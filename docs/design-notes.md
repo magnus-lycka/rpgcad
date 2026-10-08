@@ -61,6 +61,26 @@ Proposed details still to validate:
 - Explicit connections between levels, such as stairs, lifts, and ceiling hatches.
 - Exact metadata schema, campaign membership cardinality, and persistence implementation remain open.
 
+## Reusable drawing components
+
+Requested direction, not implemented:
+
+- Expect many plans with increasingly varied, larger, and more complex layouts. The current JSON prototype does not establish that the agent editing workflow, rendering, or exploration will scale to these workloads.
+- Support a catalogue of reusable components, including furniture, hatches, and doors. Plans should allow variation while retaining regularity and recognisable drawing conventions.
+- The agent should know when an existing component meets the Referee's intent and reuse it, rather than redrawing everything from primitives. Reuse must not override requested details.
+- Do not populate the catalogue with arbitrary agent inventions. The Referee identifies [Robert Pearce's Yet Another Traveller Blog](https://travellerrpgblog.blogspot.com/) as an excellent reference source.
+
+Proposed next steps and safeguards, still to validate:
+
+- Begin with a source-backed inventory for review, distinguishing individual symbols from complete room assemblies and geomorphs. Record where each candidate comes from and what was actually inspected. Separate documented dimensions from measurements inferred from a drawing and from unknowns.
+- Treat the current building's accepted doors, hatch/step-iron arrangement, lifts, and stair/platform as potential examples. Their dimensions and arrangements were approved for this building; they are not universal defaults.
+- Give the agent a searchable inventory with previews, footprints, supported variants, and sources, so it can inspect suitable entries without loading an entire library into its context.
+- A reusable definition and its placed instances could avoid repeatedly encoding the same geometry. Position, rotation, supported variations, and connections would belong to intentional placement. Exact interfaces and storage remain open; JSON is not a commitment to a particular CAD model.
+- A recognisable symbol also needs correct placement and behaviour: attachment side, access, door state, and sight blocking matter. The step-iron mistake demonstrates why rotation/reflection alone is insufficient.
+- Source material informs candidates, not automatic acceptance as official Traveller standards or as Referee-approved components. Keep source/author attribution and stated reuse terms with the inventory.
+- Review a small initial set before expanding or importing assets. A catalogue must not silently redesign existing plans when a definition is revised; versioning/update behaviour remains to be decided.
+- Reuse may reduce model duplication and agent editing effort. Rendering, model access, visibility replay, and large-plan storage still need separate measurements against representative plans.
+
 ## Exploration visibility (fog of war)
 
 Requested behaviour:

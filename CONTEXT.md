@@ -19,6 +19,8 @@ The browser drawing view contains only the drawing and its permanent 1.5 m grid.
 
 Plan/level storage and searchable catalogue metadata are not implemented. Exploration visibility now has a throwaway prototype (`?fog=1`) with position/range observers, explicit sight blockers, door states, and persistent observation history and shared model revisions in a separate exploration file. Its current assumptions and unresolved details are recorded in the design notes and prototype README.
 
+Reusable drawing components are a requested direction, not implemented. Future plans need both variation and recognisable conventions; the agent should reuse suitable catalogue entries without inventing arbitrary standards. The Referee identified Robert Pearce's Yet Another Traveller Blog as a reference. See the design notes for the distinction between requirements and proposed catalogue work.
+
 ## Documentation discipline
 
 Record settled requirements in the design notes, terms in the glossary, and observed prototype lessons in the findings. Keep this file as a short entry point. Distinguish implemented behaviour, agreed requirements, and proposals. Update the relevant record when a correction or evaluation resolves something; screenshots and chat history alone are insufficient.
