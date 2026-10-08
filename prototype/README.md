@@ -23,6 +23,7 @@ The browser shows only the drawing. The square grid is always visible, including
 - Use the browser's print command for tiled A4 landscape output.
 - For A3 portrait printing, open http://127.0.0.1:8765/?paper=a3.
 - Add `region=view` to the URL to print complete tiles intersecting the current view instead of the whole model.
+- Add `region=plan` to start print tiles at the grid corner just above/left of the model bounds. The current building then fits on one A4 landscape sheet at 1:75; the reference origin and model stay unchanged.
 
 The drawing view has no permanent controls, diagnostics, tooltips, or walkthroughs. The fog view has an optional GM panel. Agent inspection uses the model file, rendered browser view, and console when needed.
 
@@ -49,7 +50,8 @@ Open http://127.0.0.1:8765/?fog=1. The normal URL still shows the full authored 
 - Arrow keys move that observer 1.5 m at a time. `[` and `]` decrease/increase sight range by 1.5 m (minimum 1.5 m).
 - Shift-click near a door's centre to toggle its open/closed state. You can also ask the agent to change a named door in the exploration file.
 - Shift-G (or G) shows/hides GM controls, including direct numeric range entry and a reset button. Escape closes the panel.
-- Shift-R (or R) covers the entire plan with fog and closes all doors, keeping POV position and range. Click to place the observer or use an arrow key to start revealing again. Reset persists across reloads. V switches between fog and full Referee view.
+- Shift-R (or R) covers the entire plan with fog and closes all doors, keeping POV position and range. Click to place the observer or use an arrow key to start revealing again. Reset persists across reloads and exits GM view.
+- Shift-F toggles fog off/on for a temporary full-plan GM view with the blue POV marker (V remains an alias); the panel also has a full-plan button. Plain F still fits the plan to the window. This does not reveal exploration. Placement and door toggling still work, recording only normally visible areas. Returning to fog restores the player view; print/export from the fog URL stays fogged even during GM view.
 - Bright areas are currently visible, muted areas have been explored, and the grey grid is still unknown. Walls and closed doors block sight. Furniture/equipment outlines, hatches, and step irons do not block merely because they are drawn.
 
 `prototype/exploration.PROTOTYPE.json` holds version-2 scratch play state independently of the building. `observers` holds POV positions in model metres and positive sight ranges; `doors` holds current overrides. Ordered `observations` store only position, range, door states and a model-revision reference. Shared `revisions` store each observed model revision once, preserving last-seen geometry across edits. No fog polygons are saved. Reset clears observations and unused revisions.
@@ -63,7 +65,7 @@ The prototype operates on one party POV and the current level. Previously explor
 
 Tiles are anchored at the reference origin, including negative tile coordinates. A4 landscape covers 21 × 15 m on a 280 × 200 mm map area. A3 portrait covers 21 × 30 m on a 280 × 400 mm map area. The grid is always printed at 20 mm spacing at 1:75.
 
-Use actual size / 100%, zero margins, and no browser headers or footers. The two-square ruler must measure 30 mm. Exact output depends on print settings and still needs checking on paper.
+Use manual 100% / actual size, zero browser margins, and no browser headers or footers. Each grid square measures 20 mm. A4 sheets contain only the 14 × 10 grid and the plan clipped to it, centred with 8.5 mm left/right and 5 mm top/bottom margins. No added headings, rulers, or registration crosses. The Referee measured the A4 print within 1% of the intended scale and accepted it; A3 paper verification remains unperformed.
 
 ## Observations and limits
 

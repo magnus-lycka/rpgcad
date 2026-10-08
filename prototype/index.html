@@ -21,9 +21,10 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:white}
 <section id="gm-panel" aria-label="GM controls" hidden>
 <strong>Exploration</strong>
 <label>Sight range (m) <input id="sight-range" type="number" min="0.1" step="0.5" value="6"></label>
+<button id="gm-view" aria-pressed="false">Show full plan (GM)</button>
 <button id="reset-fog">Reset fog · close all doors</button><button id="close-gm">Close</button>
 <p>Click the plan to place the POV. Shift-click a door to open or close it.</p>
-<p>Shift-G: controls · Shift-R: reset</p>
+<p>Shift-G: controls · Shift-R: reset · Shift-F: fog on/off</p>
 <output id="fog-status"></output>
 </section>
 <script>
@@ -31,6 +32,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:white}
 const Geometry=(()=>{
  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
  const length=w=>Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]);
+ const doorThickness=(m,o,w)=>o.thickness??Math.min(.06,(w.thickness??m.wallThickness)*.4);
  const finite=n=>typeof n==='number'&&Number.isFinite(n);
  function validate(m){
   const fail=s=>{throw Error(s)},positive=n=>finite(n)&&n>0,point=p=>Array.isArray(p)&&p.length===2&&p.every(finite);
@@ -40,8 +42,10 @@ const Geometry=(()=>{
   const ids=new Set();for(const o of [...m.walls,...m.openings,...m.labels,...(m.outlines??[]),...(m.circles??[]),...(m.lines??[]),...(m.stepIrons??[]),...(m.spiralStairs??[])]){if(!o||typeof o.id!=='string'||!o.id||ids.has(o.id))fail('Every object needs a unique id.');ids.add(o.id)}
   for(const w of m.walls)if(!point(w.a)||!point(w.b)||!positive(length(w))||!positive(w.thickness??m.wallThickness))fail(`Invalid wall ${w.id}`);
   for(const o of m.openings){const w=m.walls.find(w=>w.id===o.wall);if(!w||!finite(o.offset)||o.offset<0||!positive(o.width)||o.offset+o.width>length(w)+1e-8)fail(`Opening ${o.id} must fit its wall.`)}
+  for(const o of m.openings)if(o.thickness!==undefined&&!positive(o.thickness))fail(`Invalid door thickness ${o.id}`);
   for(const l of m.labels)if(!point(l.at)||typeof l.text!=='string'||!positive(l.size??.4))fail(`Invalid label ${l.id}`);
   for(const r of m.outlines??[])if(!point(r.at)||!positive(r.width)||!positive(r.height)||!positive(r.stroke??.025))fail(`Invalid outline ${r.id}`);
+  for(const r of m.outlines??[])if(r.sides!==undefined&&(!Array.isArray(r.sides)||!r.sides.every(s=>['top','right','bottom','left'].includes(s))))fail(`Invalid outline sides ${r.id}`);
   for(const c of m.circles??[])if(!point(c.at)||!positive(c.radius)||!positive(c.stroke??.025))fail(`Invalid circle ${c.id}`);
   for(const l of m.lines??[])if(!point(l.a)||!point(l.b)||!positive(l.stroke??.025))fail(`Invalid line ${l.id}`);
   for(const iron of m.stepIrons??[])if(!point(iron.at)||!positive(iron.width)||!positive(iron.projection)||!positive(iron.radius)||!positive(iron.stroke??.035))fail(`Invalid step iron ${iron.id}`);
@@ -72,14 +76,22 @@ const Geometry=(()=>{
   s+=`<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(${gx} ${gy})"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="#9aa79f" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
   if(m.origin)s+=`<path d="M ${b.x} ${oy} H ${b.x+b.w} M ${ox} ${b.y} V ${b.y+b.h}" fill="none" stroke="#d62929" stroke-width="${gridStroke*1.5}"/>`;
   for(const w of m.walls)for(const p of wallPolygons(m,w))s+=`<polygon data-wall="${esc(w.id)}" points="${p.map(p=>p.join(',')).join(' ')}" fill="#27332e"/>`;
-  for(const r of m.outlines??[])s+=`<rect data-outline="${esc(r.id)}" x="${r.at[0]}" y="${r.at[1]}" width="${r.width}" height="${r.height}" fill="none" stroke="#27332e" stroke-width="${r.stroke??.025}"/>`;
-  for(const o of m.openings.filter(o=>doorStates[o.id]!=='open'&&(o.type==='sliding'||o.type==='double-closed'||o.type==='single-closed'))){
+  for(const r of m.outlines??[]){
+   if(r.sides){
+    const [x,y]=r.at,edges={top:[[x,y],[x+r.width,y]],right:[[x+r.width,y],[x+r.width,y+r.height]],bottom:[[x+r.width,y+r.height],[x,y+r.height]],left:[[x,y+r.height],[x,y]]};
+    const d=r.sides.map(side=>{const [a,b]=edges[side];return `M ${a.join(' ')} L ${b.join(' ')}`}).join(' ');
+    s+=`<path data-outline="${esc(r.id)}" d="${d}" fill="none" stroke="#27332e" stroke-width="${r.stroke??.025}"/>`;
+   }else s+=`<rect data-outline="${esc(r.id)}" x="${r.at[0]}" y="${r.at[1]}" width="${r.width}" height="${r.height}" fill="none" stroke="#27332e" stroke-width="${r.stroke??.025}"/>`;
+  }
+  for(const o of m.openings.filter(o=>o.type==='sliding'||o.type==='double-closed'||o.type==='single-closed')){
+   const open=doorStates[o.id]==='open';
    const w=m.walls.find(w=>w.id===o.wall),len=length(w),ux=(w.b[0]-w.a[0])/len,uy=(w.b[1]-w.a[1])/len;
+   const half=doorThickness(m,o,w)/2;
    const panels=o.type==='single-closed'?1:2;
    for(let i=0;i<panels;i++){
     const a=o.offset+i*o.width/panels+.01,b=o.offset+(i+1)*o.width/panels-.01;
-    const points=[[a,.06],[b,.06],[b,-.06],[a,-.06]].map(([d,n])=>[w.a[0]+ux*d-uy*n,w.a[1]+uy*d+ux*n]);
-    s+=`<polygon data-door="${esc(o.id)}" points="${points.map(p=>p.join(',')).join(' ')}" fill="#eef1ef" stroke="#27332e" stroke-width=".025"/>`;
+    const points=[[a,half],[b,half],[b,-half],[a,-half]].map(([d,n])=>[w.a[0]+ux*d-uy*n,w.a[1]+uy*d+ux*n]);
+    s+=`<polygon data-door="${esc(o.id)}" data-door-state="${open?'open':'closed'}" points="${points.map(p=>p.join(',')).join(' ')}" fill="${open?'none':'#eef1ef'}" stroke="${open?'#536158':'#27332e'}" stroke-width=".025"${open?' stroke-dasharray=".08 .06"':''}/>`;
    }
   }
   for(const o of m.openings.filter(o=>o.type==='double-swing')){
@@ -124,14 +136,11 @@ const Geometry=(()=>{
   for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++)result.push({x:ox+x*p.tw,y:oy+y*p.th,w:p.tw,h:p.th,col:x,row:y});return result;
  }
  function sheet(m,t,p,options){
-  const [ox,oy]=m.origin??[0,0];
   const x=(p.w-280)/2,y=(p.h-p.th*1000/75)/2,h=p.th*1000/75;
-  const corners=[[x,y],[x+280,y],[x,y+h],[x+280,y+h]];
-  const marks=corners.map(([a,b])=>`<path d="M ${a-3} ${b} h 6 M ${a} ${b-3} v 6"/>`).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${p.w}mm" height="${p.h}mm" viewBox="0 0 ${p.w} ${p.h}"><rect width="100%" height="100%" fill="white"/><text x="${p.w/2}" y="2.9" text-anchor="middle" font-family="sans-serif" font-size="2">Tile ${t.col}, ${t.row} · x ${t.x-ox}–${t.x+t.w-ox} m · y ${t.y-oy}–${t.y+t.h-oy} m · 1:75</text><svg x="${x}" y="${y}" width="280" height="${h}" viewBox="${t.x} ${t.y} ${t.w} ${t.h}" overflow="hidden">${(options?.render??scene)(m,t,{...options,id:`grid-${t.col}-${t.row}`})}</svg><g fill="none" stroke="#35443b" stroke-width=".15">${marks}<path d="M 12 ${p.h-2} h 30 m -30 -1 v 2 m 30 -2 v 2"/></g><text x="44" y="${p.h-1.4}" font-family="sans-serif" font-size="1.8">30 mm / 3 m</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${p.w}mm" height="${p.h}mm" viewBox="0 0 ${p.w} ${p.h}"><rect width="100%" height="100%" fill="white"/><svg x="${x}" y="${y}" width="280" height="${h}" viewBox="${t.x} ${t.y} ${t.w} ${t.h}" overflow="hidden">${(options?.render??scene)(m,t,{...options,id:`grid-${t.col}-${t.row}`})}</svg></svg>`;
  }
  function svg(m,b,options){return `<svg xmlns="http://www.w3.org/2000/svg" width="${b.w*1000/75}mm" height="${b.h*1000/75}mm" viewBox="${b.x} ${b.y} ${b.w} ${b.h}">${(options?.render??scene)(m,b,options)}</svg>`}
- return {esc,length,validate,bounds,scene,papers,tiles,sheet,svg,wallPolygons};
+ return {esc,length,doorThickness,validate,bounds,scene,papers,tiles,sheet,svg,wallPolygons};
 })();
 
 // Throwaway visibility experiment. Drawing primitives do not imply occlusion.
@@ -142,7 +151,7 @@ const Fog=(()=>{
   for(const w of m.walls)if(w.blocksSight!==false)polygons.push(...Geometry.wallPolygons(m,w));
   for(const o of m.openings){
    if(o.blocksSight===false||doors[o.id]==='open'||(!o.type&&o.blocksSight!==true))continue;
-   const w=m.walls.find(w=>w.id===o.wall),len=Geometry.length(w),ux=(w.b[0]-w.a[0])/len,uy=(w.b[1]-w.a[1])/len,t=(w.thickness??m.wallThickness)/2;
+   const w=m.walls.find(w=>w.id===o.wall),len=Geometry.length(w),ux=(w.b[0]-w.a[0])/len,uy=(w.b[1]-w.a[1])/len,t=Geometry.doorThickness(m,o,w)/2;
    polygons.push([[o.offset,t],[o.offset+o.width,t],[o.offset+o.width,-t],[o.offset,-t]].map(([d,n])=>[w.a[0]+ux*d-uy*n,w.a[1]+uy*d+ux*n]));
   }
   for(const r of m.outlines??[])if(r.blocksSight===true)polygons.push([[r.at[0],r.at[1]],[r.at[0]+r.width,r.at[1]],[r.at[0]+r.width,r.at[1]+r.height],[r.at[0],r.at[1]+r.height]]);
@@ -227,7 +236,7 @@ const viewport=document.getElementById('viewport');
 let model={wallThickness:.15,walls:[],openings:[],labels:[]},etag='',loaded=false;
 let camera={x:10.5,y:7.5,mpp:.04},drag=null;
 const settings=new URLSearchParams(location.search);
-let fogEnabled=settings.get('fog')==='1',exploration=null,explorationEtag='',savingExploration=false,currentVisibility=[],editGeneration=0;
+let fogEnabled=settings.get('fog')==='1',gmView=false,exploration=null,explorationEtag='',savingExploration=false,currentVisibility=[],editGeneration=0;
 function renderScene(m,b,options={}){
  if(!fogEnabled)return Geometry.scene(m,b,options);
  if(!exploration)return Geometry.scene({wallThickness:.15,walls:[],openings:[],labels:[]},b,{...options,background:'#cbd2ce'});
@@ -270,10 +279,17 @@ async function setRange(range){
 }
 async function resetFog(){
  if(!exploration||savingExploration)return;
- Fog.reset(exploration);updateVisibility();draw();await saveExploration();
+ Fog.reset(exploration);if(gmView)toggleGmView();updateVisibility();draw();await saveExploration();
 }
 const gmPanel=document.getElementById('gm-panel');
 function toggleGm(){gmPanel.hidden=!gmPanel.hidden}
+function toggleGmView(){
+ gmView=!gmView;
+ document.getElementById('gm-view').textContent=gmView?'Return to fog':'Show full plan (GM)';
+ document.getElementById('gm-view').setAttribute('aria-pressed',String(gmView));
+ draw();
+}
+document.getElementById('gm-view').addEventListener('click',toggleGmView);
 document.getElementById('close-gm').addEventListener('click',()=>{gmPanel.hidden=true});
 document.getElementById('reset-fog').addEventListener('click',resetFog);
 document.getElementById('sight-range').addEventListener('change',event=>setRange(Number(event.target.value)));
@@ -300,7 +316,12 @@ async function toggleDoor(at){
 function view(){return {x:camera.x-viewport.clientWidth*camera.mpp/2,y:camera.y-viewport.clientHeight*camera.mpp/2,w:viewport.clientWidth*camera.mpp,h:viewport.clientHeight*camera.mpp}}
 function draw(){
  const b=view();viewport.setAttribute('viewBox',`${b.x} ${b.y} ${b.w} ${b.h}`);
- viewport.innerHTML=renderScene(model,b,{gridStroke:camera.mpp*.8});
+ const options={gridStroke:camera.mpp*.8};
+ if(fogEnabled&&gmView){
+  viewport.innerHTML=Geometry.scene(model,b,{...options,doorStates:exploration?.doors??{}});
+  for(const o of exploration?.observers??[])viewport.innerHTML+=`<circle data-observer="${Geometry.esc(o.id)}" cx="${o.at[0]}" cy="${o.at[1]}" r=".14" fill="#176ca4" stroke="white" stroke-width=".035"/>`;
+ }else viewport.innerHTML=renderScene(model,b,options);
+ viewport.setAttribute('data-gm-view',String(fogEnabled&&gmView));
 }
 function fit(){const b=Geometry.bounds(model);camera={x:b.x+b.w/2,y:b.y+b.h/2,mpp:Math.max((b.w+3)/viewport.clientWidth,(b.h+3)/viewport.clientHeight)};draw()}
 async function poll(){
@@ -337,11 +358,13 @@ window.addEventListener('keydown',event=>{
  if(event.ctrlKey||event.metaKey||event.altKey||event.target.matches('input,textarea'))return;
  if(fogEnabled&&event.key.toLowerCase()==='g'){event.preventDefault();toggleGm()}
  if(event.key==='Escape')gmPanel.hidden=true;
- if(event.key.toLowerCase()==='f')fit();
+ if(event.key.toLowerCase()==='f'){
+  if(event.shiftKey&&fogEnabled)toggleGmView();else fit();
+ }
  if(event.key==='+'||event.key==='=')zoom(.8);
  if(event.key==='-')zoom(1.25);
  if(event.key.toLowerCase()==='s')exportSvg();
- if(event.key.toLowerCase()==='v'){fogEnabled=!fogEnabled;draw()}
+ if(fogEnabled&&event.key.toLowerCase()==='v')toggleGmView();
  if(fogEnabled&&exploration&&!savingExploration){
   const observer=exploration.observers[0];
   const movement={ArrowLeft:[-1.5,0],ArrowRight:[1.5,0],ArrowUp:[0,-1.5],ArrowDown:[0,1.5]}[event.key];
@@ -355,7 +378,12 @@ window.addEventListener('beforeprint',()=>{
  const b=settings.get('region')==='view'?view():Geometry.bounds(model);
  document.getElementById('print-pages').innerHTML='';
  try{
-  const ts=Geometry.tiles(b,p,200,model.origin);
+  let tileOrigin=model.origin;
+  if(settings.get('region')==='plan'){
+   const [gx,gy]=model.gridOrigin??[0,0];
+   tileOrigin=[gx+Math.floor((b.x-gx)/1.5)*1.5,gy+Math.floor((b.y-gy)/1.5)*1.5];
+  }
+  const ts=Geometry.tiles(b,p,200,tileOrigin);
   document.getElementById('page-style').textContent=`@page{size:${p.w}mm ${p.h}mm;margin:0}.page{width:${p.w}mm;height:${p.h}mm}`;
   document.getElementById('print-pages').innerHTML=ts.map(t=>`<div class="page">${Geometry.sheet(model,t,p,{render:renderScene})}</div>`).join('');
  }catch(error){console.error(error.message)}

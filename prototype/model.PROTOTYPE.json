@@ -316,14 +316,16 @@
       "wall": "lift-left",
       "offset": 0.5,
       "width": 2,
-      "type": "sliding"
+      "type": "sliding",
+      "thickness": 0.06
     },
     {
       "id": "upper-lift-door",
       "wall": "upper-lift-left",
       "offset": 0.18,
       "width": 2.64,
-      "type": "sliding"
+      "type": "sliding",
+      "thickness": 0.06
     },
     {
       "id": "upper-double-doors",
@@ -331,42 +333,48 @@
       "offset": 0.2,
       "width": 2.6,
       "type": "double-closed",
-      "swing": "left"
+      "swing": "left",
+      "thickness": 0.06
     },
     {
       "id": "top-left-door",
       "wall": "top-left-right",
       "offset": 0.4,
       "width": 1,
-      "type": "single-closed"
+      "type": "single-closed",
+      "thickness": 0.06
     },
     {
       "id": "top-right-door",
       "wall": "top-right-left",
       "offset": 0.1,
       "width": 1,
-      "type": "single-closed"
+      "type": "single-closed",
+      "thickness": 0.06
     },
     {
       "id": "bottom-left-door",
       "wall": "bottom-left-right",
       "offset": 0.1,
       "width": 1,
-      "type": "single-closed"
+      "type": "single-closed",
+      "thickness": 0.06
     },
     {
       "id": "bottom-right-door",
       "wall": "bottom-right-left",
       "offset": 0.4,
       "width": 1,
-      "type": "single-closed"
+      "type": "single-closed",
+      "thickness": 0.06
     },
     {
       "id": "stair-platform-door",
       "wall": "stair-right",
       "offset": 1.6,
       "width": 1.3,
-      "type": "single-closed"
+      "type": "single-closed",
+      "thickness": 0.06
     }
   ],
   "labels": [],
@@ -407,7 +415,11 @@
       ],
       "width": 1.5,
       "height": 1.5,
-      "stroke": 0.025
+      "stroke": 0.025,
+      "sides": [
+        "top",
+        "left"
+      ]
     }
   ],
   "circles": [

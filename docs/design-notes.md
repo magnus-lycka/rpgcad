@@ -24,6 +24,8 @@ These are agreed requirements from the ongoing interview, not an implementation 
 
 ## Viewing and printing
 
+- Print only the grid and authored plan content clipped to the tile. Do not add headings, registration crosses, rulers, or other unsolicited print annotations. A4 is a 14 × 10 grid of 20 mm squares, centred on landscape paper. Manual 100% A4 printing was verified by the Referee within 1% and accepted.
+
 - The browser shows only the drawing, filling its entire content area. No toolbar, sidebar, walkthrough, or diagnostics appear on the drawing screen.
 - The 1.5 m square grid is always present and visibly readable, including on an empty model. It is part of the drawing, not an optional overlay.
 - The browser supports pan, zoom, and a show-everything action.
@@ -81,6 +83,10 @@ Referee feedback on the first unfog prototype:
 - Explored areas retain last-seen content. Unseen changes, such as a door closing after the party leaves, must not update the players' remembered view until observed again.
 - Exploration survives closing and reopening the browser, with separate history for each level. Reset clears only the displayed level and pauses revealing until the next POV placement or movement. Multiple parties and separate play sessions are deferred.
 - G shows or hides the GM panel, which provides numeric range entry and reset. R is the reset shortcut. Shift-click toggles a door open or closed.
+- Open doors retain a thin dashed, unfilled panel outline in the doorway, identifying the door without implying that it is closed or blocks sight. This symbol obeys current visibility and last-seen memory like the rest of the plan.
+- Door leaves in the current building are 0.06 m thick, inset within their thicker walls. Closed-door sight blockers use that same thickness so fog exposes the recess rather than treating the doorway as a flush wall face.
+- The stair platform has only top and left border strokes; its bottom and right boundaries are supplied by the walls/door, avoiding a false line across the opened doorway.
+- The GM can temporarily view the full plan with the POV marker to orient and place the party. Shift-F or the GM panel's full-plan button toggles this view (V remains an alias; plain F fits the plan) without revealing any additional exploration. POV placement and door toggling still work in GM view; observations retain normal range/occlusion. Reset returns to fog view. Fog print/export remains fogged even while the GM is viewing the full plan.
 - Reset erases explored knowledge and closes all doors on the displayed level. It preserves POV position and range, and reveals nothing until the next POV placement or movement. Closing doors takes precedence over the earlier proposal to preserve their states: accidental disclosure is difficult to undo.
 - Persist compact observation records: visited POV positions, sight ranges, and the door/opening states needed to reconstruct what was visible at each observation. Do not persist fog polygons as authoritative exploration history.
 - Visibility polygons are derived data. Recompute them from observations; a bounded disposable cache (for example LRU) may be added if measured latency warrants it.

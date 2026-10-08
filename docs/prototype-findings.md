@@ -1,6 +1,6 @@
 # Prototype findings
 
-Recorded from the Referee's interactive evaluation on 2026-10-08. These are observations and working rules, not a claim that the general design problem is solved.
+Recorded from the Referee's interactive evaluation on 2026-10-08 and 2026-10-09. These are observations and working rules, not a claim that the general design problem is solved.
 
 ## Working loop
 
@@ -21,6 +21,8 @@ The specific SVG/JSON/Python arrangement is an experimental implementation, not 
 ## Doors and lifts
 
 - Closed doors should visibly read as closed. The Referee preferred thin rectangular panels with a meeting seam over swing arcs. Opening mechanism need not be encoded in the visible symbol.
+- Open doors must retain a visible trace. Use a thin dashed, unfilled outline in their doorway; do not remove their symbol entirely. This is a drawing convention, independent of sight blocking.
+- Door leaves must be thinner than their walls, including the sight-blocking geometry. A full-wall-thickness blocker hides the inset door symbol and makes closed doors look like wall faces in fog. The current building uses 0.06 m leaves in 0.15 m walls (0.20 m for the upper double-door frame).
 - The cargo lift's maximum door width is constrained by its car, not merely by the shaft wall. A shaft-wide attempt exceeded the car width and was corrected.
 - An inset thin outline made the lift car distinguishable from its shaft. Furniture and equipment outlines need separate drawing primitives from physical walls.
 - Place doors in the part of a corner room's wall facing the building interior, allowing for the outward shift and adjoining wall junctions.
@@ -37,11 +39,15 @@ The specific SVG/JSON/Python arrangement is an experimental implementation, not 
 
 The Referee specified a 3 × 3 m bay beside the small lift, then refined it to a lower-right 1.5 × 1.5 m platform and spiral stair in the other three squares. A right-side wall and a 1.3 m platform door completed the bay. The Referee approved the resulting floor. Preserve that platform and access arrangement rather than treating the stair as an interchangeable circular icon.
 
+The platform outline originally continued underneath its bottom/right walls, leaving a false solid line through the open doorway. Draw only its top/left edges, which separate the platform from the stair; omit edges already bounded by walls and doors.
+
 ## Verification and open limitations
 
 Inspect the full plan for unintended changes and affected details at close range for physical plausibility. Check door/car limits, wall attachments, access, and symbol orientation explicitly. A render succeeding is not proof that the Referee's design was followed.
 
-Print previews were checked for A4/A3 physical dimensions. Actual PDF/paper scale remains unverified. Junction cleanup, relationships between independent objects, multi-level alignment, and persistence/cataloguing remain future work. The renderer still uses simple overlapping wall polygons and manually positioned symbols.
+Print previews were checked for A4/A3 physical dimensions. The Referee subsequently verified A4 paper scale at manual 100% to within 1%, accepted for this prototype; A3 physical scale has not been checked. Junction cleanup, relationships between independent objects, multi-level alignment, and persistence/cataloguing remain future work. The renderer still uses simple overlapping wall polygons and manually positioned symbols.
+
+An A4 landscape PDF was subsequently generated from the prototype's own `Geometry.sheet` output using `region=plan` tile placement. The current building fits on one page without shrinking. PDF inspection confirmed a 297 × 210 mm page and grid pattern spacing of 20 mm (56 PDF points × 1.012373 pattern transform, within serialization precision). A rendered page was visually inspected. The independent calibration ruler is 30 mm. Actual paper measurement is still awaiting the Referee; the in-app print shortcut did not open a dialog, and opening Preview was blocked by pending macOS Computer Use permissions.
 
 ## Unfog experiment
 
@@ -62,3 +68,7 @@ Visibility rays stop at wall surfaces. Those wall faces need explicit visible bo
 The replacement removes polygon simplification from visibility reconstruction. A temporary probe reproduced the cargo-lift leak before the change and hid the same interior point afterward. Additional probes checked consecutive duplicate observations, historical door/model independence, and reset clearing knowledge/closing doors without revealing. Browser checks confirmed Shift-G opens controls and numeric range entry works. Corrupted old polygon history was reset rather than migrated into observations it cannot reliably reconstruct.
 
 Limitations: no lighting or eye-height model, movement-path collision, individual player knowledge, or multi-level storage yet. Last-seen geometry is retained through shared revision snapshots; long observation histories and many authored revisions need performance/storage evaluation. It is a Referee-side visual prototype, not a secure player client.
+
+## Paper evaluation, 2026-10-09
+
+The Referee printed the A4 PDF at manual 100% and measured less than 1% scale error, explicitly accepted. Printer fit/fill modes changed the preview size; their cause was not established. Peripheral corner crosses were partially clipped and the heading/calibration ruler did not print, while the required plan image was fine. These extras were unsolicited and rejected. Removed all print-added crosses, headings, tile coordinates, and rulers. A4 output now consists solely of a centred 14 × 10 grid (280 × 200 mm at 20 mm spacing) and the plan clipped to that region. Preserve authored plan labels/reference axes. Print at manual 100%; do not resize the map to accommodate printer fit/fill settings. The revised PDF was visually checked and its grid remains 20 mm digitally.
