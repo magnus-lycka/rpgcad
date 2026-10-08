@@ -1,6 +1,6 @@
 # Traveller component catalog: source reconnaissance
 
-Research date: 2026-10-09. This is a source inventory and proposed review queue, not an approved component catalog. No assets were imported, geometry invented, or component dimensions established.
+Research date: 2026-10-09. This records inspected source material for a reusable component catalog. The accompanying [component inventory](component-inventory.md) identifies actual symbol families, variants, source pages and limitations. Catalogued references are not automatic approval to place objects in the Referee's plans.
 
 ## Primary sources and available material
 
@@ -17,7 +17,13 @@ The [Symbols source folder](https://drive.google.com/drive/folders/187mYl8Pyo-nx
 
 Smith specifies 60 pixels per 5-foot square for standard-resolution exports and 300 pixels per 5-foot square for high-resolution exports. These are raster calibration statements, not dimensions for every component. A 5-foot square is 1.524 m, whereas RPGCAD uses exactly 1.5 m. Any later import needs an explicit calibration decision; these scales must not silently be treated as identical. The export descriptions also discuss image gutters and overlapping walls, so image bounds alone cannot establish usable footprints. [Smith's conversion documentation](https://ericbsmith.no-ip.org/geomorphs/)
 
-The original PDF/CAD/ZIP contents were **not inspected**. Drive returned lightweight loading/sign-in pages; direct PDF links on Smith's page were inaccessible to the web reader. Pearce's Adventure Class post was available through indexed search text despite direct requests returning HTTP 429. Individual symbol names, exact sizes, hatch/door conventions and completeness remain unverified; the download listings are not a substitute for visual review.
+### Actual source inspection
+
+The initial web reader failed to expose the downloads. A direct public download succeeded: [Starship Symbols PDF](https://ericbsmith.no-ip.org/zip/Geomorphs/PDF/Starship_Symbols.pdf), 7,796,924 bytes, 55 pages, SHA-256 `628145567988943b902dc602b56e6b903ce23a4dcd955cf99e5cd2d276dd05cb`. Text extraction with `pdftotext` produced only page separators; its drawings and labels were inspected visually after rendering. No claim is made that every PDF object is raster geometry. Pages **2, 3, 7, 9, 10, 13, 19, 24, 31, 37, 43, 44, 45, 46, 54 and 55** were read as complete pages. Page 2 supplies a navigation map for the remaining sections; those remaining pages are not claimed individually inspected.
+
+The downloaded [Symbols High Resolution ZIP](https://ericbsmith.no-ip.org/zip/Geomorphs/SymbolsHighRes.zip) contains separate PNG assets with retained filenames. A contact sheet of all ten Door and nineteen Iris Valves exports was visually compared with page 44. Important finding: the Iris Valves filename group also contains open-access symbols, floor hatches and enclosed ladder wells. Filename grouping is therefore insufficient for semantic classification. The inventory records the exact mapping rather than assigning all nineteen files the same type.
+
+Physical dimensions explicitly labelled on the PDF were established for three cargo footprints: 10×20 ft, 10×10 ft and 5×5 ft (page 3). Other inventory dimensions remain unverified. Archive filename brackets are nominal source labels; they must not be promoted to measured footprints without checking the asset. The Adventure Class PDF and CAD source geometry were not inspected as part of this PDF inventory; they are separate source sets.
 
 ## Authorship and stated license
 
@@ -25,13 +31,12 @@ These sources describe Pearce's own designs and Smith's conversions/custom addit
 
 In his February 25, 2022 reply on the Symbols post, Pearce states that both books and accompanying CAD symbols were released under Creative Commons Attribution-NonCommercial 4.0 International. Smith identifies the same license for his archives. Record attribution and the license for any selected source; this note makes no conclusion about a particular future use. [Pearce's statement](https://travellerrpgblog.blogspot.com/2020/08/starship-symbols-book.html), [Smith's archive statement](https://ericbsmith.no-ip.org/geomorphs/)
 
-## Proposed first review queue
+## Catalog result and next verification
 
-Review a few examples before admitting assets to a catalog:
+The [inspected inventory](component-inventory.md) now covers furniture and medical fixtures, doors/hatches, stairs/lifts, cargo/machinery, landscape/robots and room assemblies. Each family has a source-page/location reference; the door/hatch exports additionally have exact filename mappings. The full contents navigation map prevents overlooked categories from being mistaken for absent material.
 
-1. **Individual symbols:** one furniture example and one machinery example from the Symbols collection. These categories are explicitly described by Smith.
-2. **Room assemblies:** one bridge and one engineering assembly, with any supported variants kept identifiable. Smith explicitly describes these source categories and modifications.
-3. **Geomorphs:** one Adventure Class section, comparing the PDF with an optional cargo/vehicle overlay. Pearce documents these separately composable elements.
-4. **User-priority follow-up:** locate and visually verify door and hatch candidates in the actual Symbols book. Their individual entries and dimensions have not been established in this research.
+Before using a reference as a model component, verify the particular asset's physical footprint, attachment/orientation requirements and sight behavior. Keep sourced appearance, measured geometry and interactive semantics distinct. Multiple visual variants can preserve the same recognizable meaning without the agent inventing a fresh depiction on every plan.
 
-For each reviewed candidate, record source/page or filename, recognizable appearance, calibrated footprint, attachment/orientation requirements and whether it affects sight. Those are proposed review criteria, not properties inferred from raster art. Keep evidence and verification status explicit. Use of catalogue entries in a plan must follow the Referee's requested design.
+## Local browsable source catalogue
+
+The [visual catalogue](../../catalog/pearce-symbols/index.html) contains all 2,185 Symbols PNG exports with original files and compact previews. Its [provenance notes](../../catalog/pearce-symbols/README.md) record coverage and calibration limits. A separate [CAD index](../../catalog/pearce-symbols/cad.html) lists all 2,004 named blocks from the actual DXF, which declares inches. Drawing bounds and entity types were extracted; these include helpers and are not verified component footprints. The original DXF is retained losslessly compressed. The catalogue does not change the current building or implement component insertion.

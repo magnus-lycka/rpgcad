@@ -1,0 +1,14 @@
+As I write this it was almost two years ago, in October 2018, Robert Pearce released his Traveller Geomorphs PDF, which is an amazing resource for any Science Fiction RPG, providing ready made map tiles "Geomorphs" which can be mixed and matched to create maps or map sections of starships or city building locations. While this PDF is amazing it has on fatal flaw in my eye - the PDF contain vector rendered images - which means that they are not easily editable as an image file on a computer. This made creating map layouts on a computer for uses such as a Virtual TableTop (VTT) was not easily done.
+ A month ago, in July 2018, he released v2.0 of the Geomorphs PDF. A week after that he released the Traveller Starship Symbols PDF. These kicked me into gear rendering these PDFs into image files which can be edited and combined to create starships and larger maps.
+
+This archive presents the Geomorph tiles in PNG format with transparent floor backgrounds. This allows you to overlay the images on a square or hexagon grid or no grid at all (baseplates with pre-rendered grids are provided in the archive. Or you can toggle the grid, as I did in my sample maps below. These tiles are scaled to 60 pixels per 5 foot square (which I sometimes refer to as 60 dpi). This conveniently works out to 1 pixel = 1 inch, making a 1 yard hex 36 pixels across. I do have a second version of these tiles which are 5x larger (300 pixels per square). However, the file size is considerably larger and the tiles need more editing work before they can be released, so it may be a while before I release them.
+
+These files, as with Robert's original work, are released under Creative Commons Attribution Non-Commercial 4.0 International License. 
+https://creativecommons.org/licenses/by-nc/4.0/
+
+You can find a lot more information by visiting my webpage for these files:
+
+http://gurpsland.no-ip.org/geomorphs
+
+Eric B. Smith
+ericbsmith42@gmail.com

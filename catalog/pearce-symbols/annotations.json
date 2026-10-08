@@ -1,0 +1,223 @@
+{
+  "Symbols/Misc/Door 001 [10x30].png": {
+    "label": "Sliding wall door, straight walls",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "One rectangular blade between straight wall segments.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 002 [10x30].png": {
+    "label": "Sliding wall door, passage end",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "One blade across the end of two parallel wall segments.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 003 [10x30].png": {
+    "label": "Sliding wall door, left return",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "One rectangular blade beside a left wall return.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 004 [10x30].png": {
+    "label": "Sliding wall door, right return",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "One rectangular blade beside a right wall return.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 005 [10x30] Iris.png": {
+    "label": "Wall iris, thinner walls",
+    "family": "wall iris valve",
+    "source_page": 44,
+    "meaning": "Wall iris symbol between thinner wall segments.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 006 [10x30] Iris.png": {
+    "label": "Wall iris, heavier walls",
+    "family": "wall iris valve",
+    "source_page": 44,
+    "meaning": "Wall iris symbol between heavier wall segments.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 007 [5x5].png": {
+    "label": "Angled sliding wall door",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "Angled rectangular blade between short wall returns.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 008 [10x10].png": {
+    "label": "Angled sliding wall door, longer returns",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "Angled rectangular blade between longer wall returns.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 009 [10x10].png": {
+    "label": "Double sliding blades, thinner walls",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "Two rectangular blades between thinner wall segments.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Door 010 [10x10].png": {
+    "label": "Double sliding blades, heavier walls",
+    "family": "wall sliding door",
+    "source_page": 44,
+    "meaning": "Two rectangular blades between heavier wall segments.",
+    "verification": "visually matched to source legend/page"
+  },
+  "Symbols/Misc/Iris Valves 001 [5x5].png": {
+    "label": "Iris access down, edge detail",
+    "family": "vertical iris valve",
+    "source_page": 44,
+    "meaning": "Solid circular iris blades with adjoining squared edge detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "down"
+  },
+  "Symbols/Misc/Iris Valves 002 [5x5].png": {
+    "label": "Iris access down",
+    "family": "vertical iris valve",
+    "source_page": 44,
+    "meaning": "Solid circular iris blades without adjoining squared edge detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "down"
+  },
+  "Symbols/Misc/Iris Valves 003 [5x5].png": {
+    "label": "Iris access up, edge detail",
+    "family": "vertical iris valve",
+    "source_page": 44,
+    "meaning": "Dashed circular upper access with adjoining squared edge detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up"
+  },
+  "Symbols/Misc/Iris Valves 004 [5x5].png": {
+    "label": "Iris access up",
+    "family": "vertical iris valve",
+    "source_page": 44,
+    "meaning": "Dashed circular upper access without adjoining squared edge detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up"
+  },
+  "Symbols/Misc/Iris Valves 005 [5x5].png": {
+    "label": "Iris access up/down, edge detail",
+    "family": "vertical iris valve",
+    "source_page": 44,
+    "meaning": "Combined solid iris and dashed upper access with squared edge detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up/down"
+  },
+  "Symbols/Misc/Iris Valves 006 [5x5].png": {
+    "label": "Iris access up/down",
+    "family": "vertical iris valve",
+    "source_page": 44,
+    "meaning": "Combined solid iris and dashed upper access without squared edge detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up/down"
+  },
+  "Symbols/Misc/Iris Valves 007 [5x5].png": {
+    "label": "Open vertical access down",
+    "family": "open vertical access",
+    "source_page": 44,
+    "meaning": "Shaded rounded opening and squared side; no iris blades.",
+    "verification": "visually matched to source legend/page",
+    "direction": "down"
+  },
+  "Symbols/Misc/Iris Valves 008 [5x5].png": {
+    "label": "Open vertical access up",
+    "family": "open vertical access",
+    "source_page": 44,
+    "meaning": "Dashed rounded opening and squared side; no iris blades.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up"
+  },
+  "Symbols/Misc/Iris Valves 009 [5x5].png": {
+    "label": "Open vertical access up/down",
+    "family": "open vertical access",
+    "source_page": 44,
+    "meaning": "Combined solid/dashed rounded opening; no iris blades.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up/down"
+  },
+  "Symbols/Misc/Iris Valves 010 [5x5].png": {
+    "label": "Floor hatch down, larger detail",
+    "family": "vertical hatch",
+    "source_page": 44,
+    "meaning": "Solid circle with central cross and triangular adjoining detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "down"
+  },
+  "Symbols/Misc/Iris Valves 011 [5x5].png": {
+    "label": "Floor hatch down, smaller detail",
+    "family": "vertical hatch",
+    "source_page": 44,
+    "meaning": "Solid circle with central cross and rectangular adjoining detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "down"
+  },
+  "Symbols/Misc/Iris Valves 012 [5x5].png": {
+    "label": "Ceiling hatch up, larger detail",
+    "family": "vertical hatch",
+    "source_page": 44,
+    "meaning": "Dashed circle with central cross and triangular adjoining detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up"
+  },
+  "Symbols/Misc/Iris Valves 013 [5x5].png": {
+    "label": "Ceiling hatch up, smaller detail",
+    "family": "vertical hatch",
+    "source_page": 44,
+    "meaning": "Dashed circle with central cross and rectangular adjoining detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up"
+  },
+  "Symbols/Misc/Iris Valves 014 [5x5].png": {
+    "label": "Hatch up/down, larger detail",
+    "family": "vertical hatch",
+    "source_page": 44,
+    "meaning": "Solid/dashed circles with central cross and triangular adjoining detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up/down"
+  },
+  "Symbols/Misc/Iris Valves 015 [5x5].png": {
+    "label": "Hatch up/down, smaller detail",
+    "family": "vertical hatch",
+    "source_page": 44,
+    "meaning": "Solid/dashed circles with central cross and rectangular adjoining detail.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up/down"
+  },
+  "Symbols/Misc/Iris Valves 016 [5x5].png": {
+    "label": "Ladder well, iris up/down",
+    "family": "ladder well assembly",
+    "source_page": 44,
+    "meaning": "Three-sided enclosure with combined iris access and wall iris entry.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up/down"
+  },
+  "Symbols/Misc/Iris Valves 017 [5x5].png": {
+    "label": "Ladder well, iris down",
+    "family": "ladder well assembly",
+    "source_page": 44,
+    "meaning": "Three-sided enclosure with solid iris access and wall iris entry.",
+    "verification": "visually matched to source legend/page",
+    "direction": "down"
+  },
+  "Symbols/Misc/Iris Valves 018 [5x5].png": {
+    "label": "Ladder well, access up",
+    "family": "ladder well assembly",
+    "source_page": 44,
+    "meaning": "Three-sided enclosure with dashed upper access and wall iris entry.",
+    "verification": "visually matched to source legend/page",
+    "direction": "up"
+  },
+  "Symbols/Misc/Iris Valves 019 [5x5].png": {
+    "label": "Ladder well, wall hatch",
+    "family": "ladder well assembly",
+    "source_page": 44,
+    "meaning": "Three-sided enclosure with wall hatch entry; no circular access symbol.",
+    "verification": "visually matched to source legend/page"
+  }
+}
