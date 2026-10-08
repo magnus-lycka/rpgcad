@@ -1,6 +1,519 @@
 {
   "wallThickness": 0.15,
-  "walls": [],
-  "openings": [],
-  "labels": []
+  "walls": [
+    {
+      "id": "top",
+      "a": [
+        1.2,
+        0
+      ],
+      "b": [
+        16.05,
+        0
+      ]
+    },
+    {
+      "id": "right",
+      "a": [
+        17.25,
+        1.2
+      ],
+      "b": [
+        17.25,
+        7.8
+      ]
+    },
+    {
+      "id": "bottom",
+      "a": [
+        16.05,
+        9
+      ],
+      "b": [
+        1.2,
+        9
+      ]
+    },
+    {
+      "id": "top-left-top",
+      "a": [
+        -0.3,
+        -0.3
+      ],
+      "b": [
+        1.2,
+        -0.3
+      ]
+    },
+    {
+      "id": "top-left-right",
+      "a": [
+        1.2,
+        -0.3
+      ],
+      "b": [
+        1.2,
+        1.2
+      ]
+    },
+    {
+      "id": "top-left-bottom",
+      "a": [
+        1.2,
+        1.2
+      ],
+      "b": [
+        -0.3,
+        1.2
+      ]
+    },
+    {
+      "id": "top-left-left",
+      "a": [
+        -0.3,
+        1.2
+      ],
+      "b": [
+        -0.3,
+        -0.3
+      ]
+    },
+    {
+      "id": "top-right-top",
+      "a": [
+        16.05,
+        -0.3
+      ],
+      "b": [
+        17.55,
+        -0.3
+      ]
+    },
+    {
+      "id": "top-right-right",
+      "a": [
+        17.55,
+        -0.3
+      ],
+      "b": [
+        17.55,
+        1.2
+      ]
+    },
+    {
+      "id": "top-right-bottom",
+      "a": [
+        17.55,
+        1.2
+      ],
+      "b": [
+        16.05,
+        1.2
+      ]
+    },
+    {
+      "id": "top-right-left",
+      "a": [
+        16.05,
+        1.2
+      ],
+      "b": [
+        16.05,
+        -0.3
+      ]
+    },
+    {
+      "id": "bottom-left-top",
+      "a": [
+        -0.3,
+        7.8
+      ],
+      "b": [
+        1.2,
+        7.8
+      ]
+    },
+    {
+      "id": "bottom-left-right",
+      "a": [
+        1.2,
+        7.8
+      ],
+      "b": [
+        1.2,
+        9.3
+      ]
+    },
+    {
+      "id": "bottom-left-bottom",
+      "a": [
+        1.2,
+        9.3
+      ],
+      "b": [
+        -0.3,
+        9.3
+      ]
+    },
+    {
+      "id": "bottom-left-left",
+      "a": [
+        -0.3,
+        9.3
+      ],
+      "b": [
+        -0.3,
+        7.8
+      ]
+    },
+    {
+      "id": "bottom-right-top",
+      "a": [
+        16.05,
+        7.8
+      ],
+      "b": [
+        17.55,
+        7.8
+      ]
+    },
+    {
+      "id": "bottom-right-right",
+      "a": [
+        17.55,
+        7.8
+      ],
+      "b": [
+        17.55,
+        9.3
+      ]
+    },
+    {
+      "id": "bottom-right-bottom",
+      "a": [
+        17.55,
+        9.3
+      ],
+      "b": [
+        16.05,
+        9.3
+      ]
+    },
+    {
+      "id": "bottom-right-left",
+      "a": [
+        16.05,
+        9.3
+      ],
+      "b": [
+        16.05,
+        7.8
+      ]
+    },
+    {
+      "id": "lift-top",
+      "a": [
+        7.5,
+        6
+      ],
+      "b": [
+        10.5,
+        6
+      ]
+    },
+    {
+      "id": "lift-right",
+      "a": [
+        10.5,
+        6
+      ],
+      "b": [
+        10.5,
+        9
+      ]
+    },
+    {
+      "id": "lift-left",
+      "a": [
+        7.5,
+        6
+      ],
+      "b": [
+        7.5,
+        9
+      ]
+    },
+    {
+      "id": "upper-lift-top",
+      "a": [
+        7.5,
+        3
+      ],
+      "b": [
+        13.5,
+        3
+      ]
+    },
+    {
+      "id": "upper-lift-right",
+      "a": [
+        13.5,
+        3
+      ],
+      "b": [
+        13.5,
+        6
+      ]
+    },
+    {
+      "id": "upper-lift-bottom-extension",
+      "a": [
+        10.5,
+        6
+      ],
+      "b": [
+        13.5,
+        6
+      ]
+    },
+    {
+      "id": "upper-lift-left",
+      "a": [
+        7.5,
+        3
+      ],
+      "b": [
+        7.5,
+        6
+      ]
+    },
+    {
+      "id": "upper-double-door-frame",
+      "a": [
+        7.5,
+        0
+      ],
+      "b": [
+        7.5,
+        3
+      ]
+    },
+    {
+      "id": "stair-right",
+      "a": [
+        13.5,
+        6
+      ],
+      "b": [
+        13.5,
+        9
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "lift-door",
+      "wall": "lift-left",
+      "offset": 0.5,
+      "width": 2,
+      "type": "sliding"
+    },
+    {
+      "id": "upper-lift-door",
+      "wall": "upper-lift-left",
+      "offset": 0.18,
+      "width": 2.64,
+      "type": "sliding"
+    },
+    {
+      "id": "upper-double-doors",
+      "wall": "upper-double-door-frame",
+      "offset": 0.2,
+      "width": 2.6,
+      "type": "double-closed",
+      "swing": "left"
+    },
+    {
+      "id": "top-left-door",
+      "wall": "top-left-right",
+      "offset": 0.4,
+      "width": 1,
+      "type": "single-closed"
+    },
+    {
+      "id": "top-right-door",
+      "wall": "top-right-left",
+      "offset": 0.1,
+      "width": 1,
+      "type": "single-closed"
+    },
+    {
+      "id": "bottom-left-door",
+      "wall": "bottom-left-right",
+      "offset": 0.1,
+      "width": 1,
+      "type": "single-closed"
+    },
+    {
+      "id": "bottom-right-door",
+      "wall": "bottom-right-left",
+      "offset": 0.4,
+      "width": 1,
+      "type": "single-closed"
+    },
+    {
+      "id": "stair-platform-door",
+      "wall": "stair-right",
+      "offset": 1.6,
+      "width": 1.3,
+      "type": "single-closed"
+    }
+  ],
+  "labels": [],
+  "origin": [
+    9,
+    4.5
+  ],
+  "gridOrigin": [
+    0,
+    0
+  ],
+  "outlines": [
+    {
+      "id": "lift-car",
+      "at": [
+        7.68,
+        6.18
+      ],
+      "width": 2.64,
+      "height": 2.64,
+      "stroke": 0.025
+    },
+    {
+      "id": "upper-lift-car",
+      "at": [
+        7.68,
+        3.18
+      ],
+      "width": 5.64,
+      "height": 2.64,
+      "stroke": 0.025
+    },
+    {
+      "id": "stair-platform",
+      "at": [
+        12,
+        7.5
+      ],
+      "width": 1.5,
+      "height": 1.5,
+      "stroke": 0.025
+    }
+  ],
+  "circles": [
+    {
+      "id": "top-left-ceiling-hatch",
+      "at": [
+        0.45,
+        0.45
+      ],
+      "radius": 0.5,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "top-right-ceiling-hatch",
+      "at": [
+        16.8,
+        0.45
+      ],
+      "radius": 0.5,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "bottom-left-ceiling-hatch",
+      "at": [
+        0.45,
+        8.55
+      ],
+      "radius": 0.5,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "bottom-right-ceiling-hatch",
+      "at": [
+        16.8,
+        8.55
+      ],
+      "radius": 0.5,
+      "stroke": 0.025,
+      "dashed": true
+    }
+  ],
+  "lines": [],
+  "stepIrons": [
+    {
+      "id": "top-left-step-iron",
+      "at": [
+        -0.225,
+        0.45
+      ],
+      "width": 0.6,
+      "projection": 0.12,
+      "radius": 0.04,
+      "stroke": 0.035
+    },
+    {
+      "id": "top-right-step-iron",
+      "at": [
+        17.475,
+        0.45
+      ],
+      "width": 0.6,
+      "projection": 0.12,
+      "radius": 0.04,
+      "stroke": 0.035,
+      "direction": -1
+    },
+    {
+      "id": "bottom-left-step-iron",
+      "at": [
+        -0.225,
+        8.55
+      ],
+      "width": 0.6,
+      "projection": 0.12,
+      "radius": 0.04,
+      "stroke": 0.035,
+      "direction": 1
+    },
+    {
+      "id": "bottom-right-step-iron",
+      "at": [
+        17.475,
+        8.55
+      ],
+      "width": 0.6,
+      "projection": 0.12,
+      "radius": 0.04,
+      "stroke": 0.035,
+      "direction": -1
+    }
+  ],
+  "spiralStairs": [
+    {
+      "id": "stairs-down",
+      "at": [
+        12,
+        7.5
+      ],
+      "radius": 1.35,
+      "treads": 14,
+      "direction": "down",
+      "startAngle": 90,
+      "sweep": 270
+    }
+  ]
 }

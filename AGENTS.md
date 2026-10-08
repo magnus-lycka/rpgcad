@@ -1,3 +1,5 @@
+Read `CONTEXT.md` before continuing design or implementation. When changing a drawing or its renderer, also read `docs/prototype-findings.md` for observed corrections and verification rules.
+
 ## Agent skills
 
 ### Issue tracker

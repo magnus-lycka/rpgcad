@@ -12,7 +12,7 @@ python3 prototype/server.py
 
 Open http://127.0.0.1:8765. Python's standard library serves the model; plain JavaScript and SVG render it. The server binds only to loopback.
 
-The browser shows only the drawing. The square grid is always visible, including when the model is empty. Each square represents 1.5 m. The initial model is empty, awaiting the Referee's description.
+The browser shows only the drawing. The square grid is always visible, including when the model is empty. Each square represents 1.5 m. The current model contains the Referee's interactively developed building; preserve it when changing the prototype.
 
 ## Interaction
 
@@ -24,7 +24,7 @@ The browser shows only the drawing. The square grid is always visible, including
 - For A3 portrait printing, open http://127.0.0.1:8765/?paper=a3.
 - Add `region=view` to the URL to print complete tiles intersecting the current view instead of the whole model.
 
-There are no on-screen controls, diagnostics, tooltips, or walkthroughs. Agent inspection uses the model file, rendered browser view, and console when needed.
+The drawing view has no permanent controls, diagnostics, tooltips, or walkthroughs. The fog view has an optional GM panel. Agent inspection uses the model file, rendered browser view, and console when needed.
 
 ## Shared model
 
@@ -32,6 +32,8 @@ There are no on-screen controls, diagnostics, tooltips, or walkthroughs. Agent i
 
 All positions, dimensions, and thicknesses are in metres. IDs are unique across objects.
 
+- `origin`: optional `[x,y]` reference position on a grid intersection. Its X and Y axes are red, and print tiles align to it. Moving this reference does not move the grid or geometry. Coordinates described relative to the origin are converted to stored model positions by the agent.
+- `gridOrigin`: optional `[x,y]` grid alignment, default `[0,0]`. This is independent of the movable reference origin.
 - `wallThickness`: positive default thickness.
 - `walls`: `{id, a: [x,y], b: [x,y], thickness?}`. Endpoints describe the centre line.
 - `openings`: `{id, wall, offset, width}`. Offset is measured from the wall's `a` endpoint towards `b`. Openings must fit on their wall and follow its orientation.
@@ -39,9 +41,27 @@ All positions, dimensions, and thicknesses are in metres. IDs are unique across 
 
 This is experimental interchange data for the agent, not a user-facing language or an established format.
 
+## Unfog experiment
+
+Open http://127.0.0.1:8765/?fog=1. The normal URL still shows the full authored plan. Both views normally contain only drawing and grid; Shift-G opens the optional GM controls in fog mode.
+
+- The blue dot marks an observer. Click an unobstructed point to place the first observer there; drag still pans. This is placement, not simulated movement along a collision-checked path.
+- Arrow keys move that observer 1.5 m at a time. `[` and `]` decrease/increase sight range by 1.5 m (minimum 1.5 m).
+- Shift-click near a door's centre to toggle its open/closed state. You can also ask the agent to change a named door in the exploration file.
+- Shift-G (or G) shows/hides GM controls, including direct numeric range entry and a reset button. Escape closes the panel.
+- Shift-R (or R) covers the entire plan with fog and closes all doors, keeping POV position and range. Click to place the observer or use an arrow key to start revealing again. Reset persists across reloads. V switches between fog and full Referee view.
+- Bright areas are currently visible, muted areas have been explored, and the grey grid is still unknown. Walls and closed doors block sight. Furniture/equipment outlines, hatches, and step irons do not block merely because they are drawn.
+
+`prototype/exploration.PROTOTYPE.json` holds version-2 scratch play state independently of the building. `observers` holds POV positions in model metres and positive sight ranges; `doors` holds current overrides. Ordered `observations` store only position, range, door states and a model-revision reference. Shared `revisions` store each observed model revision once, preserving last-seen geometry across edits. No fog polygons are saved. Reset clears observations and unused revisions.
+
+Reloads, polling and redraws do not create observations. Consecutive identical observations are ignored; revisits after intervening changes remain ordered so remembered appearances update correctly. Visibility is reconstructed using unsimplified ray-cast boundaries, with a bounded 128-entry in-memory cache. The server rejects old polygon-format saves and stale writes.
+The `doors` map overrides an opening ID with `open` or `closed`. Walls block sight unless `blocksSight: false`; door openings with leaf symbols block while closed unless explicitly nonblocking. Rectangle outlines, circles, and lines can opt into blocking with `blocksSight: true`. This is a simple 2D rule, without lighting, eye heights, or glass defaults.
+
+The prototype operates on one party POV and the current level. Previously explored areas show last-seen content with a light tint; current visibility is white. Print/export uses the same fog rendering. Observation history survives reloads. Separate level histories remain to be wired into future multi-level storage. The scratch file accepts at most 5 MB per save; history replay still needs evaluation for long sessions.
+
 ## Printing
 
-Tiles are anchored at (0, 0), including negative coordinates. A4 landscape covers 21 × 15 m on a 280 × 200 mm map area. A3 portrait covers 21 × 30 m on a 280 × 400 mm map area. The grid is always printed at 20 mm spacing at 1:75.
+Tiles are anchored at the reference origin, including negative tile coordinates. A4 landscape covers 21 × 15 m on a 280 × 200 mm map area. A3 portrait covers 21 × 30 m on a 280 × 400 mm map area. The grid is always printed at 20 mm spacing at 1:75.
 
 Use actual size / 100%, zero margins, and no browser headers or footers. The two-square ruler must measure 30 mm. Exact output depends on print settings and still needs checking on paper.
 
@@ -51,11 +71,11 @@ Manual checks of the initial prototype on 2026-10-08 confirmed live targeted edi
 
 After the Referee clarified the requirements, the sample was cleared and all screen chrome removed. The renderer now maintains readable screen grid strokes at different zoom levels.
 
-The technical update mechanism appears viable. Matching the Referee's intended designs is the actual evaluation criterion and has not yet been demonstrated.
+The technical update mechanism appears viable, and the Referee positively evaluated the iterative development of this floor. Detailed observations, mistakes, and corrections are recorded in `docs/prototype-findings.md`. This is evidence for the current working loop, not proof of general autonomous design ability.
 
 - Wall junctions are overlapping polygons with simple square extensions.
 - Openings cut only their own wall; crossing walls can obstruct them.
 - Connected wall segments and labels do not automatically move together.
 - The model has no fixed outer boundary; printing is limited to 200 sheets per request in this prototype.
-- No direct geometry editing, room semantics, furniture, door leaves, or undo.
+- No direct geometry editing, room semantics, furniture, or undo. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were added during the interactive evaluation.
 - No automated tests or production framework.

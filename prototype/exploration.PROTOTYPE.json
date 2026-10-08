@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "id": "building-unfog-trial",
+  "observers": [
+    {
+      "id": "party",
+      "at": [
+        5.942,
+        3.798
+      ],
+      "range": 10
+    }
+  ],
+  "doors": {},
+  "observations": [],
+  "revisions": {},
+  "visibilityPaused": true
+}
