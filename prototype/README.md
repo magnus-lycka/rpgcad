@@ -80,4 +80,4 @@ The technical update mechanism appears viable, and the Referee positively evalua
 - Connected wall segments and labels do not automatically move together.
 - The model has no fixed outer boundary; printing is limited to 200 sheets per request in this prototype.
 - No direct geometry editing, room semantics, furniture, or undo. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were added during the interactive evaluation.
-- Regression tests cover HTTP saves and exploration behaviour; this remains a prototype without a production framework. See `docs/agents/development.md` for the required TDD workflow.
+- Regression tests cover HTTP saves, pure exploration behaviour, browser controls, and fog rendering; this remains a prototype without a production framework. See `docs/agents/development.md` for the required TDD workflow.

@@ -18,4 +18,5 @@ jobs:
           cache: npm
       - run: uv sync --locked
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: uv run --locked python scripts/check.py

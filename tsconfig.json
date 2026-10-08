@@ -11,5 +11,5 @@
     "strictNullChecks": true,
     "noImplicitAny": false
   },
-  "include": ["prototype/*.js", "tests/*.js", "*.mjs"]
+  "include": ["prototype/*.js", "tests/**/*.js", "*.mjs"]
 }

@@ -10,12 +10,17 @@ export default [
       ".venv/**",
       "tmp/**",
       "output/**",
+      "test-results/**",
+      "playwright-report/**",
     ],
   },
   js.configs.recommended,
   security.configs.recommended,
   { languageOptions: { globals: globals.node } },
-  { files: ["prototype/*.js"], languageOptions: { globals: globals.browser } },
+  {
+    files: ["prototype/*.js", "tests/browser/*.js"],
+    languageOptions: { globals: globals.browser },
+  },
   {
     rules: {
       "no-unused-vars": [

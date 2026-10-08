@@ -1,0 +1,14 @@
+{
+  "wallThickness": 0.2,
+  "walls": [{ "id": "divider", "a": [3, -3], "b": [3, 3] }],
+  "openings": [
+    {
+      "id": "door",
+      "wall": "divider",
+      "offset": 2,
+      "width": 2,
+      "type": "single-closed"
+    }
+  ],
+  "labels": [{ "id": "secret", "at": [4, 0], "text": "SECRET" }]
+}
