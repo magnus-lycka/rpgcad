@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Floor plan experiment</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:15px system-ui;background:#eef0ed;color:#24332f}header{padding:20px 24px;background:white;border-bottom:1px solid #ccd4ce}h1{margin:0 0 6px;font-size:23px}p{margin:6px 0;max-width:1000px;line-height:1.5}main{display:grid;grid-template-columns:360px 1fr;gap:20px;padding:20px}textarea{width:100%;height:380px;resize:vertical;padding:12px;font:13px/1.6 ui-monospace,monospace;border:1px solid #aab9ae;border-radius:5px;tab-size:2}button{padding:7px 10px;border:1px solid #9baea1;background:white;border-radius:4px;cursor:pointer}button:hover{background:#e4eee7}.row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}summary{cursor:pointer}pre{font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap}#paper{background:white;box-shadow:0 3px 20px #0001;width:100%;overflow:auto}#paper svg{display:block;width:100%;height:auto;min-width:420px}#status{font-size:13px;margin:10px 0}#error{color:#aa2929;white-space:pre-wrap}small{color:#56665b}#facts{line-height:1.8;font-size:13px}input[type=range]{width:130px}@media(max-width:850px){main{grid-template-columns:1fr}textarea{height:280px}}@page{size:A4 landscape;margin:5mm}@media print{body{background:white}header,aside,.controls,#status{display:none}main{display:block;padding:0}#paper{box-shadow:none;width:280mm;height:200mm}#paper svg{width:280mm!important;height:200mm;min-width:0}}
+</style>
+<header><h1>Text → floor plan · throwaway prototype</h1><p>Experiment: can rectangles in grid coordinates give us a useful, immediately editable Traveller plan? Edit the text to find out. This tests explicit geometry; it does not interpret natural-language requests yet.</p></header>
+<main><aside>
+<div class="row" aria-label="Examples"><button data-example="station">Rooms & corridor</button><button data-example="offset">Offsets & rotation</button><button data-example="blank">Start empty</button></div>
+<textarea id="source" aria-label="Floor plan description" spellcheck="false"></textarea>
+<div id="error" role="alert"></div>
+<details open><summary>Language reference</summary><pre># Units: grid squares; decimals allowed.
+sheet WIDTH HEIGHT
+wall METRES
+room X Y WIDTH HEIGHT "Label" [ANGLE]
+door X Y WIDTH [ANGLE]
+item X Y WIDTH HEIGHT "Label" [ANGLE]
+
+X/Y are measured from the top left.
+Angles are clockwise degrees, rotating
+around the rectangle's centre.
+Doors start at X/Y and rotate there.
+wall 0.15 means a 15 cm wall.
+Doors cut through walls and show a swing.
+Items are furniture/equipment outlines.
+Use ordinary double quotes for labels.
+Rooms may share edges. Walls are centred
+on their edges, consuming some interior.
+</pre></details>
+<div id="facts"></div>
+<p><small>Try: change the wall thickness, move a room by 0.25 squares, or rotate a console. Shared wall edges are merged visually; overlapping rooms are not automatically joined.</small></p>
+</aside><section>
+<div class="row controls"><button id="download">Save SVG</button><button id="print">Print / PDF</button><label><input id="grid" type="checkbox" checked> Grid</label><label><input id="labels" type="checkbox" checked> Labels</label><label>Zoom <input id="zoom" type="range" min="50" max="200" value="100"></label></div>
+<div id="status" role="status"></div><div id="paper"></div>
+<p class="controls"><small>Default sheet: 280 × 200 mm at 1:75. Print at 100% / actual size, without headers or footers; check that one square measures 20 mm. Printable margins depend on your printer. SVG retains physical dimensions.</small></p>
+</section></main>
+<script>
+// Portable experiment: text -> plain geometry -> SVG; no DOM dependencies.
+const Plan = (() => {
+const escape = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+function parse(text){
+  const plan={width:14,height:10,wall:.15,rooms:[],doors:[],items:[]};
+  text.split('\n').forEach((raw,index)=>{
+    const line=raw.trim();if(!line||line.startsWith('#'))return;
+    const t=line.match(/"[^"\n]*"|[^\s]+/g), command=t.shift();
+    const fail=message=>{throw Error(`Line ${index+1}: ${message}`)};
+    const number=i=>{if(t[i]===undefined||!Number.isFinite(Number(t[i])))fail('Expected a number.');return Number(t[i])};
+    const positive=i=>{const n=number(i);if(n<=0)fail('Dimensions must be positive.');return n};
+    if(command==='sheet'){if(t.length!==2)fail('Use: sheet WIDTH HEIGHT');plan.width=positive(0);plan.height=positive(1)}
+    else if(command==='wall'){if(t.length!==1)fail('Use: wall METRES');plan.wall=positive(0)}
+    else if(command==='room'||command==='item'){
+      if(t.length<5||t.length>6||!/^".*"$/.test(t[4]))fail(`Use: ${command} X Y WIDTH HEIGHT "Label" [ANGLE]`);
+      plan[command==='room'?'rooms':'items'].push({x:number(0),y:number(1),w:positive(2),h:positive(3),label:t[4].slice(1,-1),angle:t.length===6?number(5):0});
+    }else if(command==='door'){
+      if(t.length<3||t.length>4)fail('Use: door X Y WIDTH [ANGLE]');
+      plan.doors.push({x:number(0),y:number(1),w:positive(2),angle:t.length===4?number(3):0});
+    }else fail(`Unknown command: ${command}`);
+  });return plan;
+}
+function svg(p,{grid=true,labels=true}={}){
+ const wall=p.wall/1.5, out=[];
+ out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${p.width*20}mm" height="${p.height*20}mm" viewBox="0 0 ${p.width} ${p.height}"><title>Traveller floor plan, scale 1:75</title><defs><pattern id="grid" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M 1 0 L 0 0 0 1" fill="none" stroke="#aab5b8" stroke-width=".012"/></pattern></defs><rect width="100%" height="100%" fill="white"/>`);
+ if(grid)out.push('<rect width="100%" height="100%" fill="url(#grid)"/>');
+ // Fill all rooms before drawing walls, so adjoining fills do not erase edges.
+ const group=r=>`transform="rotate(${r.angle} ${r.x+r.w/2} ${r.y+r.h/2})"`;
+ for(const r of p.rooms)out.push(`<rect ${group(r)} x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#f5f7f3" fill-opacity=".6"/>`);
+ for(const r of p.rooms)out.push(`<rect ${group(r)} x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="#202b2c" stroke-width="${wall}"/>`);
+ for(const d of p.doors)out.push(`<g transform="translate(${d.x} ${d.y}) rotate(${d.angle})"><path d="M 0 0 H ${d.w}" stroke="white" stroke-width="${wall+.025}"/><path d="M 0 0 V ${d.w} M 0 ${d.w} A ${d.w} ${d.w} 0 0 0 ${d.w} 0" stroke="#35464a" stroke-width=".025" fill="none"/></g>`);
+ for(const r of p.items)out.push(`<rect ${group(r)} x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx=".07" fill="#dce5e4" stroke="#506364" stroke-width=".025"/>`);
+ if(labels)for(const r of [...p.rooms,...p.items])out.push(`<text x="${r.x+r.w/2}" y="${r.y+r.h/2}" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="${p.items.includes(r)?.17:.23}" fill="#263b40">${escape(r.label)}</text>`);
+ out.push('</svg>');return out.join('');
+}
+return {parse,svg};
+})();
+const examples={station:`# A small station section, not a ship design.
+sheet 14 10
+wall 0.15
+room 1 1 4 3 "Crew lounge"
+room 5 1 4 3 "Medical"
+room 9 1 4 3 "Stores"
+room 1 4 12 2 "Corridor"
+room 1 6 4 3 "Engineering"
+room 5 6 4 3 "Quarters"
+room 9 6 4 3 "Airlock"
+door 2.5 4 1
+door 6.5 4 1
+door 10.5 4 1
+door 3.5 6 1 180
+door 7.5 6 1 180
+door 11.5 6 1 180
+door 13 7 1 90
+item 1.5 1.5 1 1 "Table"
+item 5.5 1.5 2 0.75 "Bed"
+item 5.5 6.5 2 0.75 "Bunk"
+item 5.5 7.75 2 0.75 "Bunk"`,offset:`# Watch the fractional positions and rotation.
+sheet 14 10
+wall 0.30
+room 1.25 1.25 6 7 "Bridge"
+room 9 3 3 3 "Pod" 45
+door 3 8.25 1 180
+item 2 2 1.5 0.75 "Console" -30
+item 5 2 1.5 0.75 "Console" 30
+item 3.5 5 1 2 "Chair" 90`,blank:`sheet 14 10
+wall 0.15
+room 1 1 5 4 "First room"
+door 3 5 1`};
+const $=id=>document.getElementById(id);let current=null;
+function render(){const start=performance.now();try{const p=Plan.parse($('source').value);const svg=Plan.svg(p,{grid:$('grid').checked,labels:$('labels').checked});$('paper').innerHTML=svg;$('paper').querySelector('svg').style.width=$('zoom').value+'%';current={p,svg};$('error').textContent='';$('download').disabled=false;$('print').disabled=false;$('status').textContent=`${p.rooms.length} rooms · ${p.doors.length} doors · ${(performance.now()-start).toFixed(1)} ms to parse and build SVG (excludes browser paint)`;$('facts').textContent=`Sheet: ${p.width} × ${p.height} squares / ${p.width*1.5} × ${p.height*1.5} m / ${p.width*20} × ${p.height*20} mm on paper. Walls: ${p.wall*100} cm.`}catch(e){$('error').textContent=e.message+' Showing the last valid plan.';$('download').disabled=true;$('print').disabled=true;}}
+$('source').value=examples.station;
+$('source').addEventListener('input',render);$('grid').onchange=render;$('labels').onchange=render;
+document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{$('source').value=examples[b.dataset.example];render()});
+$('zoom').oninput=()=>{$('paper').querySelector('svg').style.width=$('zoom').value+'%'};
+$('download').onclick=()=>{if(!current)return;const url=URL.createObjectURL(new Blob([current.svg],{type:'image/svg+xml'}));const a=document.createElement('a');a.href=url;a.download='traveller-plan.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$('print').onclick=()=>window.print();render();
+</script>
+</html>
