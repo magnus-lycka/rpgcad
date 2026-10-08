@@ -1,0 +1,7 @@
+.agents/
+.venv/
+node_modules/
+tmp/
+output/
+prototype/*.json
+package-lock.json

@@ -1,0 +1,40 @@
+[project]
+name = "rpgcad"
+version = "0.1.0"
+description = "Agent-assisted Traveller floor plans"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "bandit[toml]",
+  "deptry",
+  "pre-commit",
+  "pytest",
+  "ruff",
+  "ty",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = [".agents", "tmp"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.bandit]
+exclude_dirs = [".venv", "tests", ".agents", "tmp"]
+
+[tool.deptry]
+known_first_party = ["prototype"]
+extend_exclude = ["tests", "tmp", ".agents"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

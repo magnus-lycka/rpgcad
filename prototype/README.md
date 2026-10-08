@@ -7,7 +7,7 @@ The Referee supplies the design. The agent translates the description into geome
 ## Run
 
 ```sh
-python3 prototype/server.py
+uv run python prototype/server.py
 ```
 
 Open http://127.0.0.1:8765. Python's standard library serves the model; plain JavaScript and SVG render it. The server binds only to loopback.
@@ -80,4 +80,4 @@ The technical update mechanism appears viable, and the Referee positively evalua
 - Connected wall segments and labels do not automatically move together.
 - The model has no fixed outer boundary; printing is limited to 200 sheets per request in this prototype.
 - No direct geometry editing, room semantics, furniture, or undo. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were added during the interactive evaluation.
-- No automated tests or production framework.
+- Regression tests cover HTTP saves and exploration behaviour; this remains a prototype without a production framework. See `docs/agents/development.md` for the required TDD workflow.

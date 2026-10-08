@@ -1,4 +1,4 @@
-"""Throwaway live-model bridge. Run: python3 prototype/server.py"""
+"""Throwaway live-model bridge. Run: uv run python prototype/server.py"""
 
 import argparse
 import hashlib
@@ -20,11 +20,17 @@ def main():
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             route = self.path.split("?", 1)[0]
-            if route not in ("/", "/model", "/exploration"):
+            if route not in ("/", "/model", "/exploration", "/app.js", "/geometry.js"):
                 self.send_error(404)
                 return
             try:
-                source = {"/": ROOT / "index.html", "/model": args.model, "/exploration": ROOT / "exploration.PROTOTYPE.json"}[route]
+                source = {
+                    "/": ROOT / "index.html",
+                    "/app.js": ROOT / "app.js",
+                    "/geometry.js": ROOT / "geometry.js",
+                    "/model": args.model,
+                    "/exploration": ROOT / "exploration.PROTOTYPE.json",
+                }[route]
                 body = source.read_bytes()
             except OSError as error:
                 self.send_error(503, str(error))
@@ -35,7 +41,16 @@ def main():
                 self.end_headers()
                 return
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8" if route == "/" else "application/json")
+            self.send_header(
+                "Content-Type",
+                (
+                    "text/javascript; charset=utf-8"
+                    if route.endswith(".js")
+                    else "text/html; charset=utf-8"
+                    if route == "/"
+                    else "application/json"
+                ),
+            )
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-cache")
             self.send_header("ETag", etag)
@@ -56,15 +71,28 @@ def main():
                     raise ValueError("Invalid exploration size")
                 state = json.loads(self.rfile.read(size))
                 if state.get("version") != 2 or "revealed" in state:
-                    raise ValueError("Reload the viewer: observation-based exploration is required")
-                if not isinstance(state.get("observers"), list) or not isinstance(state.get("observations"), list) or not isinstance(state.get("revisions"), dict):
-                    raise ValueError("Expected observers, observations and shared model revisions")
+                    raise ValueError(
+                        "Reload the viewer: observation-based exploration is required"
+                    )
+                if (
+                    not isinstance(state.get("observers"), list)
+                    or not isinstance(state.get("observations"), list)
+                    or not isinstance(state.get("revisions"), dict)
+                ):
+                    raise ValueError(
+                        "Expected observers, observations and shared model revisions"
+                    )
                 body = (json.dumps(state, indent=2, allow_nan=False) + "\n").encode()
                 target = ROOT / "exploration.PROTOTYPE.json"
                 with exploration_lock:
-                    current_etag = '"' + hashlib.sha256(target.read_bytes()).hexdigest() + '"'
+                    current_etag = (
+                        '"' + hashlib.sha256(target.read_bytes()).hexdigest() + '"'
+                    )
                     if self.headers.get("If-Match") != current_etag:
-                        self.send_error(412, "Exploration changed; reload its latest state before saving")
+                        self.send_error(
+                            412,
+                            "Exploration changed; reload before saving",
+                        )
                         return
                     temporary = target.with_suffix(".tmp")
                     temporary.write_bytes(body)
@@ -76,7 +104,7 @@ def main():
             self.send_header("ETag", '"' + hashlib.sha256(body).hexdigest() + '"')
             self.end_headers()
 
-        def log_message(self, *_):
+        def log_message(self, format: str, *args: object) -> None:
             pass
 
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
