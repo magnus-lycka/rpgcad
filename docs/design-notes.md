@@ -8,7 +8,7 @@ These are agreed requirements from the ongoing interview, not an implementation 
 - A separate browser view displays the layout and updates automatically.
 - The agent must be able to inspect both the complete current model and its rendered view.
 - For the first version, the agent makes all geometry edits. The Referee uses the browser to inspect, pan, zoom, and print.
-- The usefulness of agent-generated designs will be evaluated through use; autonomous design quality is not a prerequisite for building the tooling.
+- The Referee supplies the design. The agent translates the Referee's description into the model; it clarifies missing details rather than inventing layout choices. Success means matching the Referee's intended design.
 - Keep the first version small. Sophisticated revision planning is deferred.
 
 ## Model and drawing
@@ -24,6 +24,8 @@ These are agreed requirements from the ongoing interview, not an implementation 
 
 ## Viewing and printing
 
+- The browser shows only the drawing, filling its entire content area. No toolbar, sidebar, walkthrough, or diagnostics appear on the drawing screen.
+- The 1.5 m square grid is always present and visibly readable, including on an empty model. It is part of the drawing, not an optional overlay.
 - The browser supports pan, zoom, and a show-everything action.
 - Agent updates preserve the current pan and zoom.
 - Printing tiles the model on grid-aligned sheets at 1:75.

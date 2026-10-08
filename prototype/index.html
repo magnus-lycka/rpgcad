@@ -2,28 +2,19 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RPGCAD · live model prototype</title>
+<title>RPGCAD</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#eef1ef;color:#24312d;font:14px system-ui,sans-serif}button,select{font:inherit;padding:7px 10px;border:1px solid #b7c4bd;background:white;border-radius:4px;color:inherit}button{cursor:pointer}button:hover{background:#edf5f0}button:disabled{opacity:.5;cursor:default}header{padding:14px 20px;background:white;border-bottom:1px solid #cad4ce}h1{font-size:20px;margin:0 0 4px}p{line-height:1.5;margin:6px 0}.muted{color:#60736a;font-size:12px}main{display:grid;grid-template-columns:minmax(0,1fr) 300px;height:calc(100vh - 104px);min-height:420px}.drawing{display:flex;flex-direction:column;min-width:0;padding:12px;gap:8px}.toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center}#viewport{width:100%;flex:1;min-height:240px;background:#fff;border:1px solid #b5c5bb;touch-action:none;cursor:grab}#viewport:active{cursor:grabbing}#notice{min-height:20px;font-size:12px;color:#3e6554}#notice.error{color:#9b302c}aside{overflow:auto;padding:16px;background:#f8faf8;border-left:1px solid #ccd7d0}h2{font-size:15px;margin:12px 0 6px}h3{font-size:13px;margin:12px 0 5px}dl{display:grid;grid-template-columns:90px 1fr;margin:8px 0;font-size:12px;gap:5px}dt{color:#65746c}dd{margin:0;overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;font-size:11px}td,th{text-align:left;padding:5px 2px;border-bottom:1px solid #e1e8e2;vertical-align:top}th{font-weight:600}details{margin:12px 0}summary{cursor:pointer;font-size:13px}.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-top:12px}.tabs button{font-size:11px;padding:5px}.tabs button[aria-selected=true]{background:#dcece1}#walkthrough{font-size:12px;padding:8px 0;line-height:1.6}#print-dialog{border:1px solid #9eafa4;border-radius:6px;width:min(1000px,95vw);max-height:92vh;padding:18px;background:#e9efeb}#print-dialog::backdrop{background:#15291b66}.print-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.print-head p{flex:1}#preview{display:grid;gap:20px;margin-top:15px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}#preview svg{background:white;width:100%;height:auto;box-shadow:0 2px 8px #0002}.page{margin:0;break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}.page svg{display:block}#print-pages{display:none}a{color:#246047}@media(max-width:800px){main{grid-template-columns:1fr;height:auto}.drawing{height:70vh}aside{border:0}}@media print{body>*{display:none!important}body>#print-pages{display:block!important}body{margin:0;background:white}.page{overflow:hidden}}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:white}
+#viewport{display:block;width:100vw;height:100vh;touch-action:none;cursor:grab}
+#viewport:active{cursor:grabbing}
+#print-pages{display:none}
+.page{margin:0;break-after:page;page-break-after:always;overflow:hidden}
+.page:last-child{break-after:auto;page-break-after:auto}
+.page svg{display:block}
+@media print{html,body{height:auto;overflow:visible}#viewport{display:none}#print-pages{display:block}}
 </style>
 <style id="page-style">@page{size:A4 landscape;margin:0}</style>
-<header><h1>RPGCAD · live model prototype</h1><p class="muted">Question: can an agent edit a shared model and inspect an immediately updated drawing? Geometry edits come from the model file. Drag to pan; scroll to zoom. This is throwaway code.</p></header>
-<main><section class="drawing">
-<div class="toolbar"><button id="fit">Show everything</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><label><input type="checkbox" id="grid" checked> Grid</label><label><input type="checkbox" id="labels" checked> Labels</label><label><input type="checkbox" id="tiles"> Sheet boundaries</label><select id="paper" aria-label="Paper size"><option value="a4">A4 landscape</option><option value="a3">A3 portrait</option></select><select id="region" aria-label="Print region"><option value="all">Print whole model</option><option value="view">Print current view</option></select><button id="sheets">Preview / print</button><button id="export">Save SVG</button></div>
-<svg id="viewport" xmlns="http://www.w3.org/2000/svg" aria-label="Floor plan" role="img"></svg>
-<div id="notice" role="status">Connecting to model…</div>
-<div class="muted" id="view-state"></div>
-</section><aside>
-<h2 id="model-title">Waiting for model</h2><dl id="state"></dl>
-<p class="muted">1 grid square = 1.5 m. At 1:75, one square prints as 20 mm. The model has no page boundary.</p>
-<div class="tabs" role="tablist" aria-label="Walkthroughs"><button role="tab" data-tab="inspect" aria-selected="true">Inspect</button><button role="tab" data-tab="edit" aria-selected="false">Live edit</button><button role="tab" data-tab="print" aria-selected="false">Print</button></div>
-<div id="walkthrough"></div>
-<details open><summary>Walls · metres</summary><table><thead><tr><th>Wall</th><th>Length</th><th>Thickness</th></tr></thead><tbody id="wall-state"></tbody></table></details>
-<details><summary>Openings · metres</summary><table><thead><tr><th>Opening / wall</th><th>Offset</th><th>Width</th></tr></thead><tbody id="opening-state"></tbody></table></details>
-<details><summary>Labels · metres</summary><table><thead><tr><th>Label</th><th>Position</th></tr></thead><tbody id="label-state"></tbody></table></details>
-<p class="muted"><a href="/model" target="_blank" rel="noopener">Inspect current model data</a></p>
-</aside></main>
-<dialog id="print-dialog"><div class="print-head"><p id="print-summary"></p><button id="print-now">Print / save PDF</button><button id="close-preview">Close</button></div><p class="muted">Print at 100% / actual size, zero margins, headers and footers off. Check the 30 mm ruler (two grid squares). Browser/printer settings can override the scale.</p><div id="preview"></div></dialog>
+<svg id="viewport" xmlns="http://www.w3.org/2000/svg" aria-label="Floor plan on a 1.5 metre square grid" role="img"></svg>
 <div id="print-pages"></div>
 <script>
 // Portable pure model/geometry functions. No DOM or network dependencies.
@@ -54,11 +45,11 @@ const Geometry=(()=>{
   for(const l of m.labels){const s=l.size??.4,half=l.text.length*s*.34;pts.push([l.at[0]-half,l.at[1]-s],[l.at[0]+half,l.at[1]+s])}
   if(!pts.length)return {x:0,y:0,w:21,h:15};const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return {x:Math.min(...xs),y:Math.min(...ys),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)};
  }
- function scene(m,b,{grid=true,labels=true,id='grid'}={}){
+ function scene(m,b,{id='grid',gridStroke=.018}={}){
   let s=`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="white"/>`;
-  if(grid)s+=`<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="#aebdb4" stroke-width=".018"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
-  for(const w of m.walls)for(const p of wallPolygons(m,w))s+=`<polygon data-wall="${esc(w.id)}" points="${p.map(p=>p.join(',')).join(' ')}" fill="#27332e"><title>${esc(w.id)} · ${length(w).toFixed(2)} m · ${(w.thickness??m.wallThickness)*100} cm thick</title></polygon>`;
-  if(labels)for(const l of m.labels)s+=`<text x="${l.at[0]}" y="${l.at[1]}" font-family="sans-serif" font-size="${l.size??.4}" text-anchor="middle" dominant-baseline="central" fill="#263c30">${esc(l.text)}</text>`;
+  s+=`<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="#9aa79f" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
+  for(const w of m.walls)for(const p of wallPolygons(m,w))s+=`<polygon data-wall="${esc(w.id)}" points="${p.map(p=>p.join(',')).join(' ')}" fill="#27332e"/>`;
+  for(const l of m.labels)s+=`<text x="${l.at[0]}" y="${l.at[1]}" font-family="sans-serif" font-size="${l.size??.4}" text-anchor="middle" dominant-baseline="central" fill="#263c30">${esc(l.text)}</text>`;
   return s;
  }
  const papers={a4:{w:297,h:210,tw:21,th:15,name:'A4 landscape'},a3:{w:297,h:420,tw:21,th:30,name:'A3 portrait'}};
@@ -77,50 +68,57 @@ const Geometry=(()=>{
  return {esc,length,validate,bounds,scene,papers,tiles,sheet,svg};
 })();
 
-const $=id=>document.getElementById(id),viewport=$('viewport');
-let model=null,etag='',updates=0,camera={x:10.5,y:7.5,mpp:.04},drag=null,printSnapshot=[],printingPreview=false;
-const options=()=>({grid:$('grid').checked,labels:$('labels').checked});
+const viewport=document.getElementById('viewport');
+let model={wallThickness:.15,walls:[],openings:[],labels:[]},etag='',loaded=false;
+let camera={x:10.5,y:7.5,mpp:.04},drag=null;
+const settings=new URLSearchParams(location.search);
 function view(){return {x:camera.x-viewport.clientWidth*camera.mpp/2,y:camera.y-viewport.clientHeight*camera.mpp/2,w:viewport.clientWidth*camera.mpp,h:viewport.clientHeight*camera.mpp}}
 function draw(){
- if(!model)return;const b=view();viewport.setAttribute('viewBox',`${b.x} ${b.y} ${b.w} ${b.h}`);viewport.innerHTML=Geometry.scene(model,b,options());
- if($('tiles').checked){const p=Geometry.papers[$('paper').value];let ts=[];try{ts=Geometry.tiles(b,p,600)}catch{}for(const t of ts)viewport.innerHTML+=`<rect x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}" fill="none" stroke="#6b87ae" stroke-width="${camera.mpp}" stroke-dasharray="${camera.mpp*5} ${camera.mpp*5}"/><text x="${t.x+.3}" y="${t.y+.6}" font-size="${camera.mpp*12}" font-family="sans-serif" fill="#55759a">${t.col}, ${t.row}</text>`}
- $('view-state').textContent=`View: x ${b.x.toFixed(2)}…${(b.x+b.w).toFixed(2)} m · y ${b.y.toFixed(2)}…${(b.y+b.h).toFixed(2)} m · ${Math.round(1.5/camera.mpp)} screen px / square`;
+ const b=view();viewport.setAttribute('viewBox',`${b.x} ${b.y} ${b.w} ${b.h}`);
+ viewport.innerHTML=Geometry.scene(model,b,{gridStroke:camera.mpp*.8});
 }
-function fit(){if(!model)return;const b=Geometry.bounds(model);camera={x:b.x+b.w/2,y:b.y+b.h/2,mpp:Math.max((b.w+3)/viewport.clientWidth,(b.h+3)/viewport.clientHeight)};draw()}
-function state(){
- const e=Geometry.esc,b=Geometry.bounds(model);$('model-title').textContent=model.title||'Untitled model';
- const fields=[['Model',`${model.walls.length} walls · ${model.openings.length} openings · ${model.labels.length} labels`],['Extent',`${b.x.toFixed(2)}, ${b.y.toFixed(2)} → ${(b.x+b.w).toFixed(2)}, ${(b.y+b.h).toFixed(2)} m`],['Default wall',`${model.wallThickness*100} cm`],['Updates',updates],['Revision',etag.replaceAll('"','').slice(0,10)],['Received',new Date().toLocaleTimeString()]];
- $('state').innerHTML=fields.map(([k,v])=>`<dt>${e(k)}</dt><dd>${e(v)}</dd>`).join('');
- $('wall-state').innerHTML=model.walls.map(w=>`<tr><td>${e(w.id)}</td><td>${Geometry.length(w).toFixed(2)}</td><td>${((w.thickness??model.wallThickness)*100).toFixed(0)} cm</td></tr>`).join('');
- $('opening-state').innerHTML=model.openings.map(o=>`<tr><td>${e(o.id)}<br><span class="muted">${e(o.wall)}</span></td><td>${o.offset}</td><td>${o.width}</td></tr>`).join('');
- $('label-state').innerHTML=model.labels.map(l=>`<tr><td>${e(l.text)}</td><td>${l.at.join(', ')}</td></tr>`).join('');
-}
+function fit(){const b=Geometry.bounds(model);camera={x:b.x+b.w/2,y:b.y+b.h/2,mpp:Math.max((b.w+3)/viewport.clientWidth,(b.h+3)/viewport.clientHeight)};draw()}
 async function poll(){
- try{const response=await fetch('/model',{headers:etag?{'If-None-Match':etag}:{},cache:'no-store'});if(response.status!==304){if(!response.ok)throw Error(`Model unavailable (${response.status})`);const start=performance.now(),next=Geometry.validate(await response.json());const first=!model;model=next;etag=response.headers.get('ETag')||'';updates++;if(first)fit();else draw();state();$('notice').className='';$('notice').textContent=`Model received · ${(performance.now()-start).toFixed(1)} ms to parse and build view · checks every 250 ms`;}
- else if($('notice').classList.contains('error')){$('notice').className='';$('notice').textContent='Connected · current model unchanged';}}
- catch(error){$('notice').className='error';$('notice').textContent=`${error.message}. Keeping the last valid view.`}
+ try{
+  const response=await fetch('/model',{headers:etag?{'If-None-Match':etag}:{},cache:'no-store'});
+  if(response.status!==304){
+   if(!response.ok)throw Error(`Model unavailable (${response.status})`);
+   const next=Geometry.validate(await response.json()),first=!loaded;
+   model=next;etag=response.headers.get('ETag')||'';loaded=true;
+   if(first)fit();else draw();
+  }
+ }catch(error){console.error('Keeping the last valid drawing:',error.message)}
  finally{setTimeout(poll,250)}
 }
 viewport.addEventListener('pointerdown',event=>{drag={x:event.clientX,y:event.clientY,cx:camera.x,cy:camera.y};viewport.setPointerCapture(event.pointerId)});
 viewport.addEventListener('pointermove',event=>{if(!drag)return;camera.x=drag.cx-(event.clientX-drag.x)*camera.mpp;camera.y=drag.cy-(event.clientY-drag.y)*camera.mpp;draw()});
 viewport.addEventListener('pointerup',()=>drag=null);viewport.addEventListener('pointercancel',()=>drag=null);
+viewport.addEventListener('dblclick',fit);
 function zoom(factor,px=viewport.clientWidth/2,py=viewport.clientHeight/2){const old=camera.mpp;camera.mpp=Math.min(100,Math.max(.0001,old*factor));camera.x+=(px-viewport.clientWidth/2)*(old-camera.mpp);camera.y+=(py-viewport.clientHeight/2)*(old-camera.mpp);draw()}
 viewport.addEventListener('wheel',event=>{event.preventDefault();const r=viewport.getBoundingClientRect();zoom(Math.exp(Math.max(-200,Math.min(200,event.deltaY))*.002),event.clientX-r.left,event.clientY-r.top)},{passive:false});
-$('fit').onclick=fit;$('zoom-in').onclick=()=>zoom(.8);$('zoom-out').onclick=()=>zoom(1.25);
-for(const id of ['grid','labels','tiles','paper'])$(id).onchange=draw;
-new ResizeObserver(()=>draw()).observe(viewport);
-function preparePrint(show=true){
- if(!model)return;const p=Geometry.papers[$('paper').value],b=$('region').value==='all'?Geometry.bounds(model):view();let ts;try{ts=Geometry.tiles(b,p)}catch(error){$('notice').textContent=error.message;$('print-pages').innerHTML='';return}
- printSnapshot=ts.map(t=>Geometry.sheet(model,t,p,options()));$('page-style').textContent=`@page{size:${p.w}mm ${p.h}mm;margin:0}.page{width:${p.w}mm;height:${p.h}mm}`;
- $('preview').innerHTML=printSnapshot.join('');$('print-pages').innerHTML=printSnapshot.map(s=>`<div class="page">${s}</div>`).join('');
- $('print-summary').textContent=`${ts.length} ${p.name} sheets · 1:75 · snapshot of current model`;if(show)$('print-dialog').showModal();
+function exportSvg(){
+ const b=Geometry.bounds(model),padded={x:b.x-.3,y:b.y-.3,w:b.w+.6,h:b.h+.6};
+ const url=URL.createObjectURL(new Blob([Geometry.svg(model,padded)],{type:'image/svg+xml'}));
+ const a=document.createElement('a');a.href=url;a.download='rpgcad.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-$('sheets').onclick=()=>preparePrint();$('close-preview').onclick=()=>$('print-dialog').close();$('print-now').onclick=()=>{printingPreview=true;$('print-dialog').close();window.print()};
-window.addEventListener('beforeprint',()=>{if(!printingPreview)preparePrint(false)});
-window.addEventListener('afterprint',()=>printingPreview=false);
-$('export').onclick=()=>{if(!model)return;const b=Geometry.bounds(model),padded={x:b.x-.3,y:b.y-.3,w:b.w+.6,h:b.h+.6},url=URL.createObjectURL(new Blob([Geometry.svg(model,padded,options())],{type:'image/svg+xml'}));const a=document.createElement('a');a.href=url;a.download='rpgcad-prototype.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-const walks={inspect:'Inspect the example: the angled outer wall and thicker hull exercise non-grid geometry. Hover a wall for its identity and dimensions.<br><button data-action="fit">Show the entire model</button>',edit:'Ask the agent to move a wall, change an opening, or extend the model. Its next file update appears automatically. Pan or zoom first to check that your view stays put.<br><button data-action="zoom">Zoom in before an agent edit</button>',print:'Show sheet boundaries, then preview A4 or A3 tiles. Tile coordinates stay anchored at the model origin, including for negative coordinates.<br><button data-action="tiles">Show sheet boundaries</button> <button data-action="print">Preview printed sheets</button>'};
-function walkthrough(name){$('walkthrough').innerHTML=walks[name];document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===name)));$('walkthrough').querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(b.dataset.action==='fit')fit();if(b.dataset.action==='zoom')zoom(.6);if(b.dataset.action==='tiles'){$('tiles').checked=true;draw()}if(b.dataset.action==='print')preparePrint()})}
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>walkthrough(b.dataset.tab));walkthrough('inspect');poll();
+window.addEventListener('keydown',event=>{
+ if(event.ctrlKey||event.metaKey||event.altKey)return;
+ if(event.key.toLowerCase()==='f')fit();
+ if(event.key==='+'||event.key==='=')zoom(.8);
+ if(event.key==='-')zoom(1.25);
+ if(event.key.toLowerCase()==='s')exportSvg();
+});
+window.addEventListener('beforeprint',()=>{
+ const p=Geometry.papers[settings.get('paper')==='a3'?'a3':'a4'];
+ const b=settings.get('region')==='view'?view():Geometry.bounds(model);
+ document.getElementById('print-pages').innerHTML='';
+ try{
+  const ts=Geometry.tiles(b,p);
+  document.getElementById('page-style').textContent=`@page{size:${p.w}mm ${p.h}mm;margin:0}.page{width:${p.w}mm;height:${p.h}mm}`;
+  document.getElementById('print-pages').innerHTML=ts.map(t=>`<div class="page">${Geometry.sheet(model,t,p)}</div>`).join('');
+ }catch(error){console.error(error.message)}
+});
+new ResizeObserver(()=>draw()).observe(viewport);
+fit();poll();
 </script>
 </html>
