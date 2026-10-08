@@ -1,0 +1,189 @@
+{
+  "title": "Geometry trial \u2014 station section",
+  "wallThickness": 0.15,
+  "walls": [
+    {
+      "id": "north",
+      "a": [
+        1.5,
+        1.5
+      ],
+      "b": [
+        25.5,
+        1.5
+      ],
+      "thickness": 0.3
+    },
+    {
+      "id": "east-upper",
+      "a": [
+        25.5,
+        1.5
+      ],
+      "b": [
+        28.5,
+        4.5
+      ],
+      "thickness": 0.3
+    },
+    {
+      "id": "east",
+      "a": [
+        28.5,
+        4.5
+      ],
+      "b": [
+        28.5,
+        13.5
+      ],
+      "thickness": 0.3
+    },
+    {
+      "id": "south",
+      "a": [
+        28.5,
+        13.5
+      ],
+      "b": [
+        1.5,
+        13.5
+      ],
+      "thickness": 0.3
+    },
+    {
+      "id": "west",
+      "a": [
+        1.5,
+        13.5
+      ],
+      "b": [
+        1.5,
+        1.5
+      ],
+      "thickness": 0.3
+    },
+    {
+      "id": "corridor-north",
+      "a": [
+        1.5,
+        6
+      ],
+      "b": [
+        28.5,
+        6
+      ]
+    },
+    {
+      "id": "corridor-south",
+      "a": [
+        1.5,
+        9
+      ],
+      "b": [
+        28.5,
+        9
+      ]
+    },
+    {
+      "id": "upper-partition",
+      "a": [
+        12,
+        1.5
+      ],
+      "b": [
+        12,
+        6
+      ]
+    },
+    {
+      "id": "lower-partition",
+      "a": [
+        16.5,
+        9
+      ],
+      "b": [
+        16.5,
+        13.5
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "lounge-door",
+      "wall": "corridor-north",
+      "offset": 3,
+      "width": 1.2
+    },
+    {
+      "id": "medical-door",
+      "wall": "corridor-north",
+      "offset": 16.5,
+      "width": 1.2
+    },
+    {
+      "id": "stores-door",
+      "wall": "corridor-south",
+      "offset": 4.5,
+      "width": 1.5
+    },
+    {
+      "id": "engineering-door",
+      "wall": "corridor-south",
+      "offset": 19.5,
+      "width": 1.5
+    },
+    {
+      "id": "entrance",
+      "wall": "west",
+      "offset": 5.25,
+      "width": 1.5
+    }
+  ],
+  "labels": [
+    {
+      "id": "lounge-label",
+      "at": [
+        6,
+        3.75
+      ],
+      "text": "CREW LOUNGE",
+      "size": 0.4
+    },
+    {
+      "id": "medical-label",
+      "at": [
+        18,
+        3.75
+      ],
+      "text": "MEDICAL",
+      "size": 0.4
+    },
+    {
+      "id": "corridor-label",
+      "at": [
+        15,
+        7.5
+      ],
+      "text": "CORRIDOR \u00b7 3 m",
+      "size": 0.32
+    },
+    {
+      "id": "stores-label",
+      "at": [
+        9,
+        11.25
+      ],
+      "text": "STORES",
+      "size": 0.4
+    },
+    {
+      "id": "engineering-label",
+      "at": [
+        22.5,
+        11.25
+      ],
+      "text": "ENGINEERING",
+      "size": 0.4
+    }
+  ]
+}
