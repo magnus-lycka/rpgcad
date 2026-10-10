@@ -12,6 +12,12 @@
       "name": "Level below",
       "order": -1,
       "model": "level-below.PROTOTYPE.json"
+    },
+    {
+      "id": "below-2",
+      "name": "Second level below",
+      "order": -2,
+      "model": "level-below-2.PROTOTYPE.json"
     }
   ]
 }

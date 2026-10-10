@@ -15,7 +15,7 @@
  * @typedef {{version: number, observers: Observer[], observations: Observation[], revisions: Record<string, Model>, doors: Doors, visibilityPaused?: boolean}} Exploration
  * @typedef {{polygon: Point[], edges: Point[][]}} Region
  * @typedef {{x: number, y: number, w: number, h: number}} Bounds
- * @typedef {{id?: string, gridStroke?: number, background?: string, doorStates?: Doors, render?: (m: Model, b: Bounds, options?: SceneOptions) => string}} SceneOptions
+ * @typedef {{id?: string, gridStroke?: number, background?: string, showAxes?: boolean, doorStates?: Doors, render?: (m: Model, b: Bounds, options?: SceneOptions) => string}} SceneOptions
  */
 
 // Portable pure model/geometry functions. No DOM or network dependencies.
@@ -222,6 +222,7 @@ const Geometry = (() => {
       id = "grid",
       gridStroke = 0.018,
       background = "white",
+      showAxes = true,
       doorStates = {},
     } = {},
   ) {
@@ -229,7 +230,7 @@ const Geometry = (() => {
       [gx, gy] = m.gridOrigin ?? [0, 0];
     let s = `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${background}"/>`;
     s += `<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(${gx} ${gy})"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="#9aa79f" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
-    if (m.origin)
+    if (m.origin && showAxes)
       s += `<path d="M ${b.x} ${oy} H ${b.x + b.w} M ${ox} ${b.y} V ${b.y + b.h}" fill="none" stroke="#d62929" stroke-width="${gridStroke * 1.5}"/>`;
     for (const w of m.walls)
       for (const p of wallPolygons(m, w))
@@ -615,7 +616,13 @@ const Fog = (() => {
     return r;
   }
   /** @param {Model} m @param {Bounds} b @param {Exploration} s @param {Region[]} current @param {SceneOptions} [options] */
-  function render(m, b, s, current, { gridStroke = 0.018, id = "fog" } = {}) {
+  function render(
+    m,
+    b,
+    s,
+    current,
+    { gridStroke = 0.018, id = "fog", showAxes = true } = {},
+  ) {
     const polygon = (r) =>
       `<polygon points="${r.polygon.map((p) => p.join(",")).join(" ")}"/>`;
     const strokeEdges = (regions) =>
@@ -638,17 +645,18 @@ const Fog = (() => {
       id: `${id}-base`,
       gridStroke,
       background: "#cbd2ce",
+      showAxes,
     });
     // Chronological opaque layers replace earlier appearances only where seen.
     for (const [i, o] of s.observations.entries()) {
       const old = s.revisions[o.revision],
         r = region(o, old),
         clip = `${id}-memory-${i}`;
-      svg += `<defs><clipPath id="${clip}">${polygon(r)}</clipPath></defs><g data-memory="${i}" clip-path="url(#${clip})">${Geometry.scene(old, b, { id: `${clip}-grid`, gridStroke, doorStates: o.doors })}<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="#75877c" opacity=".08"/></g>`;
+      svg += `<defs><clipPath id="${clip}">${polygon(r)}</clipPath></defs><g data-memory="${i}" clip-path="url(#${clip})">${Geometry.scene(old, b, { id: `${clip}-grid`, gridStroke, showAxes, doorStates: o.doors })}<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="#75877c" opacity=".08"/></g>`;
       svg += `<path d="${strokeEdges([r])}" fill="none" stroke="#35433c" stroke-width="${gridStroke * 1.5}"/>`;
     }
     svg += `<defs><clipPath id="${id}-visible">${current.map(polygon).join("")}</clipPath></defs>`;
-    svg += `<g clip-path="url(#${id}-visible)">${Geometry.scene(m, b, { id: `${id}-now-grid`, gridStroke, doorStates: s.doors })}</g><path d="${strokeEdges(current)}" fill="none" stroke="#27332e" stroke-width="${gridStroke * 2}"/>`;
+    svg += `<g clip-path="url(#${id}-visible)">${Geometry.scene(m, b, { id: `${id}-now-grid`, gridStroke, showAxes, doorStates: s.doors })}</g><path d="${strokeEdges(current)}" fill="none" stroke="#27332e" stroke-width="${gridStroke * 2}"/>`;
     for (const o of s.observers)
       svg += `<circle data-observer="${Geometry.esc(o.id)}" cx="${o.at[0]}" cy="${o.at[1]}" r=".14" fill="#176ca4" stroke="white" stroke-width=".035"/>`;
     return svg;

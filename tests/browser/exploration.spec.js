@@ -2,6 +2,11 @@ import { test, expect } from "@playwright/test";
 import { PNG } from "pngjs";
 
 test.beforeEach(async ({ request }) => {
+  const characters = await request.get("/characters");
+  await request.put("/characters", {
+    headers: { "If-Match": characters.headers().etag },
+    data: { characters: [], pov: null },
+  });
   const previous = await request.get("/exploration");
   const saved = await request.put("/exploration", {
     headers: { "If-Match": previous.headers().etag },

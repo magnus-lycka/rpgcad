@@ -54,6 +54,59 @@ def test_browser_can_load_geometry_module(bridge):
     assert b"export" in response.read()
 
 
+def test_sketch_handoff_retains_raw_strokes_and_selected_level(bridge):
+    sketch = {
+        "instruction": "pond",
+        "strokes": [[[0.13, -2.17], [0.31, -2.02], [0.29, -1.81]]],
+        "modelRevision": "current-model",
+        "view": {"x": -3, "y": -4, "w": 12, "h": 8},
+    }
+    bridge.request("PUT", "/sketch?level=below", json.dumps(sketch))
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    bridge.request("GET", "/sketch?level=below")
+    response = bridge.getresponse()
+    saved = json.loads(response.read())
+    assert saved["strokes"] == sketch["strokes"]
+    assert saved["instruction"] == "pond"
+    assert saved["level"] == "below"
+    assert saved["modelRevision"] == "current-model"
+    bridge.request("GET", "/sketch")
+    response = bridge.getresponse()
+    assert json.loads(response.read()) is None
+
+
+def test_agent_can_acknowledge_visual_feedback_without_replacing_it(bridge):
+    sketch = {"instruction": "move this", "strokes": [[[1, 2]]]}
+    bridge.request("PUT", "/sketch", json.dumps(sketch))
+    response = bridge.getresponse()
+    response.read()
+    bridge.request("GET", "/sketch")
+    response = bridge.getresponse()
+    saved = json.loads(response.read())
+    bridge.request(
+        "PATCH",
+        "/sketch",
+        json.dumps(
+            {
+                "submittedAt": saved["submittedAt"],
+                "status": "applied",
+                "reply": "Moved the tank",
+            }
+        ),
+    )
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    bridge.request("GET", "/sketch")
+    response = bridge.getresponse()
+    acknowledged = json.loads(response.read())
+    assert acknowledged["strokes"] == [[[1, 2]]]
+    assert acknowledged["status"] == "applied"
+    assert acknowledged["reply"] == "Moved the tank"
+
+
 def test_stale_writer_cannot_overwrite_newer_exploration(bridge):
     bridge.request("GET", "/exploration")
     original = bridge.getresponse()
@@ -122,4 +175,36 @@ def test_exploration_is_saved_only_for_the_selected_level(bridge):
     bridge.request("GET", "/exploration?level=unknown")
     response = bridge.getresponse()
     assert response.status == 404
+    response.read()
+
+
+def test_characters_are_shared_across_levels_and_stale_saves_are_rejected(bridge):
+    bridge.request("GET", "/characters")
+    response = bridge.getresponse()
+    assert response.status == 200
+    etag = response.getheader("ETag")
+    assert json.loads(response.read()) == {"characters": [], "pov": None}
+    state = {
+        "characters": [
+            {
+                "id": "ada",
+                "name": "Ada",
+                "kind": "pc",
+                "level": "below",
+                "at": [1, 2],
+                "range": 6,
+            }
+        ],
+        "pov": "ada",
+    }
+    bridge.request("PUT", "/characters", json.dumps(state), {"If-Match": etag})
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    bridge.request("GET", "/characters?level=below")
+    response = bridge.getresponse()
+    assert json.loads(response.read()) == state
+    bridge.request("PUT", "/characters", json.dumps(state), {"If-Match": etag})
+    response = bridge.getresponse()
+    assert response.status == 412
     response.read()

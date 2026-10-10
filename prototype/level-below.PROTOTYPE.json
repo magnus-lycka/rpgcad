@@ -254,7 +254,7 @@
     {
       "id": "west-room-top",
       "a": [
-        -13.5,
+        -18,
         0
       ],
       "b": [
@@ -280,18 +280,18 @@
         4.5
       ],
       "b": [
-        -13.5,
+        -18,
         4.5
       ]
     },
     {
       "id": "west-room-left",
       "a": [
-        -13.5,
+        -18,
         4.5
       ],
       "b": [
-        -13.5,
+        -18,
         0
       ]
     },
@@ -546,6 +546,86 @@
       "width": 1.2,
       "height": 1.2,
       "stroke": 0.025
+    },
+    {
+      "id": "plant-pump-motor-1",
+      "at": [
+        -16.8,
+        2.05
+      ],
+      "width": 0.5,
+      "height": 0.4,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-pump-motor-2",
+      "at": [
+        -15.2,
+        2.05
+      ],
+      "width": 0.5,
+      "height": 0.4,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-water-treatment",
+      "at": [
+        -12.2,
+        3.25
+      ],
+      "width": 1.25,
+      "height": 0.85,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-treatment-filter-0",
+      "at": [
+        -12.05,
+        3.4
+      ],
+      "width": 0.23,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-treatment-filter-1",
+      "at": [
+        -11.72,
+        3.4
+      ],
+      "width": 0.23,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-treatment-filter-2",
+      "at": [
+        -11.39,
+        3.4
+      ],
+      "width": 0.23,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-fuel-processing",
+      "at": [
+        -11.8,
+        0.35
+      ],
+      "width": 2.2,
+      "height": 0.85,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-control-unit",
+      "at": [
+        -10.15,
+        3.5
+      ],
+      "width": 0.65,
+      "height": 0.55,
+      "stroke": 0.025
     }
   ],
   "spiralStairs": [
@@ -580,9 +660,154 @@
       ],
       "text": "AMMO HOIST",
       "size": 0.18
+    },
+    {
+      "id": "lake-intake-label",
+      "at": [
+        -18.85,
+        1.85
+      ],
+      "text": "LAKE",
+      "size": 0.2
+    },
+    {
+      "id": "plant-fuel-label",
+      "at": [
+        -10.7,
+        1.45
+      ],
+      "text": "FUEL PROCESSING",
+      "size": 0.17
+    },
+    {
+      "id": "plant-water-label",
+      "at": [
+        -11.6,
+        4.25
+      ],
+      "text": "WATER SUPPLY",
+      "size": 0.17
     }
   ],
-  "circles": [],
+  "circles": [
+    {
+      "id": "plant-upper-tank-1",
+      "at": [
+        -16.8,
+        0.9
+      ],
+      "radius": 0.65,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-upper-tank-hatch-1",
+      "at": [
+        -16.8,
+        0.9
+      ],
+      "radius": 0.12,
+      "stroke": 0.018
+    },
+    {
+      "id": "plant-upper-tank-2",
+      "at": [
+        -15,
+        0.9
+      ],
+      "radius": 0.65,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-upper-tank-hatch-2",
+      "at": [
+        -15,
+        0.9
+      ],
+      "radius": 0.12,
+      "stroke": 0.018
+    },
+    {
+      "id": "plant-water-tank-1",
+      "at": [
+        -16.8,
+        3.55
+      ],
+      "radius": 0.65,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-water-tank-hatch-1",
+      "at": [
+        -16.8,
+        3.55
+      ],
+      "radius": 0.12,
+      "stroke": 0.018
+    },
+    {
+      "id": "plant-water-tank-2",
+      "at": [
+        -15,
+        3.55
+      ],
+      "radius": 0.65,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-water-tank-hatch-2",
+      "at": [
+        -15,
+        3.55
+      ],
+      "radius": 0.12,
+      "stroke": 0.018
+    },
+    {
+      "id": "plant-pump-1",
+      "at": [
+        -17.1,
+        2.25
+      ],
+      "radius": 0.28,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-pump-2",
+      "at": [
+        -15.5,
+        2.25
+      ],
+      "radius": 0.28,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-process-vessel-0",
+      "at": [
+        -11.4,
+        0.78
+      ],
+      "radius": 0.23,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-process-vessel-1",
+      "at": [
+        -10.75,
+        0.78
+      ],
+      "radius": 0.23,
+      "stroke": 0.025
+    },
+    {
+      "id": "plant-process-vessel-2",
+      "at": [
+        -10.1,
+        0.78
+      ],
+      "radius": 0.23,
+      "stroke": 0.025
+    }
+  ],
   "lines": [
     {
       "id": "cargo-top-shelves-back",
@@ -751,6 +976,222 @@
         8.0
       ],
       "stroke": 0.018
+    },
+    {
+      "id": "plant-upper-tank-feed-1",
+      "a": [
+        -16.8,
+        1.55
+      ],
+      "b": [
+        -16.8,
+        1.8
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-upper-tank-feed-2",
+      "a": [
+        -15,
+        1.55
+      ],
+      "b": [
+        -15,
+        1.8
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-water-tank-feed-1",
+      "a": [
+        -16.8,
+        2.65
+      ],
+      "b": [
+        -16.8,
+        2.9
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-water-tank-feed-2",
+      "a": [
+        -15,
+        2.65
+      ],
+      "b": [
+        -15,
+        2.9
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-pump-impeller-a-1",
+      "a": [
+        -17.26,
+        2.25
+      ],
+      "b": [
+        -16.94,
+        2.25
+      ],
+      "stroke": 0.02
+    },
+    {
+      "id": "plant-pump-impeller-b-1",
+      "a": [
+        -17.1,
+        2.09
+      ],
+      "b": [
+        -17.1,
+        2.41
+      ],
+      "stroke": 0.02
+    },
+    {
+      "id": "plant-pump-impeller-a-2",
+      "a": [
+        -15.66,
+        2.25
+      ],
+      "b": [
+        -15.34,
+        2.25
+      ],
+      "stroke": 0.02
+    },
+    {
+      "id": "plant-pump-impeller-b-2",
+      "a": [
+        -15.5,
+        2.09
+      ],
+      "b": [
+        -15.5,
+        2.41
+      ],
+      "stroke": 0.02
+    },
+    {
+      "id": "plant-control-screen",
+      "a": [
+        -10.05,
+        3.65
+      ],
+      "b": [
+        -9.6,
+        3.65
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "lake-intake",
+      "a": [
+        -19.5,
+        2.25
+      ],
+      "b": [
+        -17.38,
+        2.25
+      ],
+      "stroke": 0.06
+    },
+    {
+      "id": "plant-pump-link",
+      "a": [
+        -16.82,
+        2.25
+      ],
+      "b": [
+        -15.78,
+        2.25
+      ],
+      "stroke": 0.06
+    },
+    {
+      "id": "plant-distribution-header",
+      "a": [
+        -15.22,
+        2.25
+      ],
+      "b": [
+        -13.8,
+        2.25
+      ],
+      "stroke": 0.06
+    },
+    {
+      "id": "plant-upper-header",
+      "a": [
+        -16.8,
+        1.8
+      ],
+      "b": [
+        -11,
+        1.8
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-upper-header-feed",
+      "a": [
+        -13.8,
+        2.25
+      ],
+      "b": [
+        -13.8,
+        1.8
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-process-inlet",
+      "a": [
+        -11,
+        1.8
+      ],
+      "b": [
+        -11,
+        1.2
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-water-header",
+      "a": [
+        -16.8,
+        2.65
+      ],
+      "b": [
+        -11.6,
+        2.65
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-water-header-feed",
+      "a": [
+        -13.8,
+        2.25
+      ],
+      "b": [
+        -13.8,
+        2.65
+      ],
+      "stroke": 0.04
+    },
+    {
+      "id": "plant-treatment-inlet",
+      "a": [
+        -11.6,
+        2.65
+      ],
+      "b": [
+        -11.6,
+        3.25
+      ],
+      "stroke": 0.04
     }
   ],
   "stepIrons": []

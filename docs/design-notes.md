@@ -11,6 +11,26 @@ These are agreed requirements from the ongoing interview, not an implementation 
 - The Referee supplies the design. The agent translates the Referee's description into the model; it clarifies missing details rather than inventing layout choices. Success means matching the Referee's intended design.
 - Keep the first version small. Sophisticated revision planning is deferred.
 
+## Drawing input
+
+Agreed direction, not implemented:
+
+- Points, lines and rectangles drawn by the Referee can accompany instructions to the agent, such as placing a door, making a corridor or creating a room.
+- The agent receives marks in model coordinates and can inspect them in the drawing. The Referee need not translate a pointed location into coordinates.
+- A mark and accompanying words form one instruction; marking the drawing alone does not settle the intended geometry.
+- Distinguish rough marks communicating location, direction or extent from precise marks supplying exact geometry. Explicitly stated dimensions govern the result of a rough mark.
+- Prefer displaying a reasonable first interpretation promptly, then adjusting it with the Referee. Seeing the result can help the Referee discover or express the intended design; do not default to an abstract question-and-answer session before drawing. Clarification remains appropriate when a consequential choice cannot reasonably be inferred.
+- Written instructions refer by default to the Referee's latest pen actions. Explicit mark identifiers are not required for ordinary sketch-and-instruct use; this supersedes the earlier proposal to label marks for routine reference.
+- Marks wait for an instruction to be submitted. The Referee can adjust or erase them before asking the agent to edit the plan.
+- Pointing can select existing objects without requiring names or coordinates. Highlight the selection so the Referee can verify its referent; also support plain location marks in empty space.
+- Input is freehand pen sketching. Do not straighten, snap or otherwise correct the strokes before knowing the Referee's intent. This supersedes the proposed rough/precise input controls as the ordinary workflow.
+- Interpret strokes together with their words and relevant context: a wiggly rectangle described as a room may become clean, possibly grid-aligned geometry; a pond, hole in the floor or pile of rubble may retain an irregular shape without grid snapping.
+- The Referee can state a corridor width when context does not make the intended width clear. Do not require a labelled line reference or numeric input before interpreting a sketch.
+- All strokes made since the previous submitted instruction form the sketch accompanying the next instruction. The Referee can erase or undo strokes before submitting.
+- Interpretation can reshape or populate the marked area, rather than simply tracing it. For example, a pond may get a more rounded outline; rubble may populate the area with suitable shapes. Use the instruction and context to choose an initial result, then refine it from feedback.
+- An established corridor width can be inferred from context. Prefer a best guess and visible correction over preliminary questioning when that is useful to discovering the design.
+- This extends the initial agent-only editing workflow. The Referee draws in the browser and writes the instruction in the existing chat. There is no browser text box or submit action. Strokes become available automatically on pen-up; the chat instruction triggers interpretation.
+
 ## Model and drawing
 
 - The model has no fixed outer boundary; paper and viewport dimensions do not constrain it.
@@ -43,6 +63,11 @@ Requested direction, not implemented as separate modes:
 - Edit mode is for developing the layout. Exploration fog has little use during ordinary design work.
 - Play mode is for using the layout with exploration visibility. The layout is expected to remain fixed during play; interactive door states and party movement are play state, not layout edits.
 - Hide the red reference X/Y axes in play mode. Keep the permanent 1.5 m grid.
+- The modes must look distinctly different: edit mode should have a drawing/CAD character, while play mode should have a game presentation. The Referee currently expects the grid in both modes; detailed styling remains open.
+- Direct drawing input makes the distinction between editing and play central to the design.
+- Edit mode uses restrained CAD styling, reference axes, selection highlights and instruction marks. Play mode uses the chosen game presentation and exploration fog, without edit annotations.
+- Drawing/selection gestures belong to edit mode. Play interactions include party placement and door operation; the active mode must be unmistakable before a click.
+- Play mode retains the full-screen drawing without a persistent palette. Edit mode has a small palette and a clear mode indicator. The palette need not be collapsible if it stays small; this explicitly revises the earlier drawing-only requirement for editing. The later freehand-pen clarification supersedes the proposed point/line/rectangle tools as the ordinary sketching workflow.
 
 Proposed handling of revisions, still to validate:
 
@@ -149,3 +174,25 @@ Questions still open:
 - Glass, lighting, eye height, multiple parties, and separate play sessions are deferred.
 
 Observation-based storage and last-seen rendering are now implemented in the throwaway prototype. Long-history replay latency and revision storage across extensive authoring changes remain to be evaluated.
+
+## Characters in play, 2026-10-10
+
+Requested direction; interaction and visibility decisions are under discussion:
+
+- Place several PCs and NPCs on a level and move them during play.
+- The Referee expects the POV to belong to a PC rather than an unrelated location marker.
+- Coordination with `ceres.rounds` for combat is a later concern, outside this first step.
+Agreed behavior:
+
+- One selected PC supplies the active POV and sight range. Switching the selected PC retains shared exploration history; visibility is not the union of all PCs' views.
+- Named PC/NPC markers are placed through an on-demand GM panel and moved by dragging in the drawing. Initial movement is immediate, without combat rules or movement limits.
+- Moving the POV PC reveals from its destination only, not an inferred path.
+- NPC markers appear in the player-facing view only when currently visible. Previously seen NPCs leave no remembered markers. The GM full-plan view shows everyone.
+- Each PC has a saved sight range. New PCs inherit the current range; the GM can change it per PC. Selecting a PC uses its saved range.
+- All PC markers remain visible in the player-facing view, including outside current visibility. Only the selected PC reveals areas; NPC markers remain subject to visibility.
+- Fog reset preserves characters, positions, selected POV and ranges; it closes all doors, clears exploration and reveals nothing until the GM moves or selects a POV PC again.
+- Characters belong to play state, with names, positions, levels and ranges persisted between visits. Show markers on their current level. Initially, the GM explicitly transfers a character to another level and places it there; automatic stair/lift travel is deferred.
+- The GM can place and drag characters freely, without wall, collision or legal-movement enforcement. Moving other characters does not reveal areas; moving the selected POV PC reveals its destination only.
+- Initial markers are small named circles, with distinguishable PC/NPC appearance and a selection ring for the POV PC. Clicking a PC makes it the POV; dragging moves a character.
+- The on-demand GM panel provides add, rename, remove, range and level controls. Portraits and combat statistics are deferred.
+- These decisions extend the earlier one-party-POV scope. The Referee confirmed the combined scope. This is implemented in the throwaway prototype; Referee evaluation is pending.

@@ -16,6 +16,9 @@ A role-playing campaign with which plans can be associated.
 **Model**:
 The spatial layout being developed, with no fixed outer boundary. Paper size and screen size do not limit its extent.
 
+**Drawing mark**:
+A freehand stroke or group of strokes supplied by the Referee as spatial input to a design instruction. Its intended meaning comes from the accompanying words and context.
+
 **Grid square**:
 A square representing 1.5 m × 1.5 m in the fictional space. At a print scale of 1:75, it measures 2 cm × 2 cm on paper.
 
@@ -48,3 +51,9 @@ What the party could see from a particular POV within its sight range, given the
 
 **Sight blocker**:
 An object or boundary that obstructs line of sight. Being drawn on a plan does not by itself make an object a sight blocker.
+
+**Character marker**:
+The representation of a PC or NPC at its current location on a plan.
+
+**POV character**:
+The selected PC whose position and sight range determine the current visible area.

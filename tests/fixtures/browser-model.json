@@ -1,5 +1,6 @@
 {
   "wallThickness": 0.2,
+  "origin": [0, 0],
   "walls": [{ "id": "divider", "a": [3, -3], "b": [3, 3] }],
   "openings": [
     {

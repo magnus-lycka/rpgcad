@@ -16,6 +16,16 @@ The browser shows only the drawing. The square grid is always visible, including
 
 ## Interaction
 
+### Visual feedback experiment
+
+Open `/?level=below&mode=edit`. Draw freely with Pen, then type your instruction in the existing agent conversation. There is no browser text entry or submit button. Pen-up automatically saves the untouched strokes in model coordinates; undo and clear update them automatically too. Pan moves the view.
+
+For each chat layout instruction the agent reads `GET /sketch?level=below` (omit the query for ground level), uses pending nonempty marks as spatial context, edits the same authoritative model and acknowledges with `PATCH /sketch?level=below`: the record's `submittedAt`, `status: "applied"` and a short `reply`. Only the acknowledged marks disappear. The normal model polling displays the result without resetting the camera. The scratch `*.sketch.PROTOTYPE.json` next to the model retains the latest strokes, model snapshot/revision and viewport. Already-applied or empty marks are not new instructions.
+
+The chat message triggers the agent, using its existing history and model. Drawing alone never triggers interpretation, and no idle-agent wake mechanism or separate interpreter is needed for this workflow. The agent procedure is documented in `CONTEXT.md`.
+
+Play hides the palette, reference axes and pen strokes; Shift-E returns to editing. Draft strokes survive switching modes within the page. Play currently uses the existing fog presentation; richer game themes and frozen layout revisions are deferred.
+
 - Drag to pan; scroll to zoom.
 - Double-click or press F to fit the model.
 - Press + or − to zoom about the centre.
@@ -98,3 +108,13 @@ uv run python prototype/server.py
 The level parameter selects both the model and its independent exploration state. Unknown IDs return 404 instead of displaying another level. The default/original level retains `exploration.PROTOTYPE.json`; the lower level saves `level-below.PROTOTYPE.exploration.json`. Fresh levels start fully fogged with no POV; click to place one, or use Shift-F to orient in GM view first. The plan manifest is read at server startup; restart after adding a new level entry.
 
 The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the original floor and has its own rooms and corridors. The original drawing is unchanged. These URLs replace the temporary port-8767 setup. A drawing-only level-switching control and a general plan library remain future work.
+
+## Character markers in play (prototype)
+
+Enter play with the Play button or Shift-E. Shift-G opens the GM panel. Type a name and choose Add PC or Add NPC; the marker starts at the current view centre. Drag it to its position. Shift-F temporarily shows all characters and the full plan without revealing additional fog.
+
+Click a PC marker, or choose a PC on the current level in the Character selector, to use its POV and saved sight range. A gold ring identifies the POV PC. Dragging it reveals from its destination only. Other PC movement and NPC movement do not reveal areas. All PCs on the displayed level remain visible; NPCs appear only within current visibility, with no remembered markers. The character selector also lists hidden characters so the GM can manage them.
+
+Use the panel to rename/remove characters and change the POV PC's sight range. Choose a destination level and Move to level to transfer the selected character; the browser opens that level, preserving its coordinates so it can be dragged into place using GM full-plan view. Automatic stair/lift travel and combat integration are deferred. Shift-R clears exploration and closes doors while preserving character positions, ranges and selection; reveal pauses until POV selection or movement.
+
+`characters.PROTOTYPE.json` is scratch play state shared by all levels served by this prototype. It is separate from authored geometry and level-specific exploration. HTTP optimistic concurrency rejects stale saves. No sample characters are inserted into the Referee's plan.

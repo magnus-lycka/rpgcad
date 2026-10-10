@@ -1,0 +1,2475 @@
+{
+  "wallThickness": 0.15,
+  "origin": [
+    9,
+    4.5
+  ],
+  "gridOrigin": [
+    0,
+    0
+  ],
+  "walls": [
+    {
+      "id": "lift-top",
+      "a": [
+        7.5,
+        6
+      ],
+      "b": [
+        10.5,
+        6
+      ]
+    },
+    {
+      "id": "lift-right",
+      "a": [
+        10.5,
+        6
+      ],
+      "b": [
+        10.5,
+        9
+      ]
+    },
+    {
+      "id": "lift-left",
+      "a": [
+        7.5,
+        6
+      ],
+      "b": [
+        7.5,
+        9
+      ]
+    },
+    {
+      "id": "upper-lift-top",
+      "a": [
+        7.5,
+        3
+      ],
+      "b": [
+        13.5,
+        3
+      ]
+    },
+    {
+      "id": "upper-lift-right",
+      "a": [
+        13.5,
+        3
+      ],
+      "b": [
+        13.5,
+        6
+      ]
+    },
+    {
+      "id": "upper-lift-bottom-extension",
+      "a": [
+        10.5,
+        6
+      ],
+      "b": [
+        13.5,
+        6
+      ]
+    },
+    {
+      "id": "upper-lift-left",
+      "a": [
+        7.5,
+        3
+      ],
+      "b": [
+        7.5,
+        6
+      ]
+    },
+    {
+      "id": "stair-right",
+      "a": [
+        13.5,
+        6
+      ],
+      "b": [
+        13.5,
+        9
+      ]
+    },
+    {
+      "id": "core-bottom",
+      "a": [
+        13.5,
+        9
+      ],
+      "b": [
+        7.5,
+        9
+      ]
+    },
+    {
+      "id": "right-space-outer-wall",
+      "a": [
+        16.5,
+        0
+      ],
+      "b": [
+        16.5,
+        9
+      ]
+    },
+    {
+      "id": "right-space-bottom",
+      "a": [
+        16.5,
+        9
+      ],
+      "b": [
+        13.5,
+        9
+      ]
+    },
+    {
+      "id": "above-cargo-corridor-top",
+      "a": [
+        7.5,
+        0
+      ],
+      "b": [
+        13.5,
+        0
+      ]
+    },
+    {
+      "id": "right-space-top-return",
+      "a": [
+        13.5,
+        0
+      ],
+      "b": [
+        16.5,
+        0
+      ]
+    },
+    {
+      "id": "left-area-top",
+      "a": [
+        3,
+        0
+      ],
+      "b": [
+        7.5,
+        0
+      ]
+    },
+    {
+      "id": "left-area-bottom",
+      "a": [
+        3,
+        12
+      ],
+      "b": [
+        7.5,
+        12
+      ]
+    },
+    {
+      "id": "left-area-left",
+      "a": [
+        3,
+        0
+      ],
+      "b": [
+        3,
+        12
+      ]
+    },
+    {
+      "id": "left-area-lower-return",
+      "a": [
+        7.5,
+        12
+      ],
+      "b": [
+        7.5,
+        9
+      ]
+    },
+    {
+      "id": "south-open-corridor-left",
+      "a": [
+        4.5,
+        12
+      ],
+      "b": [
+        4.5,
+        30
+      ]
+    },
+    {
+      "id": "south-open-corridor-right",
+      "a": [
+        7.5,
+        12
+      ],
+      "b": [
+        7.5,
+        30
+      ]
+    },
+    {
+      "id": "south-side-room-top",
+      "a": [
+        0,
+        12
+      ],
+      "b": [
+        3,
+        12
+      ]
+    },
+    {
+      "id": "south-side-room-left",
+      "a": [
+        0,
+        12
+      ],
+      "b": [
+        0,
+        15
+      ]
+    },
+    {
+      "id": "south-side-room-bottom",
+      "a": [
+        0,
+        15
+      ],
+      "b": [
+        4.5,
+        15
+      ]
+    },
+    {
+      "id": "south-side-rooms-left-extension",
+      "a": [
+        0,
+        15
+      ],
+      "b": [
+        0,
+        27
+      ]
+    },
+    {
+      "id": "south-side-room-2-bottom",
+      "a": [
+        0,
+        18
+      ],
+      "b": [
+        4.5,
+        18
+      ]
+    },
+    {
+      "id": "south-side-room-3-bottom",
+      "a": [
+        0,
+        21
+      ],
+      "b": [
+        4.5,
+        21
+      ]
+    },
+    {
+      "id": "south-side-room-4-bottom",
+      "a": [
+        0,
+        24
+      ],
+      "b": [
+        4.5,
+        24
+      ]
+    },
+    {
+      "id": "south-side-room-5-bottom",
+      "a": [
+        0,
+        27
+      ],
+      "b": [
+        4.5,
+        27
+      ]
+    },
+    {
+      "id": "south-corridor-end-wall",
+      "a": [
+        4.5,
+        30
+      ],
+      "b": [
+        7.5,
+        30
+      ],
+      "thickness": 0.2
+    },
+    {
+      "id": "south-right-rooms-top",
+      "a": [
+        7.5,
+        12
+      ],
+      "b": [
+        12,
+        12
+      ]
+    },
+    {
+      "id": "south-right-rooms-outer-wall",
+      "a": [
+        12,
+        12
+      ],
+      "b": [
+        12,
+        27
+      ]
+    },
+    {
+      "id": "south-right-room-1-bottom",
+      "a": [
+        7.5,
+        15
+      ],
+      "b": [
+        12,
+        15
+      ]
+    },
+    {
+      "id": "south-right-room-2-bottom",
+      "a": [
+        7.5,
+        18
+      ],
+      "b": [
+        12,
+        18
+      ]
+    },
+    {
+      "id": "south-right-room-3-bottom",
+      "a": [
+        7.5,
+        21
+      ],
+      "b": [
+        12,
+        21
+      ]
+    },
+    {
+      "id": "south-right-room-4-bottom",
+      "a": [
+        7.5,
+        24
+      ],
+      "b": [
+        12,
+        24
+      ]
+    },
+    {
+      "id": "south-right-room-5-bottom",
+      "a": [
+        7.5,
+        27
+      ],
+      "b": [
+        12,
+        27
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "lift-door",
+      "wall": "lift-left",
+      "offset": 0.5,
+      "width": 2,
+      "type": "sliding",
+      "thickness": 0.06
+    },
+    {
+      "id": "upper-lift-door",
+      "wall": "upper-lift-left",
+      "offset": 0.18,
+      "width": 2.64,
+      "type": "sliding",
+      "thickness": 0.06
+    },
+    {
+      "id": "stair-platform-door",
+      "wall": "stair-right",
+      "offset": 1.6,
+      "width": 1.3,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-open-corridor-entry",
+      "wall": "left-area-bottom",
+      "offset": 1.5,
+      "width": 3
+    },
+    {
+      "id": "south-side-room-door",
+      "wall": "south-open-corridor-left",
+      "offset": 1.75,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-side-room-2-door",
+      "wall": "south-open-corridor-left",
+      "offset": 4.75,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-side-room-3-door",
+      "wall": "south-open-corridor-left",
+      "offset": 7.75,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-side-room-4-door",
+      "wall": "south-open-corridor-left",
+      "offset": 10.75,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-side-room-5-door",
+      "wall": "south-open-corridor-left",
+      "offset": 13.75,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-corridor-end-double-doors",
+      "wall": "south-corridor-end-wall",
+      "offset": 0.2,
+      "width": 2.6,
+      "type": "double-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-right-room-1-door",
+      "wall": "south-open-corridor-right",
+      "offset": 0.25,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-right-room-2-door",
+      "wall": "south-open-corridor-right",
+      "offset": 3.25,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-right-room-3-door",
+      "wall": "south-open-corridor-right",
+      "offset": 6.25,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-right-room-4-door",
+      "wall": "south-open-corridor-right",
+      "offset": 9.25,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "south-right-room-5-door",
+      "wall": "south-open-corridor-right",
+      "offset": 12.25,
+      "width": 1,
+      "type": "single-closed",
+      "thickness": 0.06
+    }
+  ],
+  "outlines": [
+    {
+      "id": "lift-car",
+      "at": [
+        7.68,
+        6.18
+      ],
+      "width": 2.64,
+      "height": 2.64,
+      "stroke": 0.025
+    },
+    {
+      "id": "upper-lift-car",
+      "at": [
+        7.68,
+        3.18
+      ],
+      "width": 5.64,
+      "height": 2.64,
+      "stroke": 0.025
+    },
+    {
+      "id": "stair-platform",
+      "at": [
+        12,
+        7.5
+      ],
+      "width": 1.5,
+      "height": 1.5,
+      "stroke": 0.025,
+      "sides": [
+        "top",
+        "left"
+      ]
+    },
+    {
+      "id": "cargo-top-shelves",
+      "at": [
+        3.2,
+        0.2
+      ],
+      "width": 3.2,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "cargo-crate-1",
+      "at": [
+        3.15,
+        4.1
+      ],
+      "width": 1.2,
+      "height": 1.2,
+      "stroke": 0.025
+    },
+    {
+      "id": "cargo-crate-2",
+      "at": [
+        6.15,
+        9.15
+      ],
+      "width": 1.2,
+      "height": 1.2,
+      "stroke": 0.025
+    },
+    {
+      "id": "cargo-crate-3",
+      "at": [
+        3.15,
+        7.9
+      ],
+      "width": 1.2,
+      "height": 1.2,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-bunk",
+      "at": [
+        0.2,
+        12.45
+      ],
+      "width": 0.9,
+      "height": 2.1,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-upper-bunk",
+      "at": [
+        0.28,
+        12.53
+      ],
+      "width": 0.74,
+      "height": 1.94,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "cell-1-pillow",
+      "at": [
+        0.35,
+        12.62
+      ],
+      "width": 0.6,
+      "height": 0.32,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-cupboard",
+      "at": [
+        1.4,
+        14.3
+      ],
+      "width": 0.7,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-desk",
+      "at": [
+        1.6,
+        12.2
+      ],
+      "width": 1.2,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-chair",
+      "at": [
+        1.98,
+        13.05
+      ],
+      "width": 0.44,
+      "height": 0.44,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-sink",
+      "at": [
+        3.975,
+        12.2
+      ],
+      "width": 0.45,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-toilet-cistern",
+      "at": [
+        4.205,
+        12.95
+      ],
+      "width": 0.22,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-bunk",
+      "at": [
+        0.2,
+        15.45
+      ],
+      "width": 0.9,
+      "height": 2.1,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-upper-bunk",
+      "at": [
+        0.28,
+        15.53
+      ],
+      "width": 0.74,
+      "height": 1.94,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "cell-2-pillow",
+      "at": [
+        0.35,
+        15.62
+      ],
+      "width": 0.6,
+      "height": 0.32,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-cupboard",
+      "at": [
+        1.4,
+        17.3
+      ],
+      "width": 0.7,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-desk",
+      "at": [
+        1.6,
+        15.2
+      ],
+      "width": 1.2,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-chair",
+      "at": [
+        1.98,
+        16.05
+      ],
+      "width": 0.44,
+      "height": 0.44,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-sink",
+      "at": [
+        3.975,
+        15.2
+      ],
+      "width": 0.45,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-toilet-cistern",
+      "at": [
+        4.205,
+        15.95
+      ],
+      "width": 0.22,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-bunk",
+      "at": [
+        0.2,
+        18.45
+      ],
+      "width": 0.9,
+      "height": 2.1,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-upper-bunk",
+      "at": [
+        0.28,
+        18.53
+      ],
+      "width": 0.74,
+      "height": 1.94,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "cell-3-pillow",
+      "at": [
+        0.35,
+        18.62
+      ],
+      "width": 0.6,
+      "height": 0.32,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-cupboard",
+      "at": [
+        1.4,
+        20.3
+      ],
+      "width": 0.7,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-desk",
+      "at": [
+        1.6,
+        18.2
+      ],
+      "width": 1.2,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-chair",
+      "at": [
+        1.98,
+        19.05
+      ],
+      "width": 0.44,
+      "height": 0.44,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-sink",
+      "at": [
+        3.975,
+        18.2
+      ],
+      "width": 0.45,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-toilet-cistern",
+      "at": [
+        4.205,
+        18.95
+      ],
+      "width": 0.22,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-bunk",
+      "at": [
+        0.2,
+        21.45
+      ],
+      "width": 0.9,
+      "height": 2.1,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-upper-bunk",
+      "at": [
+        0.28,
+        21.53
+      ],
+      "width": 0.74,
+      "height": 1.94,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "cell-4-pillow",
+      "at": [
+        0.35,
+        21.62
+      ],
+      "width": 0.6,
+      "height": 0.32,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-cupboard",
+      "at": [
+        1.4,
+        23.3
+      ],
+      "width": 0.7,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-desk",
+      "at": [
+        1.6,
+        21.2
+      ],
+      "width": 1.2,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-chair",
+      "at": [
+        1.98,
+        22.05
+      ],
+      "width": 0.44,
+      "height": 0.44,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-sink",
+      "at": [
+        3.975,
+        21.2
+      ],
+      "width": 0.45,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-toilet-cistern",
+      "at": [
+        4.205,
+        21.95
+      ],
+      "width": 0.22,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-bunk",
+      "at": [
+        0.2,
+        24.45
+      ],
+      "width": 0.9,
+      "height": 2.1,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-upper-bunk",
+      "at": [
+        0.28,
+        24.53
+      ],
+      "width": 0.74,
+      "height": 1.94,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "cell-5-pillow",
+      "at": [
+        0.35,
+        24.62
+      ],
+      "width": 0.6,
+      "height": 0.32,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-cupboard",
+      "at": [
+        1.4,
+        26.3
+      ],
+      "width": 0.7,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-desk",
+      "at": [
+        1.6,
+        24.2
+      ],
+      "width": 1.2,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-chair",
+      "at": [
+        1.98,
+        25.05
+      ],
+      "width": 0.44,
+      "height": 0.44,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-sink",
+      "at": [
+        3.975,
+        24.2
+      ],
+      "width": 0.45,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-toilet-cistern",
+      "at": [
+        4.205,
+        24.95
+      ],
+      "width": 0.22,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-1-shelves-1",
+      "at": [
+        11.25,
+        12.2
+      ],
+      "width": 0.55,
+      "height": 2.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-1-shelves-2",
+      "at": [
+        8.5,
+        14.3
+      ],
+      "width": 2,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-1-crate-1",
+      "at": [
+        9,
+        12.25
+      ],
+      "width": 0.65,
+      "height": 0.9,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-1-crate-2",
+      "at": [
+        10.15,
+        13.35
+      ],
+      "width": 0.8,
+      "height": 0.65,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-1-crate-3",
+      "at": [
+        8,
+        13.45
+      ],
+      "width": 0.55,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-2-shelves-1",
+      "at": [
+        8.6,
+        15.2
+      ],
+      "width": 3.1,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-2-shelves-2",
+      "at": [
+        11.2,
+        16.05
+      ],
+      "width": 0.6,
+      "height": 1.7,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-2-crate-1",
+      "at": [
+        8,
+        16.65
+      ],
+      "width": 0.9,
+      "height": 0.95,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-2-crate-2",
+      "at": [
+        9.5,
+        16.25
+      ],
+      "width": 1,
+      "height": 0.7,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-3-shelves-1",
+      "at": [
+        7.7,
+        20.25
+      ],
+      "width": 4.1,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-3-crate-1",
+      "at": [
+        9,
+        18.2
+      ],
+      "width": 1.1,
+      "height": 0.8,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-3-crate-2",
+      "at": [
+        10.5,
+        18.35
+      ],
+      "width": 0.65,
+      "height": 0.65,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-3-crate-3",
+      "at": [
+        8,
+        19.15
+      ],
+      "width": 0.65,
+      "height": 0.8,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-3-crate-4",
+      "at": [
+        10.3,
+        19.25
+      ],
+      "width": 0.95,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-4-shelves-1",
+      "at": [
+        11.1,
+        21.2
+      ],
+      "width": 0.7,
+      "height": 2.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-4-shelves-2",
+      "at": [
+        8.2,
+        23.3
+      ],
+      "width": 2.1,
+      "height": 0.5,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-4-crate-1",
+      "at": [
+        9.1,
+        21.3
+      ],
+      "width": 0.65,
+      "height": 0.65,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-4-crate-2",
+      "at": [
+        9.85,
+        21.35
+      ],
+      "width": 0.7,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-4-crate-3",
+      "at": [
+        9.3,
+        22.25
+      ],
+      "width": 1.1,
+      "height": 0.75,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-5-shelves-1",
+      "at": [
+        8.6,
+        24.2
+      ],
+      "width": 3.2,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-5-shelves-2",
+      "at": [
+        7.7,
+        26.25
+      ],
+      "width": 1.7,
+      "height": 0.55,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-5-crate-1",
+      "at": [
+        10.4,
+        25.4
+      ],
+      "width": 1.1,
+      "height": 1.2,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-5-crate-2",
+      "at": [
+        8.15,
+        25.15
+      ],
+      "width": 0.65,
+      "height": 0.7,
+      "stroke": 0.025
+    },
+    {
+      "id": "storage-5-crate-3",
+      "at": [
+        9.1,
+        25.2
+      ],
+      "width": 0.85,
+      "height": 0.6,
+      "stroke": 0.025
+    }
+  ],
+  "spiralStairs": [
+    {
+      "id": "stairs-up",
+      "at": [
+        12,
+        7.5
+      ],
+      "radius": 1.35,
+      "treads": 14,
+      "direction": "up",
+      "startAngle": 90,
+      "sweep": 270
+    }
+  ],
+  "labels": [],
+  "circles": [
+    {
+      "id": "cell-1-sink-basin",
+      "at": [
+        4.2,
+        12.475
+      ],
+      "radius": 0.14,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-toilet-bowl",
+      "at": [
+        3.975,
+        13.225
+      ],
+      "radius": 0.22,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-1-toilet-seat",
+      "at": [
+        3.975,
+        13.225
+      ],
+      "radius": 0.15,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-sink-basin",
+      "at": [
+        4.2,
+        15.475
+      ],
+      "radius": 0.14,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-toilet-bowl",
+      "at": [
+        3.975,
+        16.225
+      ],
+      "radius": 0.22,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-2-toilet-seat",
+      "at": [
+        3.975,
+        16.225
+      ],
+      "radius": 0.15,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-sink-basin",
+      "at": [
+        4.2,
+        18.475
+      ],
+      "radius": 0.14,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-toilet-bowl",
+      "at": [
+        3.975,
+        19.225
+      ],
+      "radius": 0.22,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-3-toilet-seat",
+      "at": [
+        3.975,
+        19.225
+      ],
+      "radius": 0.15,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-sink-basin",
+      "at": [
+        4.2,
+        21.475
+      ],
+      "radius": 0.14,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-toilet-bowl",
+      "at": [
+        3.975,
+        22.225
+      ],
+      "radius": 0.22,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-4-toilet-seat",
+      "at": [
+        3.975,
+        22.225
+      ],
+      "radius": 0.15,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-sink-basin",
+      "at": [
+        4.2,
+        24.475
+      ],
+      "radius": 0.14,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-toilet-bowl",
+      "at": [
+        3.975,
+        25.225
+      ],
+      "radius": 0.22,
+      "stroke": 0.025
+    },
+    {
+      "id": "cell-5-toilet-seat",
+      "at": [
+        3.975,
+        25.225
+      ],
+      "radius": 0.15,
+      "stroke": 0.025
+    }
+  ],
+  "lines": [
+    {
+      "id": "cargo-top-shelves-back",
+      "a": [
+        3.2,
+        0.35
+      ],
+      "b": [
+        6.4,
+        0.35
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-top-shelves-bay-2",
+      "a": [
+        3.4,
+        0.2
+      ],
+      "b": [
+        3.4,
+        0.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-top-shelves-bay-3",
+      "a": [
+        4.9,
+        0.2
+      ],
+      "b": [
+        4.9,
+        0.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-1-brace-a",
+      "a": [
+        3.15,
+        4.1
+      ],
+      "b": [
+        4.3500000000000005,
+        5.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-1-brace-b",
+      "a": [
+        4.3500000000000005,
+        4.1
+      ],
+      "b": [
+        3.15,
+        5.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-2-brace-a",
+      "a": [
+        6.15,
+        9.15
+      ],
+      "b": [
+        7.3500000000000005,
+        10.350000000000001
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-2-brace-b",
+      "a": [
+        7.3500000000000005,
+        9.15
+      ],
+      "b": [
+        6.15,
+        10.350000000000001
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-3-brace-a",
+      "a": [
+        3.15,
+        7.9
+      ],
+      "b": [
+        4.35,
+        9.100000000000001
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-3-brace-b",
+      "a": [
+        4.35,
+        7.9
+      ],
+      "b": [
+        3.15,
+        9.100000000000001
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-1-bunk-foot",
+      "a": [
+        0.2,
+        14.3
+      ],
+      "b": [
+        1.1,
+        14.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-1-cupboard-doors",
+      "a": [
+        1.75,
+        14.3
+      ],
+      "b": [
+        1.75,
+        14.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-1-chair-back",
+      "a": [
+        1.98,
+        13.43
+      ],
+      "b": [
+        2.42,
+        13.43
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-1-sink-tap",
+      "a": [
+        4.395,
+        12.475
+      ],
+      "b": [
+        4.295,
+        12.475
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-2-bunk-foot",
+      "a": [
+        0.2,
+        17.3
+      ],
+      "b": [
+        1.1,
+        17.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-2-cupboard-doors",
+      "a": [
+        1.75,
+        17.3
+      ],
+      "b": [
+        1.75,
+        17.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-2-chair-back",
+      "a": [
+        1.98,
+        16.43
+      ],
+      "b": [
+        2.42,
+        16.43
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-2-sink-tap",
+      "a": [
+        4.395,
+        15.475
+      ],
+      "b": [
+        4.295,
+        15.475
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-3-bunk-foot",
+      "a": [
+        0.2,
+        20.3
+      ],
+      "b": [
+        1.1,
+        20.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-3-cupboard-doors",
+      "a": [
+        1.75,
+        20.3
+      ],
+      "b": [
+        1.75,
+        20.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-3-chair-back",
+      "a": [
+        1.98,
+        19.43
+      ],
+      "b": [
+        2.42,
+        19.43
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-3-sink-tap",
+      "a": [
+        4.395,
+        18.475
+      ],
+      "b": [
+        4.295,
+        18.475
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-4-bunk-foot",
+      "a": [
+        0.2,
+        23.3
+      ],
+      "b": [
+        1.1,
+        23.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-4-cupboard-doors",
+      "a": [
+        1.75,
+        23.3
+      ],
+      "b": [
+        1.75,
+        23.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-4-chair-back",
+      "a": [
+        1.98,
+        22.43
+      ],
+      "b": [
+        2.42,
+        22.43
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-4-sink-tap",
+      "a": [
+        4.395,
+        21.475
+      ],
+      "b": [
+        4.295,
+        21.475
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-5-bunk-foot",
+      "a": [
+        0.2,
+        26.3
+      ],
+      "b": [
+        1.1,
+        26.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-5-cupboard-doors",
+      "a": [
+        1.75,
+        26.3
+      ],
+      "b": [
+        1.75,
+        26.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-5-chair-back",
+      "a": [
+        1.98,
+        25.43
+      ],
+      "b": [
+        2.42,
+        25.43
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cell-5-sink-tap",
+      "a": [
+        4.395,
+        24.475
+      ],
+      "b": [
+        4.295,
+        24.475
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-shelf-1-bay-1",
+      "a": [
+        11.25,
+        12.85
+      ],
+      "b": [
+        11.8,
+        12.85
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-shelf-1-bay-2",
+      "a": [
+        11.25,
+        13.5
+      ],
+      "b": [
+        11.8,
+        13.5
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-shelf-1-bay-3",
+      "a": [
+        11.25,
+        14.15
+      ],
+      "b": [
+        11.8,
+        14.15
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-shelf-1-back",
+      "a": [
+        11.635,
+        12.2
+      ],
+      "b": [
+        11.635,
+        14.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-shelf-2-bay-1",
+      "a": [
+        9.166666666666666,
+        14.3
+      ],
+      "b": [
+        9.166666666666666,
+        14.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-shelf-2-bay-2",
+      "a": [
+        9.833333333333334,
+        14.3
+      ],
+      "b": [
+        9.833333333333334,
+        14.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-shelf-2-back",
+      "a": [
+        8.5,
+        14.65
+      ],
+      "b": [
+        10.5,
+        14.65
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-crate-1-brace-a",
+      "a": [
+        9,
+        12.25
+      ],
+      "b": [
+        9.65,
+        13.15
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-crate-1-brace-b",
+      "a": [
+        9.65,
+        12.25
+      ],
+      "b": [
+        9,
+        13.15
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-crate-2-brace-a",
+      "a": [
+        10.15,
+        13.35
+      ],
+      "b": [
+        10.950000000000001,
+        14.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-crate-2-brace-b",
+      "a": [
+        10.950000000000001,
+        13.35
+      ],
+      "b": [
+        10.15,
+        14.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-crate-3-brace-a",
+      "a": [
+        8,
+        13.45
+      ],
+      "b": [
+        8.55,
+        14.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-1-crate-3-brace-b",
+      "a": [
+        8.55,
+        13.45
+      ],
+      "b": [
+        8,
+        14.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-shelf-1-bay-1",
+      "a": [
+        9.375,
+        15.2
+      ],
+      "b": [
+        9.375,
+        15.7
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-shelf-1-bay-2",
+      "a": [
+        10.15,
+        15.2
+      ],
+      "b": [
+        10.15,
+        15.7
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-shelf-1-bay-3",
+      "a": [
+        10.925,
+        15.2
+      ],
+      "b": [
+        10.925,
+        15.7
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-shelf-1-back",
+      "a": [
+        8.6,
+        15.55
+      ],
+      "b": [
+        11.7,
+        15.55
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-shelf-2-bay-1",
+      "a": [
+        11.2,
+        16.9
+      ],
+      "b": [
+        11.799999999999999,
+        16.9
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-shelf-2-back",
+      "a": [
+        11.62,
+        16.05
+      ],
+      "b": [
+        11.62,
+        17.75
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-crate-1-brace-a",
+      "a": [
+        8,
+        16.65
+      ],
+      "b": [
+        8.9,
+        17.6
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-crate-1-brace-b",
+      "a": [
+        8.9,
+        16.65
+      ],
+      "b": [
+        8,
+        17.6
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-crate-2-brace-a",
+      "a": [
+        9.5,
+        16.25
+      ],
+      "b": [
+        10.5,
+        16.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-2-crate-2-brace-b",
+      "a": [
+        10.5,
+        16.25
+      ],
+      "b": [
+        9.5,
+        16.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-shelf-1-bay-1",
+      "a": [
+        8.52,
+        20.25
+      ],
+      "b": [
+        8.52,
+        20.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-shelf-1-bay-2",
+      "a": [
+        9.34,
+        20.25
+      ],
+      "b": [
+        9.34,
+        20.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-shelf-1-bay-3",
+      "a": [
+        10.16,
+        20.25
+      ],
+      "b": [
+        10.16,
+        20.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-shelf-1-bay-4",
+      "a": [
+        10.98,
+        20.25
+      ],
+      "b": [
+        10.98,
+        20.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-shelf-1-back",
+      "a": [
+        7.7,
+        20.634999999999998
+      ],
+      "b": [
+        11.8,
+        20.634999999999998
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-1-brace-a",
+      "a": [
+        9,
+        18.2
+      ],
+      "b": [
+        10.1,
+        19.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-1-brace-b",
+      "a": [
+        10.1,
+        18.2
+      ],
+      "b": [
+        9,
+        19.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-2-brace-a",
+      "a": [
+        10.5,
+        18.35
+      ],
+      "b": [
+        11.15,
+        19.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-2-brace-b",
+      "a": [
+        11.15,
+        18.35
+      ],
+      "b": [
+        10.5,
+        19.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-3-brace-a",
+      "a": [
+        8,
+        19.15
+      ],
+      "b": [
+        8.65,
+        19.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-3-brace-b",
+      "a": [
+        8.65,
+        19.15
+      ],
+      "b": [
+        8,
+        19.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-4-brace-a",
+      "a": [
+        10.3,
+        19.25
+      ],
+      "b": [
+        11.25,
+        19.85
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-3-crate-4-brace-b",
+      "a": [
+        11.25,
+        19.25
+      ],
+      "b": [
+        10.3,
+        19.85
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-shelf-1-bay-1",
+      "a": [
+        11.1,
+        21.85
+      ],
+      "b": [
+        11.799999999999999,
+        21.85
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-shelf-1-bay-2",
+      "a": [
+        11.1,
+        22.5
+      ],
+      "b": [
+        11.799999999999999,
+        22.5
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-shelf-1-bay-3",
+      "a": [
+        11.1,
+        23.15
+      ],
+      "b": [
+        11.799999999999999,
+        23.15
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-shelf-1-back",
+      "a": [
+        11.59,
+        21.2
+      ],
+      "b": [
+        11.59,
+        23.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-shelf-2-bay-1",
+      "a": [
+        8.899999999999999,
+        23.3
+      ],
+      "b": [
+        8.899999999999999,
+        23.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-shelf-2-bay-2",
+      "a": [
+        9.6,
+        23.3
+      ],
+      "b": [
+        9.6,
+        23.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-shelf-2-back",
+      "a": [
+        8.2,
+        23.65
+      ],
+      "b": [
+        10.299999999999999,
+        23.65
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-crate-1-brace-a",
+      "a": [
+        9.1,
+        21.3
+      ],
+      "b": [
+        9.75,
+        21.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-crate-1-brace-b",
+      "a": [
+        9.75,
+        21.3
+      ],
+      "b": [
+        9.1,
+        21.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-crate-2-brace-a",
+      "a": [
+        9.85,
+        21.35
+      ],
+      "b": [
+        10.549999999999999,
+        21.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-crate-2-brace-b",
+      "a": [
+        10.549999999999999,
+        21.35
+      ],
+      "b": [
+        9.85,
+        21.95
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-crate-3-brace-a",
+      "a": [
+        9.3,
+        22.25
+      ],
+      "b": [
+        10.4,
+        23.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-4-crate-3-brace-b",
+      "a": [
+        10.4,
+        22.25
+      ],
+      "b": [
+        9.3,
+        23.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-shelf-1-bay-1",
+      "a": [
+        9.4,
+        24.2
+      ],
+      "b": [
+        9.4,
+        24.75
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-shelf-1-bay-2",
+      "a": [
+        10.2,
+        24.2
+      ],
+      "b": [
+        10.2,
+        24.75
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-shelf-1-bay-3",
+      "a": [
+        11.0,
+        24.2
+      ],
+      "b": [
+        11.0,
+        24.75
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-shelf-1-back",
+      "a": [
+        8.6,
+        24.585
+      ],
+      "b": [
+        11.8,
+        24.585
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-shelf-2-bay-1",
+      "a": [
+        8.55,
+        26.25
+      ],
+      "b": [
+        8.55,
+        26.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-shelf-2-back",
+      "a": [
+        7.7,
+        26.634999999999998
+      ],
+      "b": [
+        9.4,
+        26.634999999999998
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-crate-1-brace-a",
+      "a": [
+        10.4,
+        25.4
+      ],
+      "b": [
+        11.5,
+        26.6
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-crate-1-brace-b",
+      "a": [
+        11.5,
+        25.4
+      ],
+      "b": [
+        10.4,
+        26.6
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-crate-2-brace-a",
+      "a": [
+        8.15,
+        25.15
+      ],
+      "b": [
+        8.8,
+        25.85
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-crate-2-brace-b",
+      "a": [
+        8.8,
+        25.15
+      ],
+      "b": [
+        8.15,
+        25.85
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-crate-3-brace-a",
+      "a": [
+        9.1,
+        25.2
+      ],
+      "b": [
+        9.95,
+        25.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "storage-5-crate-3-brace-b",
+      "a": [
+        9.95,
+        25.2
+      ],
+      "b": [
+        9.1,
+        25.8
+      ],
+      "stroke": 0.018
+    }
+  ],
+  "stepIrons": []
+}
