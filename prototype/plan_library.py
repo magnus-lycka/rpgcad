@@ -136,6 +136,7 @@ def validate_components(model, definitions):
                     or not finite(instance.get("rotation"))
                 )
             )
+            or (not attached and "opening" in instance)
             or not valid_access(instance.get("access", {}))
             or (
                 "blocksSight" in instance

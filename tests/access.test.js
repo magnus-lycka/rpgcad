@@ -107,3 +107,45 @@ test("remembered component door keeps the exact leaf definition and state previo
   assert.match(remembered, /data-door-state="open"/);
   assert.match(Geometry.scene(m, { x: 0, y: -3, w: 6, h: 6 }), /3.01,-0.49/);
 });
+
+test("door instance sight override controls a closed leaf independently of opening defaults", () => {
+  for (const blocksSight of [false, true]) {
+    const m = accessModel();
+    assert.ok(m.components);
+    const panel = m.components[0];
+    panel.blocksSight = blocksSight;
+    m.openings[0].blocksSight = !blocksSight;
+    Geometry.validate(m);
+    assert.equal(
+      Geometry.componentSemantics(m, panel).blocksSight,
+      blocksSight,
+    );
+    assert.equal(
+      Geometry.accessOpening(m, m.openings[0]).blocksSight,
+      blocksSight,
+    );
+    assert.equal(
+      Fog.inside(
+        [4, 0],
+        Fog.visible({ at: [0, 0], range: 6 }, Fog.blockers(m, {})).polygon,
+      ),
+      !blocksSight,
+    );
+    assert.match(
+      Geometry.scene(m, { x: 0, y: -3, w: 6, h: 6 }),
+      /data-door="access"/,
+    );
+  }
+});
+
+test("door semantics inherit opening sight settings when the instance has no override", () => {
+  const m = accessModel();
+  assert.ok(m.components);
+  m.openings[0].blocksSight = false;
+  Geometry.validate(m);
+  assert.equal(
+    Geometry.componentSemantics(m, m.components[0]).blocksSight,
+    false,
+  );
+  assert.equal(Geometry.accessOpening(m, m.openings[0]).blocksSight, false);
+});

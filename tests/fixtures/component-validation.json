@@ -1,0 +1,89 @@
+{
+  "model": {
+    "wallThickness": 0.2,
+    "walls": [],
+    "openings": [],
+    "labels": [],
+    "componentDefinitions": {
+      "machinery@1": {
+        "id": "machinery",
+        "version": 1,
+        "name": "Machine",
+        "family": "machinery",
+        "defaults": {
+          "width": 1.5,
+          "length": 2
+        },
+        "details": {
+          "headDepth": 0.3
+        },
+        "blocksSight": true
+      }
+    },
+    "components": [
+      {
+        "id": "machine",
+        "definition": "machinery@1",
+        "at": [0, 0],
+        "rotation": 0
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "non-door opening attachment",
+      "valid": false,
+      "instance": {
+        "opening": "stray"
+      }
+    },
+    {
+      "name": "null settings",
+      "valid": false,
+      "instance": {
+        "settings": null
+      }
+    },
+    {
+      "name": "array settings",
+      "valid": false,
+      "instance": {
+        "settings": []
+      }
+    },
+    {
+      "name": "missing definition name",
+      "valid": false,
+      "omitDefinition": ["name"]
+    },
+    {
+      "name": "empty definition name",
+      "valid": false,
+      "definition": {
+        "name": ""
+      }
+    },
+    {
+      "name": "valid omitted settings",
+      "valid": true
+    },
+    {
+      "name": "valid empty settings",
+      "valid": true,
+      "instance": {
+        "settings": {}
+      }
+    },
+    {
+      "name": "valid footprint override",
+      "valid": true,
+      "instance": {
+        "settings": {
+          "width": 1.2,
+          "length": 2.5
+        },
+        "blocksSight": false
+      }
+    }
+  ]
+}

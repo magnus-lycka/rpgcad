@@ -953,3 +953,26 @@ def test_unknown_component_identifier_is_explicit(bridge):
     response = bridge.getresponse()
     assert response.status == 404
     response.read()
+
+
+COMPONENT_VALIDATION = json.loads(
+    (Path(__file__).parent / "fixtures" / "component-validation.json").read_text()
+)
+
+
+@pytest.mark.parametrize("case", COMPONENT_VALIDATION["cases"], ids=lambda c: c["name"])
+def test_authored_component_validation_preserves_rejected_saves(bridge, tmp_path, case):
+    model = json.loads(json.dumps(COMPONENT_VALIDATION["model"]))
+    assert put_state(bridge, "/model", model, "")[0] == 204
+    before = read_state(bridge, "/model")
+    metadata = read_state(bridge, "/library")
+    (tmp_path / "test-clock").write_text("2040-01-01T00:00:00+00:00")
+    model["components"][0].update(case.get("instance", {}))
+    model["componentDefinitions"]["machinery@1"].update(case.get("definition", {}))
+    for key in case.get("omitDefinition", []):
+        del model["componentDefinitions"]["machinery@1"][key]
+    status, _ = put_state(bridge, "/model", model, before[1] or "")
+    assert status == (204 if case["valid"] else 400)
+    if not case["valid"]:
+        assert read_state(bridge, "/model") == before
+        assert read_state(bridge, "/library") == metadata

@@ -162,6 +162,8 @@ const Geometry = (() => {
     )) {
       if (
         !definition ||
+        typeof definition.name !== "string" ||
+        !definition.name ||
         key !== `${definition.id}@${definition.version}` ||
         !Number.isInteger(definition.version) ||
         definition.version < 1 ||
@@ -200,6 +202,11 @@ const Geometry = (() => {
         ].includes(definition.family) ||
         (definition.family !== "door" &&
           (!point(instance.at) || !finite(instance.rotation))) ||
+        (definition.family !== "door" && "opening" in instance) ||
+        (instance.settings !== undefined &&
+          (instance.settings === null ||
+            typeof instance.settings !== "object" ||
+            Array.isArray(instance.settings))) ||
         !validAccess(instance.access ?? {}) ||
         (instance.blocksSight !== undefined &&
           typeof instance.blocksSight !== "boolean") ||
@@ -249,7 +256,7 @@ const Geometry = (() => {
         opening.thickness ?? definition.details.leafThickness,
         (wall?.thickness ?? m.wallThickness) * 0.4,
       ),
-      blocksSight: opening.blocksSight ?? definition.blocksSight,
+      blocksSight: componentSemantics(m, instance).blocksSight,
     };
   }
   // Family settings change the footprint while retaining a physical head/back depth.
@@ -276,8 +283,13 @@ const Geometry = (() => {
     const definition = m.componentDefinitions?.[instance.definition];
     if (!definition)
       throw Error(`Unknown component definition ${instance.definition}`);
+    const opening =
+      definition.family === "door"
+        ? m.openings.find((o) => o.id === instance.opening)
+        : undefined;
     return {
-      blocksSight: instance.blocksSight ?? definition.blocksSight,
+      blocksSight:
+        instance.blocksSight ?? opening?.blocksSight ?? definition.blocksSight,
       access: { ...definition.access, ...instance.access },
     };
   }

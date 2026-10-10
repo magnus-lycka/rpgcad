@@ -89,7 +89,7 @@ The technical update mechanism appears viable, and the Referee positively evalua
 - Openings cut only their own wall; crossing walls can obstruct them.
 - Connected wall segments and labels do not automatically move together.
 - The model has no fixed outer boundary; printing is limited to 200 sheets per request in this prototype.
-- No direct geometry editing, room semantics, furniture, or undo. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were added during the interactive evaluation.
+- No direct geometry editing, room semantics, or undo. Six reusable component families are implemented: bed, chair, wall door, ceiling hatch, crew console and generic service machinery. Their dimensions are proposed defaults; Referee viability approval under ticket #13 remains pending before catalogue expansion. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were also added during the interactive evaluation.
 - Regression tests cover HTTP saves, pure exploration behaviour, browser controls, and fog rendering; this remains a prototype without a production framework. See `docs/agents/development.md` for the required TDD workflow.
 
 ## Levels in one server
@@ -213,6 +213,10 @@ owns saved play state. A leaf uses the opening's explicit thickness or the saved
 definition's leaf thickness, capped at 40% of wall thickness. It has two thin
 closed panels and retains dashed outlines while open. Shift-click and reset use
 the existing play controls. Oversized or dangling attachments cannot be saved.
+Only wall doors accept an `opening` attachment; other families reject that field.
+For a closed door, sight blocking resolves from the instance `blocksSight` override,
+then the existing opening setting, then the saved definition. Opening the door
+always removes its sight blocker while retaining its drawn trace.
 
 A ceiling hatch instance uses the normal `at` and clockwise `rotation`, with
 optional `settings: {width, length, direction, state}`. Direction is `up`, `down`
