@@ -57,3 +57,25 @@ test("catalogue guidance describes physical properties in readable language", as
   await expect(bed).toContainText("Source dimensions: unknown");
   await expect(page.getByRole("status")).toContainText("1 component ·");
 });
+
+// Cross-slice characterisation: attachment metadata uses the generic preview path.
+test("catalogue previews the attached wall door and ceiling hatch with their settings", async ({
+  page,
+}) => {
+  await page.goto("/components.html");
+  const door = page.getByRole("article", { name: "Wall door", exact: true });
+  await expect(door.getByRole("img")).toBeVisible();
+  await expect(door.locator("[data-wall]")).toHaveCount(2);
+  await expect(door).toContainText("door@1");
+  await expect(door).not.toContainText("Preview unavailable");
+  const hatch = page.getByRole("article", {
+    name: "Ceiling hatch",
+    exact: true,
+  });
+  await expect(hatch.getByRole("img")).toBeVisible();
+  await expect(hatch).toContainText("ceiling-hatch@1");
+  await expect(hatch).toContainText("UP");
+  await expect(hatch).toContainText("up-down");
+  await expect(hatch).toContainText("open");
+  await expect(hatch).not.toContainText("Preview unavailable");
+});

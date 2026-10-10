@@ -1,0 +1,109 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { Geometry, Fog } from "../prototype/geometry.js";
+const door = {
+  id: "door",
+  version: 1,
+  name: "Wall door",
+  family: "door",
+  defaults: { width: 1, length: 0.06 },
+  details: { leafThickness: 0.06 },
+  blocksSight: true,
+};
+/** @returns {import("../prototype/geometry.js").Model} */
+const accessModel = () => ({
+  wallThickness: 0.2,
+  walls: [{ id: "wall", a: [3, -3], b: [3, 3] }],
+  openings: [{ id: "access", wall: "wall", offset: 2.5, width: 1 }],
+  labels: [],
+  componentDefinitions: { "door@1": door },
+  components: [{ id: "panel", definition: "door@1", opening: "access" }],
+});
+test("attached component door uses the measured opening and thin leaf, retaining a trace when open", () => {
+  const m = Geometry.validate(accessModel());
+  const closed = Geometry.scene(m, { x: 0, y: -3, w: 6, h: 6 });
+  assert.match(closed, /data-component="panel"/);
+  assert.match(closed, /data-door="access"/);
+  assert.match(closed, /3.03,-0.49/);
+  assert.equal(
+    Fog.inside(
+      [4, 0],
+      Fog.visible({ at: [0, 0], range: 6 }, Fog.blockers(m, {})).polygon,
+    ),
+    false,
+  );
+  assert.equal(
+    Fog.inside(
+      [4, 0],
+      Fog.visible({ at: [0, 0], range: 6 }, Fog.blockers(m, { access: "open" }))
+        .polygon,
+    ),
+    true,
+  );
+  const open = Geometry.scene(
+    m,
+    { x: 0, y: -3, w: 6, h: 6 },
+    { doorStates: { access: "open" } },
+  );
+  assert.match(open, /data-door-state="open"/);
+  assert.match(open, /stroke-dasharray=".08 .06"/);
+});
+
+test("ceiling hatch labels vertical direction independently of its open state", () => {
+  const m = accessModel();
+  assert.ok(m.componentDefinitions);
+  assert.ok(m.components);
+  m.componentDefinitions["hatch@1"] = {
+    id: "hatch",
+    version: 1,
+    name: "Ceiling hatch",
+    family: "ceiling-hatch",
+    defaults: { width: 1, length: 1 },
+    details: {},
+    blocksSight: false,
+  };
+  m.components.push({
+    id: "roof",
+    definition: "hatch@1",
+    at: [1, 1],
+    rotation: 0,
+    settings: { direction: "up-down", state: "open" },
+  });
+  const svg = Geometry.scene(Geometry.validate(m), { x: 0, y: 0, w: 6, h: 6 });
+  assert.match(svg, /data-access-direction="up-down" data-access-state="open"/);
+  assert.match(svg, /r="0.5"/);
+  assert.match(svg, />UP-DOWN<\/text>/);
+  assert.ok(m.components[1].settings);
+  m.components[1].settings.state = "closed";
+  assert.match(
+    Geometry.scene(Geometry.validate(m), { x: 0, y: 0, w: 6, h: 6 }),
+    /data-access-direction="up-down" data-access-state="closed"/,
+  );
+});
+
+// Characterisation: existing observation snapshots already retain hydrated definitions.
+test("remembered component door keeps the exact leaf definition and state previously seen", () => {
+  const m = accessModel();
+  const state = Fog.validate({
+    version: 2,
+    observers: [{ at: [0, 0], range: 6 }],
+    doors: { access: "open" },
+    observations: [],
+    revisions: {},
+  });
+  Fog.observation(state, m, "seen");
+  assert.ok(m.componentDefinitions);
+  m.componentDefinitions["door@1"] = {
+    ...door,
+    details: { leafThickness: 0.02 },
+  };
+  state.doors = {};
+  const remembered = Geometry.scene(
+    state.revisions.seen,
+    { x: 0, y: -3, w: 6, h: 6 },
+    { doorStates: state.observations[0].doors },
+  );
+  assert.match(remembered, /3.03,-0.49/);
+  assert.match(remembered, /data-door-state="open"/);
+  assert.match(Geometry.scene(m, { x: 0, y: -3, w: 6, h: 6 }), /3.01,-0.49/);
+});

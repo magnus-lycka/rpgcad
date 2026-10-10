@@ -202,3 +202,22 @@ model containing the definition's preview instance and any required attachment w
 or opening; the browser supplies its `componentDefinitions`. Otherwise it renders
 one default instance at `[0,0]` with zero rotation. Catalogue definitions and artwork
 are original AGPL v3; CC BY-NC reference attribution does not license imported artwork.
+
+### Reusable access components
+
+The original `door@1` and `ceiling-hatch@1` catalogue definitions are proposed
+metre defaults, licensed AGPL v3. Save definitions at plan scope as with furniture.
+A wall door instance uses `{id, definition: "door@1", opening: "opening-id"}`.
+The existing opening owns wall, offset and accessible width; its identity also
+owns saved play state. A leaf uses the opening's explicit thickness or the saved
+definition's leaf thickness, capped at 40% of wall thickness. It has two thin
+closed panels and retains dashed outlines while open. Shift-click and reset use
+the existing play controls. Oversized or dangling attachments cannot be saved.
+
+A ceiling hatch instance uses the normal `at` and clockwise `rotation`, with
+optional `settings: {width, length, direction, state}`. Direction is `up`, `down`
+or `up-down` (default `up`); state is independently `open` or `closed` (default
+`closed`). Its dashed circle and direction label describe vertical access. Hatch
+state is authored data, with no new play toggle, planar sight blocker, automatic
+level travel or movement enforcement. Historical observations retain the exact
+saved definitions and wall-door state seen at that time.
