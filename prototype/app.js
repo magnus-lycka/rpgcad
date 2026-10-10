@@ -26,7 +26,7 @@ const settings = new URLSearchParams(location.search);
 let editing =
   settings.get("mode") === "edit" ||
   (settings.get("mode") !== "play" && settings.get("fog") !== "1");
-let sketchTool = settings.get("mode") === "edit" ? "pen" : "pan";
+let sketchTool = "pan";
 /** @type {number[][][]} */
 let strokes = [];
 /** @type {number[][]|null} */
@@ -622,8 +622,12 @@ async function poll() {
       etag = response.headers.get("ETag") || "";
       loaded = true;
       if (fogEnabled && exploration) updateVisibility();
-      if (first) fit();
-      else draw();
+      if (first) {
+        fit();
+        document.querySelectorAll("[data-calibrate]").forEach((button) => {
+          button.removeAttribute("disabled");
+        });
+      } else draw();
     }
     if (loaded) await pollExploration();
     if (loaded) await pollSketchReply();
@@ -743,6 +747,60 @@ function zoom(
   camera.y += (py - viewport.clientHeight / 2) * (old - camera.mpp);
   draw();
 }
+document.querySelectorAll("[data-zoom]").forEach((button) => {
+  button.addEventListener("click", () => {
+    zoom(button.getAttribute("data-zoom") === "in" ? 0.8 : 1.25);
+  });
+});
+document.querySelectorAll("[data-fit]").forEach((button) => {
+  button.addEventListener("click", fit);
+});
+const calibrationDialog = element("calibration-dialog");
+if (!(calibrationDialog instanceof HTMLDialogElement))
+  throw Error("Expected calibration dialog");
+let calibrationMetres = 7.5;
+document.querySelectorAll("[data-calibrate]").forEach((button) => {
+  button.addEventListener("click", () => {
+    // Keep the ruler at the drawing's actual magnification. Use fewer squares
+    // when five would not fit; never shrink the ruler with CSS.
+    const available = Math.min(900, window.innerWidth - 80);
+    let squares = Math.min(5, Math.floor((available * camera.mpp) / 1.5));
+    if (squares < 1) {
+      squares = 1;
+      while ((squares * 1.5) / camera.mpp > available) squares /= 2;
+    }
+    calibrationMetres = squares * 1.5;
+    const pixels = calibrationMetres / camera.mpp;
+    const ruler = element("calibration-ruler");
+    ruler.setAttribute("width", String(pixels));
+    ruler.setAttribute("viewBox", `0 0 ${pixels} 32`);
+    const ticks = [];
+    for (let i = 0; i <= Math.ceil(squares); i++) {
+      const x = (Math.min(i, squares) / squares) * pixels;
+      ticks.push(`M ${x} 4 V 28`);
+    }
+    ruler.innerHTML = `<path d="M 0 16 H ${pixels} ${ticks.join(" ")}" fill="none" stroke="black" stroke-width="1"/>`;
+    element("calibration-length").textContent =
+      `${squares} grid squares · ${calibrationMetres} m`;
+    calibrationDialog.showModal();
+  });
+});
+element("cancel-calibration").addEventListener("click", () =>
+  calibrationDialog.close(),
+);
+element("calibration-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const measured = element("calibration-mm"),
+    scale = element("calibration-scale");
+  if (
+    !(measured instanceof HTMLInputElement) ||
+    !(scale instanceof HTMLInputElement)
+  )
+    throw Error("Expected calibration inputs");
+  const targetMm = (calibrationMetres * 1000) / scale.valueAsNumber;
+  zoom(measured.valueAsNumber / targetMm);
+  calibrationDialog.close();
+});
 viewport.addEventListener(
   "wheel",
   (event) => {
@@ -772,6 +830,7 @@ function exportSvg() {
 }
 window.addEventListener("keydown", (event) => {
   if (
+    calibrationDialog.open ||
     event.ctrlKey ||
     event.metaKey ||
     event.altKey ||

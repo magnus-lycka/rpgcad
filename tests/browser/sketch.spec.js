@@ -56,6 +56,7 @@ test("play mode hides the edit palette, strokes and reference axes while preserv
 }) => {
   await page.goto("/?mode=edit");
   await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(1);
+  await page.getByRole("button", { name: "Pen", exact: true }).click();
   await page.mouse.move(450, 350);
   await page.mouse.down();
   await page.mouse.move(470, 365);
@@ -78,6 +79,7 @@ test("the agent consuming marks for a chat instruction clears them from the draw
 }) => {
   await page.goto("/?mode=edit");
   await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(1);
+  await page.getByRole("button", { name: "Pen", exact: true }).click();
   await page.mouse.move(480, 300);
   await page.mouse.down();
   await page.mouse.move(500, 320);

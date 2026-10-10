@@ -18,7 +18,7 @@ The browser shows only the drawing. The square grid is always visible, including
 
 ### Visual feedback experiment
 
-Open `/?level=below&mode=edit`. Draw freely with Pen, then type your instruction in the existing agent conversation. There is no browser text entry or submit button. Pen-up automatically saves the untouched strokes in model coordinates; undo and clear update them automatically too. Pan moves the view.
+Open `/?level=below&mode=edit`. Draw freely with Pen, then type your instruction in the existing agent conversation. There is no browser text entry or submit button. Pen-up automatically saves the untouched strokes in model coordinates; undo and clear update them automatically too. Pan moves the view and is the default tool. Select Pen to add marks; its cursor is a pen.
 
 For each chat layout instruction the agent reads `GET /sketch?level=below` (omit the query for ground level), uses pending nonempty marks as spatial context, edits the same authoritative model and acknowledges with `PATCH /sketch?level=below`: the record's `submittedAt`, `status: "applied"` and a short `reply`. Only the acknowledged marks disappear. The normal model polling displays the result without resetting the camera. The scratch `*.sketch.PROTOTYPE.json` next to the model retains the latest strokes, model snapshot/revision and viewport. Already-applied or empty marks are not new instructions.
 
@@ -28,7 +28,8 @@ Play hides the palette, reference axes and pen strokes; Shift-E returns to editi
 
 - Drag to pan; scroll to zoom.
 - Double-click or press F to fit the model.
-- Press + or − to zoom about the centre.
+- Press + or −, or use the zoom buttons, to zoom about the centre.
+- Choose Calibrate in the edit toolbar (or the play GM controls). Measure between the ruler end ticks, enter the measured millimetres and scale denominator, then Apply scale. Five squares represent 7.5 m, requiring 100 mm at 1:75: an 80 mm measurement increases current magnification to 125%. The ruler uses current grid spacing and shows fewer squares if needed to fit the screen. Calibration affects the current view only; Fit, zooming or reloading changes that view. Print dimensions remain independent.
 - Press S to save the model as SVG at 1:75.
 - Use the browser's print command for tiled A4 landscape output.
 - For A3 portrait printing, open http://127.0.0.1:8765/?paper=a3.

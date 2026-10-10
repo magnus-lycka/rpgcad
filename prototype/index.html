@@ -29,8 +29,8 @@
       position: fixed;
       top: 14px;
       left: 14px;
-      width: 230px;
-      padding: 12px;
+      max-width: calc(100vw - 44px);
+      padding: 8px;
       background: #f7fafdf5;
       border: 1px solid #9eafc2;
       border-radius: 5px;
@@ -41,14 +41,16 @@
       display: none;
     }
     #edit-palette strong {
-      display: block;
-      margin-bottom: 9px;
-      letter-spacing: 0.08em;
+      display: none;
     }
     #edit-palette button {
       font: inherit;
       padding: 5px 9px;
-      margin: 0 3px 7px 0;
+      margin: 0;
+      border: 1px solid #b7c2cf;
+      border-radius: 4px;
+      background: white;
+      color: #203448;
     }
     #edit-palette button[aria-pressed="true"] {
       background: #d4e6ff;
@@ -56,11 +58,38 @@
     }
     #sketch-status {
       display: block;
-      margin-top: 5px;
+      margin-top: 0;
       line-height: 1.4;
     }
-    body[data-mode="edit"] #viewport {
-      cursor: crosshair;
+    .tool-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+    }
+    .tool-row + .tool-row {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid #d5dee8;
+    }
+    #edit-palette a {
+      padding: 5px;
+      color: #203448;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible {
+      outline: 2px solid #226ac0;
+      outline-offset: 2px;
+    }
+    body[data-tool="pan"] #viewport:active {
+      cursor: grabbing;
+    }
+    body[data-tool="pen"] #viewport {
+      cursor:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 28 7 19 23 3Q25 1 28 4Q31 7 29 9L13 25Z' fill='white' stroke='black' stroke-width='1.5'/%3E%3Cpath d='m7 19 6 6m7-19 6 6M4 28l5-2' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")
+          4 28,
+        default;
     }
     body[data-tool="pan"] #viewport {
       cursor: grab;
@@ -108,6 +137,42 @@
       margin: 8px 0;
       font-size: 13px;
     }
+    #calibration-dialog {
+      border: 1px solid #9eafc2;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: calc(100vw - 80px);
+      background: #fff;
+      color: #203448;
+      font: 14px system-ui;
+      box-shadow: 0 8px 40px #20344830;
+    }
+    #calibration-dialog::backdrop {
+      background: #20344830;
+    }
+    #calibration-dialog h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    #calibration-ruler {
+      display: block;
+      overflow: visible;
+      height: 32px;
+      margin: 18px 0 6px;
+    }
+    #calibration-form label {
+      display: block;
+      margin: 12px 0;
+    }
+    #calibration-form input {
+      width: 90px;
+      padding: 6px;
+      font: inherit;
+    }
+    #calibration-form button {
+      padding: 7px 12px;
+      font: inherit;
+    }
     .page {
       margin: 0;
       break-after: page;
@@ -129,7 +194,8 @@
       }
       #viewport,
       #gm-panel,
-      #edit-palette {
+      #edit-palette,
+      #calibration-dialog {
         display: none;
       }
       #print-pages {
@@ -152,12 +218,22 @@
   <div id="print-pages"></div>
   <section id="edit-palette" aria-label="Edit tools" hidden>
     <strong>EDIT · SKETCH</strong>
-    <button id="pen-tool" aria-pressed="true">Pen</button>
-    <button id="pan-tool" aria-pressed="false">Pan</button>
-    <button id="undo-stroke">Undo stroke</button>
-    <button id="clear-sketch">Clear</button>
-    <button id="play-mode">Play</button>
-    <a href="/library.html">Library</a>
+    <div class="tool-row">
+      <button id="pen-tool" aria-pressed="false">Pen</button>
+      <button id="pan-tool" aria-pressed="true">Pan</button>
+      <button id="undo-stroke">Undo stroke</button>
+      <button id="clear-sketch">Clear</button>
+      <button id="play-mode">Play</button>
+      <a href="/library.html">Library</a>
+    </div>
+    <div class="tool-row" aria-label="View controls">
+      <button data-zoom="out" aria-label="Zoom out" title="Zoom out (−)">
+        −
+      </button>
+      <button data-zoom="in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+      <button data-fit aria-label="Fit plan" title="Fit plan (F)">Fit</button>
+      <button data-calibrate disabled>Calibrate</button>
+    </div>
     <output id="sketch-status" aria-live="polite"></output>
   </section>
   <section id="gm-panel" aria-label="GM controls" hidden>
@@ -180,6 +256,13 @@
       <select id="character-level" aria-label="Destination level"></select
     ></label>
     <button id="transfer-character">Move to level</button>
+    <strong>View</strong>
+    <div class="tool-row">
+      <button data-zoom="out" aria-label="Zoom out">−</button>
+      <button data-zoom="in" aria-label="Zoom in">+</button>
+      <button data-fit aria-label="Fit plan">Fit</button>
+      <button data-calibrate disabled>Calibrate</button>
+    </div>
     <strong>Exploration</strong>
     <label
       >Sight range (m)
@@ -195,5 +278,41 @@
     <p>Shift-G: controls · Shift-R: reset · Shift-F: fog on/off</p>
     <output id="fog-status"></output>
   </section>
+  <dialog id="calibration-dialog" aria-labelledby="calibration-title">
+    <form id="calibration-form">
+      <h2 id="calibration-title">Calibrate screen scale</h2>
+      <p>Measure between the two end ticks with your ruler.</p>
+      <svg
+        id="calibration-ruler"
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-label="Screen calibration ruler"
+      ></svg>
+      <p id="calibration-length"></p>
+      <label
+        >Measured length (mm)
+        <input
+          id="calibration-mm"
+          type="number"
+          min="0.01"
+          step="any"
+          required
+          autofocus
+      /></label>
+      <label
+        >Scale 1:
+        <input
+          id="calibration-scale"
+          type="number"
+          min="0.01"
+          step="any"
+          value="75"
+          required
+      /></label>
+      <p>Applies to this screen view. Printing keeps its own scale.</p>
+      <button type="submit">Apply scale</button>
+      <button id="cancel-calibration" type="button">Cancel</button>
+    </form>
+  </dialog>
   <script type="module" src="/app.js"></script>
 </html>

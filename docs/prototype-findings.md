@@ -308,3 +308,24 @@ Armrests must paint above the seat, with opaque white fill and black outlines.
 Transparent armrests showed the seat edges through them, making the sides look
 heavy. The shared chair geometry now masks those underlying edges in both loose
 chairs and console seats; the armrest direction and thin outline width remain.
+
+
+## Screen navigation and physical calibration
+
+The Referee requested Pan as the default, a pen-shaped Pen cursor, visible zoom
+controls and ruler-based screen calibration. The compact edit toolbar now offers
+Pan/Pen, sketch operations, Play/Library, zoom, Fit and Calibrate. Play retains
+drawing-only presentation; the same view controls are available in its GM panel.
+
+Calibration measures a screen ruler at the current model magnification rather
+than assuming CSS millimetres equal physical millimetres. Five grid squares are
+7.5 m and should measure 100 mm at 1:75. Entering 80 mm therefore increases
+magnification to 125%, without changing geometry or print dimensions. Fewer
+squares are shown if five would exceed the viewport; the stated length and
+calculation follow the actual ruler. Calibration is temporary view state.
+
+Failing-first browser tests cover Pan/cursor selection, zoom/Fit, and that worked
+calibration example with unchanged model data. Calibration waits for initial
+model loading and Fit: measuring before that fit would invalidate the ruler.
+The screen-only dialog is excluded from print output. Live visual inspection
+confirmed a readable ruler and compact toolbar in the narrow drawing window.
