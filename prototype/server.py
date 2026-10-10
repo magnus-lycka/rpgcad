@@ -167,6 +167,29 @@ def main():
             self.end_headers()
             self.wfile.write(body)
 
+        def do_POST(self):
+            if urlsplit(self.path).path != "/duplicate":
+                self.send_error(404)
+                return
+            origin = self.headers.get("Origin")
+            if origin and origin != f"http://{self.headers.get('Host')}":
+                self.send_error(403)
+                return
+            plan = self.selected_plan()
+            if plan is None:
+                return
+            try:
+                duplicate = store.duplicate(plan["id"])
+            except OSError as error:
+                self.send_error(503, str(error))
+                return
+            body = json.dumps(duplicate).encode()
+            self.send_response(201)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
         def do_PUT(self):
             if urlsplit(self.path).path == "/characters":
                 self.save_characters()
