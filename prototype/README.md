@@ -59,7 +59,7 @@ Open http://127.0.0.1:8765/?fog=1. The normal URL still shows the full authored 
 Reloads, polling and redraws do not create observations. Consecutive identical observations are ignored; revisits after intervening changes remain ordered so remembered appearances update correctly. Visibility is reconstructed using unsimplified ray-cast boundaries, with a bounded 128-entry in-memory cache. The server rejects old polygon-format saves and stale writes.
 The `doors` map overrides an opening ID with `open` or `closed`. Walls block sight unless `blocksSight: false`; door openings with leaf symbols block while closed unless explicitly nonblocking. Rectangle outlines, circles, and lines can opt into blocking with `blocksSight: true`. This is a simple 2D rule, without lighting, eye heights, or glass defaults.
 
-The prototype operates on one party POV and the current level. Previously explored areas show last-seen content with a light tint; current visibility is white. Print/export uses the same fog rendering. Observation history survives reloads. Separate level histories remain to be wired into future multi-level storage. The scratch file accepts at most 5 MB per save; history replay still needs evaluation for long sessions.
+The prototype operates on one party POV and the current level. Previously explored areas show last-seen content with a light tint; current visibility is white. Print/export uses the same fog rendering. Observation history survives reloads. Each selected level has a separate exploration history; see the level URLs below. The scratch file accepts at most 5 MB per save; history replay still needs evaluation for long sessions.
 
 ## Printing
 
@@ -81,3 +81,20 @@ The technical update mechanism appears viable, and the Referee positively evalua
 - The model has no fixed outer boundary; printing is limited to 200 sheets per request in this prototype.
 - No direct geometry editing, room semantics, furniture, or undo. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were added during the interactive evaluation.
 - Regression tests cover HTTP saves, pure exploration behaviour, browser controls, and fog rendering; this remains a prototype without a production framework. See `docs/agents/development.md` for the required TDD workflow.
+
+## Levels in one server
+
+`plan.PROTOTYPE.json` groups the original floor and lower floor as levels of the same building. Run the server once:
+
+```sh
+uv run python prototype/server.py
+```
+
+- Ground floor: http://127.0.0.1:8765/
+- Lower floor: http://127.0.0.1:8765/?level=below
+- Ground-floor fog: http://127.0.0.1:8765/?fog=1
+- Lower-floor fog: http://127.0.0.1:8765/?level=below&fog=1
+
+The level parameter selects both the model and its independent exploration state. Unknown IDs return 404 instead of displaying another level. The default/original level retains `exploration.PROTOTYPE.json`; the lower level saves `level-below.PROTOTYPE.exploration.json`. Fresh levels start fully fogged with no POV; click to place one, or use Shift-F to orient in GM view first. The plan manifest is read at server startup; restart after adding a new level entry.
+
+The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the original floor and has its own rooms and corridors. The original drawing is unchanged. These URLs replace the temporary port-8767 setup. A drawing-only level-switching control and a general plan library remain future work.

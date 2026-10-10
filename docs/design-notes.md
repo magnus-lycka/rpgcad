@@ -35,6 +35,32 @@ These are agreed requirements from the ongoing interview, not an implementation 
 - Printed sheets have coordinates and alignment marks in their margins.
 - Printing supports the whole model or a selected area, with consistent tile boundaries across repeated prints.
 
+## Editing and play
+
+Requested direction, not implemented as separate modes:
+
+- Designing a plan and using it in play are distinct activities; distinguish edit mode from play mode.
+- Edit mode is for developing the layout. Exploration fog has little use during ordinary design work.
+- Play mode is for using the layout with exploration visibility. The layout is expected to remain fixed during play; interactive door states and party movement are play state, not layout edits.
+- Hide the red reference X/Y axes in play mode. Keep the permanent 1.5 m grid.
+
+Proposed handling of revisions, still to validate:
+
+- Tie play/exploration to a particular layout revision so subsequent authoring need not invalidate the active game's fog.
+- Moving an existing game to a changed layout requires an explicit choice. Resetting exploration is a simple initial policy; preserving selected knowledge or replaying observations against a revised layout would need separate rules to avoid revealing changed areas accidentally.
+- Do not silently replay old observations against new geometry: this may reveal areas that were blocked when the observations were made.
+- Separate modes may simplify the prototype's historical geometry machinery, but no storage simplification has been selected yet. Multiple sessions, revision selection and transitions between modes remain open.
+
+## Themes and styling
+
+Requested direction, not implemented:
+
+- Apply different themes/styles to the same model without changing its layout or physical meaning.
+- The Referee likes the warm colors of the Azhanti High Lightning reference for screen presentation.
+- Printing should support black-and-white or restrained color to reduce ink use. Meaningful distinctions must remain readable without relying on color alone.
+- Styling must preserve the permanent readable grid, physical dimensions and print scale. Changing appearance must not change door state, access direction or sight blocking.
+- Exact palettes, style controls and theme storage remain open; this requirement does not settle the prototype JSON format as the production model.
+
 ## First prototype architecture
 
 - A model file is the authoritative state. The agent can read the complete model and edit particular objects in that file.
@@ -115,7 +141,7 @@ Referee feedback on the first unfog prototype:
 
 The unfog prototype separates authored geometry, current visibility, and accumulated exploration. `?fog=1` selects the fog view. Version-2 exploration stores observation inputs and shared model revisions; visibility polygons are derived in a bounded in-memory cache. Ordered observation layers retain last-seen content. Shift-G opens the optional GM panel. Reset closes doors and clears observations and revisions, keeping POV/range and pausing reveal. Polling/reload do not append observations; stale saves are rejected.
 
-The prototype still supports only the current level. Separate histories per level are agreed behaviour for future multi-level support, not implemented catalogue functionality.
+The prototype now serves the original and lower level through a shared server, selected by URL, with separate exploration histories. A level-switching control and general plan catalogue remain unimplemented.
 
 Questions still open:
 

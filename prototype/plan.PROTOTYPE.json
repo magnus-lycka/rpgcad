@@ -1,0 +1,17 @@
+{
+  "id": "referee-building",
+  "levels": [
+    {
+      "id": "original",
+      "name": "Original level",
+      "order": 0,
+      "model": "model.PROTOTYPE.json"
+    },
+    {
+      "id": "below",
+      "name": "Level below",
+      "order": -1,
+      "model": "level-below.PROTOTYPE.json"
+    }
+  ]
+}

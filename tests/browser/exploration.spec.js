@@ -160,3 +160,34 @@ test("browser printing produces an A4 sheet with only a 14 by 10 grid area at 20
   await expect(map.locator("pattern")).toHaveAttribute("height", "1.5");
   await expect(paper.locator("text")).toHaveText(["SECRET"]);
 });
+
+test("a level URL draws that level and saves its fog independently", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/?level=below&fog=1");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observers",
+    "[]",
+  );
+  await page.keyboard.press("Shift+f");
+  await expect(page.locator("#viewport")).toContainText("LOWER LEVEL");
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().includes("/exploration?level=below") &&
+        response.request().method() === "PUT" &&
+        response.status() === 204,
+    ),
+    page.locator("#viewport").click({ position: { x: 600, y: 400 } }),
+  ]);
+  const below = await request.get("/exploration?level=below");
+  expect((await below.json()).observations).toHaveLength(1);
+  const ground = await request.get("/exploration");
+  expect((await ground.json()).observations).toHaveLength(0);
+  await page.reload();
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    "1",
+  );
+});

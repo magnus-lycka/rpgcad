@@ -72,3 +72,45 @@ Limitations: no lighting or eye-height model, movement-path collision, individua
 ## Paper evaluation, 2026-10-09
 
 The Referee printed the A4 PDF at manual 100% and measured less than 1% scale error, explicitly accepted. Printer fit/fill modes changed the preview size; their cause was not established. Peripheral corner crosses were partially clipped and the heading/calibration ruler did not print, while the required plan image was fine. These extras were unsolicited and rejected. Removed all print-added crosses, headings, tile coordinates, and rulers. A4 output now consists solely of a centred 14 × 10 grid (280 × 200 mm at 20 mm spacing) and the plan clipped to that region. Preserve authored plan labels/reference axes. Print at manual 100%; do not resize the map to accommodate printer fit/fill settings. The revised PDF was visually checked and its grid remains 20 mm digitally.
+
+## Starting the lower floor, 2026-10-10
+
+The Referee requested only copies of the lifts and stairs. The new model preserves their coordinates, origin, grid alignment, car outlines, doors and stair platform. The original bottom wall also bounds the lifts/stair; only its 6 m section spanning the copied bays is retained. The rest of the building and corner details are not copied. The lower stair reads UP, connecting to the original floor; a test exposed that the renderer had previously hardcoded DOWN regardless of the model's direction. Direction now controls the label, while the copied stair geometry is unchanged. The rendered lower-level core was visually inspected.
+
+The existing `--model`/`--port` options display the second level without replacing the first. A manifest records both as one plan. This does not implement a level-switching UI or independent exploration endpoints.
+
+## First autocannon tower outline, 2026-10-10
+
+The Referee specified a 4 cm square at 1:75 (3 × 3 m), with its left wall aligned to the ground building’s open left boundary (stored x=0). Its lower wall is 15 cm at 1:75 (11.25 m) below the ground building’s lower wall (stored y=9): the tower spans x=0..3 and y=17.25..20.25. Only an outline is drawn on the lower level; shaft routes, cannon details and the second tower’s position have not been specified.
+
+The second tower is the first rotated 180° about the main building’s actual centre, stored [8.625, 4.5], rather than its snapped reference origin [9, 4.5]. Its outline spans x=14.25..17.25 and y=-11.25..-8.25, aligning its right edge to the building’s right boundary.
+
+## Lower-level circulation, 2026-10-10
+
+The Referee requested a 3 m strip to the right of the stair/cargo lift, a 3 m corridor above the cargo lift matching the ground floor, and a 1.5 m corridor to the upper-right tower. The strip spans stored x=13.5..16.5 beside y=3..9; the upper corridor spans y=0..3, with the original double-door frame copied at x=7.5. The circulation spaces join without a dividing wall. Widths follow the prototype’s existing wall-centre-line convention.
+
+The Referee confirmed that the narrow corridor continues inside the tower footprint to an access shaft. It is centred on the tower, x=15..16.5, runs north from y=0 and terminates at y=-9.75 beneath the tower centre. Shaft dimensions and its access symbol remain unspecified, so no shaft details are drawn yet.
+
+The Referee then extended the tower corridor another half grid square (0.75 m), moving its end from stored y=-9.75 to y=-10.5.
+
+The Referee removed the copied upper double door/frame: the upper corridor joins the space to the left of the lifts directly. That space matches the ground-floor extent, stored x=0..7.5 and y=0..9, with top/bottom boundaries and the left side open as above. No corner rooms were requested for this floor.
+
+The Referee then closed the lower level’s left side with a wall at stored x=0, y=0..9. The ground floor remains open on that side.
+
+The second tower access corridor matches the first under the established 180° symmetry: 1.5 m wide, stored x=0.75..2.25 and y=9..19.5. An un-doored opening through the left area’s bottom wall joins it to that area; its end is 0.75 m short of the tower’s far outline, matching the upper corridor.
+
+The Referee requested a 9 m long, 1.5 m wide corridor with its lower wall at reference y=1.5 m, confirmed a room measuring 3 × 3 grid squares (4.5 × 4.5 m), and confirmed the corridor runs left from the main area. The corridor spans stored x=-9..0, y=4.5..6 (reference origin y=4.5). The room is centred on the corridor and spans x=-13.5..-9, y=3..7.5. Open connections cut the main area’s left wall and the room’s right wall; no doors were specified.
+
+The Referee corrected the reference Y convention: positive Y is upward from the red horizontal axis. The west corridor and room were moved up two grid lines (3 m). The corridor now spans stored y=1.5..3, so its lower wall is reference y=+1.5 m; the centred room spans stored y=0..4.5. Convert reference coordinates using x=storedX−originX and y=originY−storedY. The earlier interpretation used screen-down Y and was wrong.
+
+The Referee subsequently removed both tower footprint outlines from the lower-level drawing. Their access corridors remain unchanged.
+
+## Cannon ammunition handling rooms, 2026-10-10
+
+The Referee selected 1.5 × 1.5 m ceiling shafts and 3 × 3 m handling rooms. Both rooms use the previously established tower footprints, with centred dashed square ceiling shafts labelled AMMO HOIST. Corridors terminate at the room entrances with 1.5 m un-doored openings; their previous end caps are removed. Hoist machinery, load capacity and door details remain unspecified. The dashed outlines describe overhead access, not opening state or sight blocking.
+
+The Referee requested shelves and crates in the cargo area in front of the lifts. A first arrangement uses shallow shelf runs inside the top and left walls and three 1.2 m square crates with crossed bracing. Lift approaches, the west corridor and the lower tower route remain clear. Furniture uses thin drawing outlines and does not automatically block sight. Positions/sizes are an agent-arranged first pass, not universal component defaults.
+
+## Replacing one port per level, 2026-10-10
+
+The Referee rejected one port per drawing. The prototype now selects levels by URL on port 8765: `?level=below` and `?level=below&fog=1`. Model reads and exploration reads/writes all use the selected level; unknown IDs return 404. The ground-floor exploration file is preserved, and each other model has its own exploration file. HTTP tests verify routing and independent saves; a browser test verifies selected geometry, initial all-fog state, first POV placement, persistence and isolation from the original level. A fresh exploration with no observers revealed an existing inability to place the initial POV; placement now creates one. The manifest is still a prototype format and is read at startup.

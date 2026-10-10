@@ -21,6 +21,10 @@ def bridge(tmp_path):
     (tmp_path / "exploration.PROTOTYPE.json").write_text(
         json.dumps({"version": 2, "observers": [], "observations": [], "revisions": {}})
     )
+    (tmp_path / "below.json").write_text('{"name":"lower level"}')
+    (tmp_path / "plan.PROTOTYPE.json").write_text(
+        json.dumps({"levels": [{"id": "below", "model": "below.json"}]})
+    )
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -78,3 +82,44 @@ def test_stale_writer_cannot_overwrite_newer_exploration(bridge):
     bridge.request("GET", "/exploration")
     current = bridge.getresponse()
     assert json.loads(current.read())["observers"] == [{"at": [1.5, 0], "range": 6}]
+
+
+def test_level_urls_select_models_on_the_same_server(bridge):
+    for route, expected in [
+        ("/model", "test plan"),
+        ("/model?level=below", "lower level"),
+    ]:
+        bridge.request("GET", route)
+        response = bridge.getresponse()
+        assert response.status == 200
+        assert json.loads(response.read())["name"] == expected
+    bridge.request("GET", "/model?level=unknown")
+    response = bridge.getresponse()
+    assert response.status == 404
+    response.read()
+
+
+def test_exploration_is_saved_only_for_the_selected_level(bridge):
+    bridge.request("GET", "/exploration?level=below")
+    response = bridge.getresponse()
+    assert response.status == 200
+    etag = response.getheader("ETag")
+    state = json.loads(response.read())
+    assert state["observations"] == []
+    state["observers"] = [{"at": [3, 6], "range": 9}]
+    bridge.request(
+        "PUT", "/exploration?level=below", json.dumps(state), {"If-Match": etag}
+    )
+    saved = bridge.getresponse()
+    assert saved.status == 204
+    saved.read()
+    bridge.request("GET", "/exploration?level=below")
+    response = bridge.getresponse()
+    assert json.loads(response.read())["observers"] == [{"at": [3, 6], "range": 9}]
+    bridge.request("GET", "/exploration")
+    response = bridge.getresponse()
+    assert json.loads(response.read())["observers"] == []
+    bridge.request("GET", "/exploration?level=unknown")
+    response = bridge.getresponse()
+    assert response.status == 404
+    response.read()

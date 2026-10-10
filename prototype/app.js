@@ -23,6 +23,9 @@ let camera = { x: 10.5, y: 7.5, mpp: 0.04 };
 /** @type {{x:number,y:number,cx:number,cy:number}|null} */
 let drag = null;
 const settings = new URLSearchParams(location.search);
+const levelQuery = settings.get("level")
+  ? `?${new URLSearchParams({ level: settings.get("level") || "" })}`
+  : "";
 /** @type {Exploration|null} */
 let exploration = null;
 /** @type {import('./geometry.js').Region[]} */
@@ -70,7 +73,7 @@ async function saveExploration() {
   savingExploration = true;
   ++editGeneration;
   try {
-    const response = await fetch("/exploration", {
+    const response = await fetch(`/exploration${levelQuery}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -92,7 +95,7 @@ async function saveExploration() {
 async function pollExploration() {
   if (!fogEnabled || savingExploration) return;
   const generation = editGeneration;
-  const response = await fetch("/exploration", {
+  const response = await fetch(`/exploration${levelQuery}`, {
     headers: explorationEtag ? { "If-None-Match": explorationEtag } : {},
     cache: "no-store",
   });
@@ -147,14 +150,15 @@ element("reset-fog").addEventListener("click", resetFog);
 rangeInput.addEventListener("change", () => setRange(Number(rangeInput.value)));
 
 async function placeObserver(at) {
-  if (!exploration || savingExploration || !exploration.observers.length)
-    return;
+  if (!exploration || savingExploration) return;
   if (
     Fog.blockers(model, exploration.doors).polygons.some((p) =>
       Fog.inside(at, p),
     )
   )
     return;
+  if (!exploration.observers.length)
+    exploration.observers.push({ id: "party", at, range: 6 });
   exploration.observers[0].at = at.map((n) => Math.round(n * 1000) / 1000);
   exploration.visibilityPaused = false;
   recordObservation();
@@ -226,7 +230,7 @@ function fit() {
 }
 async function poll() {
   try {
-    const response = await fetch("/model", {
+    const response = await fetch(`/model${levelQuery}`, {
       headers: etag ? { "If-None-Match": etag } : {},
       cache: "no-store",
     });

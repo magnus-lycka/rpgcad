@@ -19,6 +19,25 @@ def main():
             ROOT / "tests" / "fixtures" / "browser-model.json",
             target / "model.PROTOTYPE.json",
         )
+        (target / "below.json").write_text(
+            json.dumps(
+                {
+                    "wallThickness": 0.15,
+                    "walls": [],
+                    "openings": [],
+                    "labels": [
+                        {"id": "lower-label", "at": [0, 0], "text": "LOWER LEVEL"}
+                    ],
+                }
+            )
+        )
+        (target / "plan.PROTOTYPE.json").write_text(
+            json.dumps(
+                {
+                    "levels": [{"id": "below", "model": "below.json"}],
+                }
+            )
+        )
         (target / "exploration.PROTOTYPE.json").write_text(
             json.dumps(
                 {

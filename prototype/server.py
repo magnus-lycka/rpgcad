@@ -6,6 +6,7 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Lock
+from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parent
 
@@ -16,22 +17,64 @@ def main():
     parser.add_argument("--model", type=Path, default=ROOT / "model.PROTOTYPE.json")
     args = parser.parse_args()
     exploration_lock = Lock()
+    models = {"": args.model}
+    plan_file = ROOT / "plan.PROTOTYPE.json"
+    if plan_file.exists():
+        for level in json.loads(plan_file.read_text())["levels"]:
+            models[level["id"]] = ROOT / level["model"]
+
+    empty_exploration = (
+        json.dumps(
+            {
+                "version": 2,
+                "observers": [],
+                "observations": [],
+                "revisions": {},
+                "doors": {},
+                "visibilityPaused": True,
+            },
+            indent=2,
+        )
+        + "\n"
+    ).encode()
+
+    def exploration_path(model):
+        if model.resolve() == args.model.resolve():
+            return ROOT / "exploration.PROTOTYPE.json"
+        return model.with_name(model.stem + ".exploration.json")
+
+    def exploration_bytes(target):
+        return target.read_bytes() if target.exists() else empty_exploration
 
     class Handler(BaseHTTPRequestHandler):
+        def selected_model(self):
+            level = parse_qs(urlsplit(self.path).query).get("level", [""])[0]
+            model = models.get(level)
+            if model is None:
+                self.send_error(404, "Unknown level")
+            return model
+
         def do_GET(self):
             route = self.path.split("?", 1)[0]
             if route not in ("/", "/model", "/exploration", "/app.js", "/geometry.js"):
                 self.send_error(404)
                 return
             try:
+                model = self.selected_model()
+                if model is None:
+                    return
                 source = {
                     "/": ROOT / "index.html",
                     "/app.js": ROOT / "app.js",
                     "/geometry.js": ROOT / "geometry.js",
-                    "/model": args.model,
-                    "/exploration": ROOT / "exploration.PROTOTYPE.json",
+                    "/model": model,
+                    "/exploration": exploration_path(model),
                 }[route]
-                body = source.read_bytes()
+                body = (
+                    exploration_bytes(source)
+                    if route == "/exploration"
+                    else source.read_bytes()
+                )
             except OSError as error:
                 self.send_error(503, str(error))
                 return
@@ -58,8 +101,11 @@ def main():
             self.wfile.write(body)
 
         def do_PUT(self):
-            if self.path != "/exploration":
+            if urlsplit(self.path).path != "/exploration":
                 self.send_error(404)
+                return
+            model = self.selected_model()
+            if model is None:
                 return
             origin = self.headers.get("Origin")
             if origin and origin != f"http://{self.headers.get('Host')}":
@@ -83,10 +129,12 @@ def main():
                         "Expected observers, observations and shared model revisions"
                     )
                 body = (json.dumps(state, indent=2, allow_nan=False) + "\n").encode()
-                target = ROOT / "exploration.PROTOTYPE.json"
+                target = exploration_path(model)
                 with exploration_lock:
                     current_etag = (
-                        '"' + hashlib.sha256(target.read_bytes()).hexdigest() + '"'
+                        '"'
+                        + hashlib.sha256(exploration_bytes(target)).hexdigest()
+                        + '"'
                     )
                     if self.headers.get("If-Match") != current_etag:
                         self.send_error(

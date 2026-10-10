@@ -3,11 +3,11 @@
  * @typedef {{id: string, a: Point, b: Point, thickness?: number, blocksSight?: boolean}} Wall
  * @typedef {{id: string, wall: string, offset: number, width: number, thickness?: number, type?: string, angle?: number, blocksSight?: boolean}} Opening
  * @typedef {{id: string, at: Point, text: string, size?: number}} Label
- * @typedef {{id: string, at: Point, width: number, height: number, stroke?: number, sides?: Array<'top'|'right'|'bottom'|'left'>, blocksSight?: boolean}} Outline
+ * @typedef {{id: string, at: Point, width: number, height: number, stroke?: number, dashed?: boolean, sides?: Array<'top'|'right'|'bottom'|'left'>, blocksSight?: boolean}} Outline
  * @typedef {{id: string, at: Point, radius: number, stroke?: number, dashed?: boolean, blocksSight?: boolean}} Circle
  * @typedef {{id: string, a: Point, b: Point, stroke?: number, blocksSight?: boolean}} Line
  * @typedef {{id: string, at: Point, width: number, projection: number, radius: number, stroke?: number, direction?: number}} StepIron
- * @typedef {{id: string, at: Point, radius: number, treads: number, startAngle?: number, sweep?: number}} Stair
+ * @typedef {{id: string, at: Point, radius: number, treads: number, direction?: 'up'|'down', startAngle?: number, sweep?: number}} Stair
  * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point}} Model
  * @typedef {Record<string, 'open'|'closed'>} Doors
  * @typedef {{id?: string, at: Point, range: number}} Observer
@@ -262,9 +262,9 @@ const Geometry = (() => {
             return `M ${a.join(" ")} L ${b.join(" ")}`;
           })
           .join(" ");
-        s += `<path data-outline="${esc(r.id)}" d="${d}" fill="none" stroke="#27332e" stroke-width="${r.stroke ?? 0.025}"/>`;
+        s += `<path data-outline="${esc(r.id)}" d="${d}" fill="none" stroke="#27332e" stroke-width="${r.stroke ?? 0.025}"${r.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
       } else
-        s += `<rect data-outline="${esc(r.id)}" x="${r.at[0]}" y="${r.at[1]}" width="${r.width}" height="${r.height}" fill="none" stroke="#27332e" stroke-width="${r.stroke ?? 0.025}"/>`;
+        s += `<rect data-outline="${esc(r.id)}" x="${r.at[0]}" y="${r.at[1]}" width="${r.width}" height="${r.height}" fill="none" stroke="#27332e" stroke-width="${r.stroke ?? 0.025}"${r.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
     }
     for (const o of m.openings.filter(
       (o) =>
@@ -355,7 +355,7 @@ const Geometry = (() => {
         back = [b[0] + 0.18 * Math.sin(angle), b[1] - 0.18 * Math.cos(angle)],
         normal = [Math.cos(angle) * 0.075, Math.sin(angle) * 0.075];
       s += `<path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke="white" stroke-width=".1"/><path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke-width=".035"/><polygon points="${tip.join(",")} ${[back[0] + normal[0], back[1] + normal[1]].join(",")} ${[back[0] - normal[0], back[1] - normal[1]].join(",")}" fill="#27332e" stroke="none"/>`;
-      s += `<rect x="${cx - 1.05}" y="${cy + 0.3}" width=".86" height=".26" fill="white" stroke="none"/><text x="${cx - 0.62}" y="${cy + 0.49}" text-anchor="middle" font-family="sans-serif" font-size=".2" fill="#27332e" stroke="none">DOWN</text></g>`;
+      s += `<rect x="${cx - 1.05}" y="${cy + 0.3}" width=".86" height=".26" fill="white" stroke="none"/><text x="${cx - 0.62}" y="${cy + 0.49}" text-anchor="middle" font-family="sans-serif" font-size=".2" fill="#27332e" stroke="none">${stair.direction === "up" ? "UP" : "DOWN"}</text></g>`;
     }
     for (const l of m.labels)
       s += `<text x="${l.at[0]}" y="${l.at[1]}" font-family="sans-serif" font-size="${l.size ?? 0.4}" text-anchor="middle" dominant-baseline="central" fill="#263c30">${esc(l.text)}</text>`;

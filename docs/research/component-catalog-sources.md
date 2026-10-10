@@ -40,3 +40,7 @@ Before using a reference as a model component, verify the particular asset's phy
 ## Local browsable source catalogue
 
 The [visual catalogue](../../catalog/pearce-symbols/index.html) contains all 2,185 Symbols PNG exports with original files and compact previews. Its [provenance notes](../../catalog/pearce-symbols/README.md) record coverage and calibration limits. A separate [CAD index](../../catalog/pearce-symbols/cad.html) lists all 2,004 named blocks from the actual DXF, which declares inches. Drawing bounds and entity types were extracted; these include helpers and are not verified component footprints. The original DXF is retained losslessly compressed. The catalogue does not change the current building or implement component insertion.
+
+## Referee-supplied classic examples
+
+Two photographed classic layouts provide additional visual references: [observations and design implications](classic-traveller-layout-examples.md). Their symbol legends and drawing hierarchies are recorded separately from the Pearce/Smith source catalogue; their provenance and reuse permissions are not assumed to match it.

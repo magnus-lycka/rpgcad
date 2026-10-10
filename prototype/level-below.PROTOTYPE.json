@@ -1,0 +1,757 @@
+{
+  "wallThickness": 0.15,
+  "origin": [
+    9,
+    4.5
+  ],
+  "gridOrigin": [
+    0,
+    0
+  ],
+  "walls": [
+    {
+      "id": "lift-top",
+      "a": [
+        7.5,
+        6
+      ],
+      "b": [
+        10.5,
+        6
+      ]
+    },
+    {
+      "id": "lift-right",
+      "a": [
+        10.5,
+        6
+      ],
+      "b": [
+        10.5,
+        9
+      ]
+    },
+    {
+      "id": "lift-left",
+      "a": [
+        7.5,
+        6
+      ],
+      "b": [
+        7.5,
+        9
+      ]
+    },
+    {
+      "id": "upper-lift-top",
+      "a": [
+        7.5,
+        3
+      ],
+      "b": [
+        13.5,
+        3
+      ]
+    },
+    {
+      "id": "upper-lift-right",
+      "a": [
+        13.5,
+        3
+      ],
+      "b": [
+        13.5,
+        6
+      ]
+    },
+    {
+      "id": "upper-lift-bottom-extension",
+      "a": [
+        10.5,
+        6
+      ],
+      "b": [
+        13.5,
+        6
+      ]
+    },
+    {
+      "id": "upper-lift-left",
+      "a": [
+        7.5,
+        3
+      ],
+      "b": [
+        7.5,
+        6
+      ]
+    },
+    {
+      "id": "stair-right",
+      "a": [
+        13.5,
+        6
+      ],
+      "b": [
+        13.5,
+        9
+      ]
+    },
+    {
+      "id": "core-bottom",
+      "a": [
+        13.5,
+        9
+      ],
+      "b": [
+        7.5,
+        9
+      ]
+    },
+    {
+      "id": "right-space-outer-wall",
+      "a": [
+        16.5,
+        0
+      ],
+      "b": [
+        16.5,
+        9
+      ]
+    },
+    {
+      "id": "right-space-bottom",
+      "a": [
+        16.5,
+        9
+      ],
+      "b": [
+        13.5,
+        9
+      ]
+    },
+    {
+      "id": "above-cargo-corridor-top",
+      "a": [
+        7.5,
+        0
+      ],
+      "b": [
+        13.5,
+        0
+      ]
+    },
+    {
+      "id": "right-space-top-return",
+      "a": [
+        13.5,
+        0
+      ],
+      "b": [
+        15,
+        0
+      ]
+    },
+    {
+      "id": "tower-access-corridor-left",
+      "a": [
+        15,
+        0
+      ],
+      "b": [
+        15,
+        -8.25
+      ]
+    },
+    {
+      "id": "tower-access-corridor-right",
+      "a": [
+        16.5,
+        0
+      ],
+      "b": [
+        16.5,
+        -8.25
+      ]
+    },
+    {
+      "id": "left-area-top",
+      "a": [
+        0,
+        0
+      ],
+      "b": [
+        7.5,
+        0
+      ]
+    },
+    {
+      "id": "left-area-bottom",
+      "a": [
+        0,
+        9
+      ],
+      "b": [
+        7.5,
+        9
+      ]
+    },
+    {
+      "id": "left-area-left",
+      "a": [
+        0,
+        0
+      ],
+      "b": [
+        0,
+        9
+      ]
+    },
+    {
+      "id": "lower-tower-corridor-left",
+      "a": [
+        0.75,
+        9
+      ],
+      "b": [
+        0.75,
+        17.25
+      ]
+    },
+    {
+      "id": "lower-tower-corridor-right",
+      "a": [
+        2.25,
+        9
+      ],
+      "b": [
+        2.25,
+        17.25
+      ]
+    },
+    {
+      "id": "west-room-corridor-top",
+      "a": [
+        0,
+        1.5
+      ],
+      "b": [
+        -9,
+        1.5
+      ]
+    },
+    {
+      "id": "west-room-corridor-bottom",
+      "a": [
+        0,
+        3
+      ],
+      "b": [
+        -9,
+        3
+      ]
+    },
+    {
+      "id": "west-room-top",
+      "a": [
+        -13.5,
+        0
+      ],
+      "b": [
+        -9,
+        0
+      ]
+    },
+    {
+      "id": "west-room-right",
+      "a": [
+        -9,
+        0
+      ],
+      "b": [
+        -9,
+        4.5
+      ]
+    },
+    {
+      "id": "west-room-bottom",
+      "a": [
+        -9,
+        4.5
+      ],
+      "b": [
+        -13.5,
+        4.5
+      ]
+    },
+    {
+      "id": "west-room-left",
+      "a": [
+        -13.5,
+        4.5
+      ],
+      "b": [
+        -13.5,
+        0
+      ]
+    },
+    {
+      "id": "upper-ammo-top",
+      "a": [
+        14.25,
+        -11.25
+      ],
+      "b": [
+        17.25,
+        -11.25
+      ]
+    },
+    {
+      "id": "upper-ammo-right",
+      "a": [
+        17.25,
+        -11.25
+      ],
+      "b": [
+        17.25,
+        -8.25
+      ]
+    },
+    {
+      "id": "upper-ammo-bottom",
+      "a": [
+        14.25,
+        -8.25
+      ],
+      "b": [
+        17.25,
+        -8.25
+      ]
+    },
+    {
+      "id": "upper-ammo-left",
+      "a": [
+        14.25,
+        -11.25
+      ],
+      "b": [
+        14.25,
+        -8.25
+      ]
+    },
+    {
+      "id": "lower-ammo-top",
+      "a": [
+        0,
+        17.25
+      ],
+      "b": [
+        3,
+        17.25
+      ]
+    },
+    {
+      "id": "lower-ammo-right",
+      "a": [
+        3,
+        17.25
+      ],
+      "b": [
+        3,
+        20.25
+      ]
+    },
+    {
+      "id": "lower-ammo-bottom",
+      "a": [
+        0,
+        20.25
+      ],
+      "b": [
+        3,
+        20.25
+      ]
+    },
+    {
+      "id": "lower-ammo-left",
+      "a": [
+        0,
+        17.25
+      ],
+      "b": [
+        0,
+        20.25
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "lift-door",
+      "wall": "lift-left",
+      "offset": 0.5,
+      "width": 2,
+      "type": "sliding",
+      "thickness": 0.06
+    },
+    {
+      "id": "upper-lift-door",
+      "wall": "upper-lift-left",
+      "offset": 0.18,
+      "width": 2.64,
+      "type": "sliding",
+      "thickness": 0.06
+    },
+    {
+      "id": "stair-platform-door",
+      "wall": "stair-right",
+      "offset": 1.6,
+      "width": 1.3,
+      "type": "single-closed",
+      "thickness": 0.06
+    },
+    {
+      "id": "lower-tower-corridor-entry",
+      "wall": "left-area-bottom",
+      "offset": 0.75,
+      "width": 1.5
+    },
+    {
+      "id": "west-corridor-entry",
+      "wall": "left-area-left",
+      "offset": 1.5,
+      "width": 1.5
+    },
+    {
+      "id": "west-room-entry",
+      "wall": "west-room-right",
+      "offset": 1.5,
+      "width": 1.5
+    },
+    {
+      "id": "upper-ammo-entry",
+      "wall": "upper-ammo-bottom",
+      "offset": 0.75,
+      "width": 1.5
+    },
+    {
+      "id": "lower-ammo-entry",
+      "wall": "lower-ammo-top",
+      "offset": 0.75,
+      "width": 1.5
+    }
+  ],
+  "outlines": [
+    {
+      "id": "lift-car",
+      "at": [
+        7.68,
+        6.18
+      ],
+      "width": 2.64,
+      "height": 2.64,
+      "stroke": 0.025
+    },
+    {
+      "id": "upper-lift-car",
+      "at": [
+        7.68,
+        3.18
+      ],
+      "width": 5.64,
+      "height": 2.64,
+      "stroke": 0.025
+    },
+    {
+      "id": "stair-platform",
+      "at": [
+        12,
+        7.5
+      ],
+      "width": 1.5,
+      "height": 1.5,
+      "stroke": 0.025,
+      "sides": [
+        "top",
+        "left"
+      ]
+    },
+    {
+      "id": "upper-ammo-ceiling-shaft",
+      "at": [
+        15.0,
+        -10.5
+      ],
+      "width": 1.5,
+      "height": 1.5,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "lower-ammo-ceiling-shaft",
+      "at": [
+        0.75,
+        18.0
+      ],
+      "width": 1.5,
+      "height": 1.5,
+      "stroke": 0.025,
+      "dashed": true
+    },
+    {
+      "id": "cargo-top-shelves",
+      "at": [
+        0.4,
+        0.2
+      ],
+      "width": 6,
+      "height": 0.6,
+      "stroke": 0.025
+    },
+    {
+      "id": "cargo-left-shelves",
+      "at": [
+        0.2,
+        3.6
+      ],
+      "width": 0.55,
+      "height": 4.8,
+      "stroke": 0.025
+    },
+    {
+      "id": "cargo-crate-1",
+      "at": [
+        3,
+        4.1
+      ],
+      "width": 1.2,
+      "height": 1.2,
+      "stroke": 0.025
+    },
+    {
+      "id": "cargo-crate-2",
+      "at": [
+        4.4,
+        4.1
+      ],
+      "width": 1.2,
+      "height": 1.2,
+      "stroke": 0.025
+    },
+    {
+      "id": "cargo-crate-3",
+      "at": [
+        3.6,
+        6.8
+      ],
+      "width": 1.2,
+      "height": 1.2,
+      "stroke": 0.025
+    }
+  ],
+  "spiralStairs": [
+    {
+      "id": "stairs-up",
+      "at": [
+        12,
+        7.5
+      ],
+      "radius": 1.35,
+      "treads": 14,
+      "direction": "up",
+      "startAngle": 90,
+      "sweep": 270
+    }
+  ],
+  "labels": [
+    {
+      "id": "upper-ammo-hoist-label",
+      "at": [
+        15.75,
+        -9.75
+      ],
+      "text": "AMMO HOIST",
+      "size": 0.18
+    },
+    {
+      "id": "lower-ammo-hoist-label",
+      "at": [
+        1.5,
+        18.75
+      ],
+      "text": "AMMO HOIST",
+      "size": 0.18
+    }
+  ],
+  "circles": [],
+  "lines": [
+    {
+      "id": "cargo-top-shelves-back",
+      "a": [
+        0.4,
+        0.35
+      ],
+      "b": [
+        6.4,
+        0.35
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-top-shelves-bay-1",
+      "a": [
+        1.9,
+        0.2
+      ],
+      "b": [
+        1.9,
+        0.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-top-shelves-bay-2",
+      "a": [
+        3.4,
+        0.2
+      ],
+      "b": [
+        3.4,
+        0.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-top-shelves-bay-3",
+      "a": [
+        4.9,
+        0.2
+      ],
+      "b": [
+        4.9,
+        0.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-left-shelves-back",
+      "a": [
+        0.35,
+        3.6
+      ],
+      "b": [
+        0.35,
+        8.4
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-left-shelves-bay-1",
+      "a": [
+        0.2,
+        4.8
+      ],
+      "b": [
+        0.75,
+        4.8
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-left-shelves-bay-2",
+      "a": [
+        0.2,
+        6.0
+      ],
+      "b": [
+        0.75,
+        6.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-left-shelves-bay-3",
+      "a": [
+        0.2,
+        7.199999999999999
+      ],
+      "b": [
+        0.75,
+        7.199999999999999
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-1-brace-a",
+      "a": [
+        3,
+        4.1
+      ],
+      "b": [
+        4.2,
+        5.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-1-brace-b",
+      "a": [
+        4.2,
+        4.1
+      ],
+      "b": [
+        3,
+        5.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-2-brace-a",
+      "a": [
+        4.4,
+        4.1
+      ],
+      "b": [
+        5.6000000000000005,
+        5.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-2-brace-b",
+      "a": [
+        5.6000000000000005,
+        4.1
+      ],
+      "b": [
+        4.4,
+        5.3
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-3-brace-a",
+      "a": [
+        3.6,
+        6.8
+      ],
+      "b": [
+        4.8,
+        8.0
+      ],
+      "stroke": 0.018
+    },
+    {
+      "id": "cargo-crate-3-brace-b",
+      "a": [
+        4.8,
+        6.8
+      ],
+      "b": [
+        3.6,
+        8.0
+      ],
+      "stroke": 0.018
+    }
+  ],
+  "stepIrons": []
+}
