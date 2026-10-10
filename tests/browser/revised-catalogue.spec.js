@@ -46,3 +46,12 @@ test("wall door preview reserves only the opening width", async ({
   expect(entries[0].definition.preview.walls[0].b).toEqual([1, 0]);
   expect(entries[0].definition.preview.openings[0].offset).toBe(0);
 });
+
+test("chair placement guidance agrees with its front facing negative local Y", async ({
+  request,
+}) => {
+  const { entries } = await (
+    await request.get("/components?definition=chair%401")
+  ).json();
+  expect(entries[0].definition.placement.anchor).toContain("front faces -y");
+});

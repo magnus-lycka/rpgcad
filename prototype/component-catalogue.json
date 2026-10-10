@@ -76,7 +76,7 @@
         "length": "Positive metre seat depth"
       },
       "placement": {
-        "anchor": "Local [0,0] is the back-left corner; +x across width, front faces +y.",
+        "anchor": "Local [0,0] is the front-left corner; +x across width, front faces -y.",
         "access": "Leave access in front; no collision or snapping enforcement."
       },
       "license": "AGPL-3.0-only",
