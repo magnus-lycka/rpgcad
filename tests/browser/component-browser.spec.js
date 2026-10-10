@@ -80,3 +80,26 @@ test("catalogue previews the attached wall door and ceiling hatch with their set
   await expect(hatch).toContainText("open");
   await expect(hatch).not.toContainText("Preview unavailable");
 });
+
+// Integrated-family characterisation: generic catalogue renderer supports equipment.
+test("catalogue renders console stations and machinery details with usable guidance", async ({
+  page,
+}) => {
+  await page.goto("/components.html");
+  const console = page.getByRole("article", {
+    name: "Crew console",
+    exact: true,
+  });
+  await expect(console.getByRole("img")).toBeVisible();
+  await expect(console.locator("[data-console-seat]")).toHaveCount(1);
+  await expect(console).toContainText("Seat count");
+  await expect(console).not.toContainText("Preview unavailable");
+  const machine = page.getByRole("article", {
+    name: "Service machinery",
+    exact: true,
+  });
+  await expect(machine.getByRole("img")).toBeVisible();
+  await expect(machine.locator("[data-machinery-core]")).toHaveCount(1);
+  await expect(machine).toContainText("Blocks sight: Yes");
+  await expect(machine).not.toContainText("Preview unavailable");
+});
