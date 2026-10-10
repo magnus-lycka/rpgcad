@@ -14,7 +14,7 @@ import pytest
 @pytest.fixture
 def bridge(tmp_path):
     source = Path(__file__).resolve().parents[1] / "prototype"
-    for name in ("server.py", "index.html", "geometry.js", "app.js"):
+    for name in ("server.py", "plan_library.py", "index.html", "geometry.js", "app.js"):
         if (source / name).exists():
             shutil.copy(source / name, tmp_path / name)
     (tmp_path / "model.PROTOTYPE.json").write_text('{"name":"test plan"}')
@@ -319,3 +319,108 @@ def test_different_plans_isolate_models_marks_exploration_and_characters(
         response = bridge.getresponse()
         original = json.loads(response.read())
         assert original.get("characters", original.get("observers")) == []
+
+
+def test_metadata_changes_preserve_ids_and_propagate_edit_dates(multiple_plans):
+    bridge = multiple_plans
+    bridge.request(
+        "PATCH",
+        "/metadata?plan=depot&level=original",
+        json.dumps(
+            {"name": "Cargo deck", "description": "Stores", "tags": ["cargo", "quiet"]}
+        ),
+    )
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    bridge.request("GET", "/plan?plan=depot")
+    response = bridge.getresponse()
+    plan = json.loads(response.read())
+    level = plan["levels"][0]
+    assert (plan["id"], level["id"], level["name"]) == (
+        "depot",
+        "original",
+        "Cargo deck",
+    )
+    assert level["tags"] == ["cargo", "quiet"]
+    assert level["description"] == "Stores"
+    assert level["createdAt"] is None
+    assert plan["createdAt"] is None
+    assert level["editedAt"] == plan["editedAt"]
+    assert level["editedAt"] is not None
+    bridge.request(
+        "PATCH",
+        "/metadata?plan=depot&level=original",
+        json.dumps(
+            {"name": "Cargo deck", "description": "Stores", "tags": ["cargo", "quiet"]}
+        ),
+    )
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    bridge.request("GET", "/plan?plan=depot")
+    response = bridge.getresponse()
+    assert json.loads(response.read()) == plan
+
+
+def test_authored_model_change_updates_only_its_level_and_parent(
+    multiple_plans, tmp_path
+):
+    bridge = multiple_plans
+    bridge.request("GET", "/library")
+    response = bridge.getresponse()
+    original = json.loads(response.read())
+    assert all(p["editedAt"] is None for p in original["plans"])
+    (tmp_path / "depot.json").write_text('{"name":"changed cargo layout"}')
+    bridge.request("GET", "/library")
+    response = bridge.getresponse()
+    changed = json.loads(response.read())
+    building, depot = changed["plans"]
+    assert building["editedAt"] is None
+    assert depot["editedAt"] is not None
+    assert depot["levels"][0]["editedAt"] == depot["editedAt"]
+    assert depot["createdAt"] is None
+    (tmp_path / "depot.json").write_text('{ "name": "changed cargo layout" }\n')
+    bridge.request("GET", "/library")
+    response = bridge.getresponse()
+    assert json.loads(response.read()) == changed
+
+
+def test_authoring_history_survives_play_and_failed_metadata_saves(
+    multiple_plans, tmp_path
+):
+    bridge = multiple_plans
+    path = tmp_path / "library.PROTOTYPE.json"
+    data = json.loads(path.read_text())
+    plan = data["plans"][1]
+    plan.update(
+        createdAt="2020-01-02T03:04:05+00:00", editedAt="2021-01-02T03:04:05+00:00"
+    )
+    plan["levels"][0].update(
+        createdAt="2020-01-03T03:04:05+00:00", editedAt="2021-01-03T03:04:05+00:00"
+    )
+    path.write_text(json.dumps(data))
+    bridge.request("GET", "/plan?plan=depot")
+    response = bridge.getresponse()
+    before = json.loads(response.read())
+    bridge.request("PATCH", "/metadata?plan=depot", json.dumps({"name": ""}))
+    response = bridge.getresponse()
+    assert response.status == 400
+    response.read()
+    bridge.request("GET", "/exploration?plan=depot")
+    response = bridge.getresponse()
+    etag = response.getheader("ETag")
+    exploration = json.loads(response.read())
+    exploration["observers"] = [{"at": [0, 0], "range": 6}]
+    bridge.request(
+        "PUT", "/exploration?plan=depot", json.dumps(exploration), {"If-Match": etag}
+    )
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    bridge.request("GET", "/plan?plan=depot")
+    response = bridge.getresponse()
+    after = json.loads(response.read())
+    for key in ("createdAt", "editedAt"):
+        assert after[key] == before[key]
+        assert after["levels"][0][key] == before["levels"][0][key]

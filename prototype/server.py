@@ -10,6 +10,8 @@ from pathlib import Path
 from threading import Lock
 from urllib.parse import parse_qs, urlsplit
 
+from plan_library import PlanLibrary
+
 ROOT = Path(__file__).resolve().parent
 
 
@@ -31,12 +33,8 @@ def main():
         level.setdefault("name", level["id"])
     legacy["characters"] = "characters.PROTOTYPE.json"
 
-    def library():
-        return (
-            json.loads(library_file.read_text())
-            if library_file.exists()
-            else {"plans": [legacy]}
-        )
+    store = PlanLibrary(ROOT, legacy)
+    library = store.read
 
     def plan_models(plan):
         return {level["id"]: ROOT / level["model"] for level in plan["levels"]}
@@ -344,6 +342,9 @@ def main():
             self.end_headers()
 
         def do_PATCH(self):
+            if urlsplit(self.path).path == "/metadata":
+                self.save_metadata()
+                return
             if urlsplit(self.path).path != "/sketch":
                 self.send_error(404)
                 return
@@ -373,6 +374,32 @@ def main():
                     temporary.write_text(json.dumps(sketch, indent=2) + "\n")
                     temporary.replace(target)
             except (ValueError, TypeError, AttributeError, OSError) as error:
+                self.send_error(400, str(error))
+                return
+            self.send_response(204)
+            self.end_headers()
+
+        def save_metadata(self):
+            plan = self.selected_plan()
+            if plan is None:
+                return
+            query = parse_qs(urlsplit(self.path).query)
+            level = query.get("level", [None])[0]
+            if level and level not in plan_models(plan):
+                self.send_error(404, "Unknown level")
+                return
+            origin = self.headers.get("Origin")
+            if origin and origin != f"http://{self.headers.get('Host')}":
+                self.send_error(403)
+                return
+            try:
+                size = int(self.headers.get("Content-Length", 0))
+                if not 0 < size <= 100_000:
+                    raise ValueError("Invalid metadata size")
+                store.edit_metadata(
+                    plan["id"], level, json.loads(self.rfile.read(size))
+                )
+            except (ValueError, TypeError, OSError) as error:
                 self.send_error(400, str(error))
                 return
             self.send_response(204)
