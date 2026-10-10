@@ -976,3 +976,64 @@ def test_authored_component_validation_preserves_rejected_saves(bridge, tmp_path
     if not case["valid"]:
         assert read_state(bridge, "/model") == before
         assert read_state(bridge, "/library") == metadata
+
+
+@pytest.fixture
+def registered_component_demo(tmp_path):
+    original = {
+        "plans": [
+            {
+                "id": "existing",
+                "name": "Existing plan",
+                "description": "Keep this history",
+                "tags": [],
+                "createdAt": "2020-01-01T00:00:00+00:00",
+                "editedAt": "2021-01-01T00:00:00+00:00",
+                "lastPlayedAt": "2022-01-01T00:00:00+00:00",
+                "levels": [
+                    {
+                        "id": "existing-floor",
+                        "name": "Existing floor",
+                        "description": "",
+                        "tags": [],
+                        "model": "existing.json",
+                        "createdAt": "2020-01-01T00:00:00+00:00",
+                        "editedAt": "2021-01-01T00:00:00+00:00",
+                        "lastPlayedAt": "2022-01-01T00:00:00+00:00",
+                    }
+                ],
+            }
+        ],
+        "modelRevisions": {"existing-history": "keep"},
+    }
+    library = tmp_path / "library.PROTOTYPE.json"
+    library.write_text(json.dumps(original))
+    (tmp_path / "existing.json").write_text(
+        '{"wallThickness":0.15,"walls":[],"openings":[],"labels":[]}'
+    )
+    command = Path(__file__).resolve().parents[1] / "scripts/register_component_demo.py"
+    subprocess.run([sys.executable, str(command), "--root", str(tmp_path)], check=True)
+    registered = json.loads(library.read_text())
+    demo = registered["plans"][-1]
+    path = tmp_path / demo["levels"][0]["model"]
+    model = json.loads(path.read_text())
+    model["components"][0]["settings"] = {"width": 1.4, "length": 2.4}
+    path.write_text(json.dumps(model))
+    return original, demo
+
+
+def test_registered_demo_immediate_edit_dates_on_first_library_read(
+    registered_component_demo, bridge
+):
+    # Registration and direct authored edit both precede the server's first read.
+    original, demo = registered_component_demo
+    current, _ = read_state(bridge, "/library?plan=component-demo&level=demo")
+    assert current["plans"][0] == original["plans"][0]
+    changed = current["plans"][-1]
+    assert changed["editedAt"] == "2035-06-07T08:09:10+00:00"
+    assert changed["levels"][0]["editedAt"] == "2035-06-07T08:09:10+00:00"
+    assert changed["createdAt"] == demo["createdAt"]
+    assert changed["levels"][0]["createdAt"] == demo["levels"][0]["createdAt"]
+    assert changed["lastPlayedAt"] is None
+    assert changed["levels"][0]["lastPlayedAt"] is None
+    assert current["modelRevisions"]["existing-history"] == "keep"

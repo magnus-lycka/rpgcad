@@ -29,7 +29,11 @@ def test_registration_preserves_existing_records_and_refuses_repeat(tmp_path):
     assert result.returncode == 0, result.stderr
     registered = json.loads(library.read_text())
     assert registered["plans"][:-1] == original["plans"]
-    assert registered["modelRevisions"] == original["modelRevisions"]
+    assert registered["modelRevisions"]["old"] == original["modelRevisions"]["old"]
+    assert set(registered["modelRevisions"]) == {
+        "old",
+        json.dumps(["component-demo", "demo"]),
+    }
     assert state.read_text() == '{"observations":["keep"]}'
     demo = registered["plans"][-1]
     assert (demo["id"], demo["name"]) == ("component-demo", "Component demonstration")

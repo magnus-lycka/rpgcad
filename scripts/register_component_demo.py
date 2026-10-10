@@ -7,9 +7,13 @@ import sys
 from pathlib import Path
 
 SOURCE = Path(__file__).resolve().parents[1] / "prototype/demos/component-demo.json"
+# Direct script execution needs the repository root for shared authored hashing.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def register(root: Path):
+    from prototype.plan_library import model_fingerprint
+
     library = root / "library.PROTOTYPE.json"
     original = library.read_bytes()
     data = json.loads(original)
@@ -64,6 +68,10 @@ def register(root: Path):
                 }
             )
             + "\n"
+        )
+        key = json.dumps([plan["id"], plan["levels"][0]["id"]])
+        data.setdefault("modelRevisions", {})[key] = model_fingerprint(
+            directory / "model.json", definitions
         )
         with backup.open("xb") as file:
             file.write(original)
