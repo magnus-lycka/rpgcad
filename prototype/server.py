@@ -67,6 +67,20 @@ def main():
     def exploration_bytes(target):
         return target.read_bytes() if target.exists() else empty_exploration
 
+    def meaningful_exploration(state):
+        """Ignore default serialization and snapshots unused by observation history."""
+        revisions = state["revisions"]
+        return {
+            "observers": state["observers"],
+            "observations": state["observations"],
+            "doors": state.get("doors", {}),
+            "visibilityPaused": state.get("visibilityPaused", False),
+            "revisions": {
+                observation["revision"]: revisions.get(observation["revision"])
+                for observation in state["observations"]
+            },
+        }
+
     def sketch_path(model):
         return model.with_name(model.stem + ".sketch.PROTOTYPE.json")
 
@@ -202,11 +216,8 @@ def main():
                 body = (json.dumps(state, indent=2, allow_nan=False) + "\n").encode()
                 target = exploration_path(model)
                 with exploration_lock:
-                    current_etag = (
-                        '"'
-                        + hashlib.sha256(exploration_bytes(target)).hexdigest()
-                        + '"'
-                    )
+                    previous = exploration_bytes(target)
+                    current_etag = '"' + hashlib.sha256(previous).hexdigest() + '"'
                     if self.headers.get("If-Match") != current_etag:
                         self.send_error(
                             412,
@@ -216,6 +227,18 @@ def main():
                     temporary = target.with_suffix(".tmp")
                     temporary.write_bytes(body)
                     temporary.replace(target)
+                    if meaningful_exploration(
+                        json.loads(previous)
+                    ) != meaningful_exploration(state):
+                        plan = self.selected_plan()
+                        store.record_play(
+                            plan["id"],
+                            {
+                                level["id"]
+                                for level in plan["levels"]
+                                if ROOT / level["model"] == model
+                            },
+                        )
             except (ValueError, TypeError, OSError) as error:
                 self.send_error(400, str(error))
                 return
@@ -284,6 +307,24 @@ def main():
                     temporary = character_file.with_suffix(".tmp")
                     temporary.write_bytes(body)
                     temporary.replace(character_file)
+                    old_state = json.loads(previous)
+                    old_characters = {c["id"]: c for c in old_state["characters"]}
+                    new_characters = {c["id"]: c for c in characters}
+                    affected_levels = set()
+                    for cid in old_characters.keys() | new_characters.keys():
+                        old = old_characters.get(cid)
+                        new = new_characters.get(cid)
+                        if old != new:
+                            affected_levels.update(c["level"] for c in (old, new) if c)
+                    if old_state.get("pov") != state.get("pov"):
+                        for roster, pov in (
+                            (old_characters, old_state.get("pov")),
+                            (new_characters, state.get("pov")),
+                        ):
+                            if pov in roster:
+                                affected_levels.add(roster[pov]["level"])
+                    if affected_levels:
+                        store.record_play(plan["id"], affected_levels)
             except (ValueError, TypeError, OSError, AttributeError) as error:
                 self.send_error(400, str(error))
                 return

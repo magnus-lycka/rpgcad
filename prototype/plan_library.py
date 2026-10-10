@@ -90,3 +90,15 @@ class PlanLibrary:
                 record.update(update)
                 record["editedAt"] = plan["editedAt"] = datetime.now(UTC).isoformat()
                 self.write(data)
+
+    def record_play(self, plan_id, level_ids):
+        """Update only play dates using the latest authoritative records."""
+        with self.lock:
+            data = self.read()
+            plan = next(p for p in data["plans"] if p["id"] == plan_id)
+            played_at = datetime.now(UTC).isoformat()
+            plan["lastPlayedAt"] = played_at
+            for level in plan["levels"]:
+                if level["id"] in level_ids:
+                    level["lastPlayedAt"] = played_at
+            self.write(data)

@@ -142,3 +142,10 @@ The five left-hand cells on the second lower level have bunks, cupboards, desks/
 ## Library metadata and authoring dates, 2026-10-10
 
 The metadata slice uses stable plan/level IDs independently of their names. Browser forms distinguish plan and level tags, and agent PATCH requests update the same record. HTTP checks verify no-op metadata, rejected saves and saved exploration do not change authoring dates. Persisted semantic JSON fingerprints detect direct model-file edits without treating whitespace changes as new authoring. Initial migration fingerprints retain unknown historical dates. Browser checks verify rename persistence, retained drawing links and recent-edit ordering. An existing reload/keyboard test exposed a readiness race: tests must wait for rendered geometry before sending a shortcut after navigation.
+
+
+## Meaningful saved play dates, 2026-10-10
+
+Controlled-date HTTP checks distinguish character/POV changes, movement, range, doors, observation history, reset and resuming reveal from no-op and stale writes. Character transfers affect both source and destination levels. Authoring dates and unrelated plans/levels remain unchanged. Unused model snapshots and explicit default-field serialization are housekeeping, not play.
+
+A browser check exposed an automatic exploration save when model polling loaded changed geometry. Polling now updates current visibility without recording or saving an observation; explicit play actions still record the current model revision. Browser checks cover entry, mode toggles, pan/zoom, temporary GM view, model refresh, reload and return to the library. Tests must await enabled mutation controls before a second POV click, because timestamp persistence extends an existing asynchronous save interval.

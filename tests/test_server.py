@@ -17,6 +17,19 @@ def bridge(tmp_path):
     for name in ("server.py", "plan_library.py", "index.html", "geometry.js", "app.js"):
         if (source / name).exists():
             shutil.copy(source / name, tmp_path / name)
+    (tmp_path / "test-clock").write_text("2035-06-07T08:09:10+00:00")
+    clock_module = tmp_path / "plan_library.py"
+    clock_module.write_text(
+        clock_module.read_text().replace(
+            "from datetime import UTC, datetime",
+            "from datetime import UTC, datetime as RealDatetime\n"
+            "class datetime(RealDatetime):\n"
+            "    @classmethod\n"
+            "    def now(cls, tz=None):\n"
+            "        return RealDatetime.fromisoformat(\n"
+            "            Path(__file__).with_name('test-clock').read_text())",
+        )
+    )
     (tmp_path / "model.PROTOTYPE.json").write_text('{"name":"test plan"}')
     (tmp_path / "exploration.PROTOTYPE.json").write_text(
         json.dumps({"version": 2, "observers": [], "observations": [], "revisions": {}})
@@ -424,3 +437,192 @@ def test_authoring_history_survives_play_and_failed_metadata_saves(
     for key in ("createdAt", "editedAt"):
         assert after[key] == before[key]
         assert after["levels"][0][key] == before["levels"][0][key]
+
+
+@pytest.fixture
+def dated_play(multiple_plans, tmp_path):
+    bridge = multiple_plans
+    bridge.request("GET", "/library")
+    response = bridge.getresponse()
+    data = json.loads(response.read())
+    for plan in data["plans"]:
+        for record in [plan, *plan["levels"]]:
+            record.update(
+                createdAt="2020-01-01T00:00:00+00:00",
+                editedAt="2021-01-01T00:00:00+00:00",
+                lastPlayedAt="2022-01-01T00:00:00+00:00",
+            )
+    (tmp_path / "library.PROTOTYPE.json").write_text(json.dumps(data))
+    return bridge
+
+
+def read_state(bridge, route):
+    bridge.request("GET", route)
+    response = bridge.getresponse()
+    assert response.status == 200
+    return json.loads(response.read()), response.getheader("ETag")
+
+
+def put_state(bridge, route, state, etag):
+    bridge.request("PUT", route, json.dumps(state), {"If-Match": etag})
+    response = bridge.getresponse()
+    result = response.status, response.getheader("ETag")
+    response.read()
+    return result
+
+
+def test_saved_exploration_records_play_without_changing_authoring_dates(
+    dated_play, tmp_path
+):
+    bridge = dated_play
+    before, _ = read_state(bridge, "/library")
+    state, etag = read_state(bridge, "/exploration?level=below")
+    state["doors"] = {"cargo-door": "open"}
+    status, etag = put_state(bridge, "/exploration?level=below", state, etag)
+    assert status == 204
+    after, _ = read_state(bridge, "/library")
+    expected = json.loads(json.dumps(before))
+    expected["plans"][0]["lastPlayedAt"] = "2035-06-07T08:09:10+00:00"
+    expected["plans"][0]["levels"][1]["lastPlayedAt"] = "2035-06-07T08:09:10+00:00"
+    assert after == expected
+    (tmp_path / "test-clock").write_text("2040-01-01T00:00:00+00:00")
+    assert put_state(bridge, "/exploration?level=below", state, etag)[0] == 204
+    state["visibilityPaused"] = False
+    assert put_state(bridge, "/exploration?level=below", state, '"stale"')[0] == 412
+    assert read_state(bridge, "/library")[0] == expected
+
+
+def test_character_saves_record_only_affected_levels_including_transfer(
+    dated_play, tmp_path
+):
+    bridge = dated_play
+    before, _ = read_state(bridge, "/library")
+    state, etag = read_state(bridge, "/characters")
+    state["characters"] = [
+        {
+            "id": "pc",
+            "name": "Scout",
+            "kind": "pc",
+            "level": "below",
+            "at": [1, 2],
+            "range": 6,
+        },
+        {
+            "id": "npc",
+            "name": "Guard",
+            "kind": "npc",
+            "level": "original",
+            "at": [0, 0],
+            "range": 3,
+        },
+    ]
+    state["pov"] = "pc"
+    assert put_state(bridge, "/characters", state, etag)[0] == 204
+    expected = json.loads(json.dumps(before))
+    expected["plans"][0]["lastPlayedAt"] = "2035-06-07T08:09:10+00:00"
+    for level in expected["plans"][0]["levels"]:
+        level["lastPlayedAt"] = "2035-06-07T08:09:10+00:00"
+    assert read_state(bridge, "/library")[0] == expected
+    state, etag = read_state(bridge, "/characters")
+    (tmp_path / "test-clock").write_text("2040-01-01T00:00:00+00:00")
+    assert put_state(bridge, "/characters", state, etag)[0] == 204
+    assert read_state(bridge, "/library")[0] == expected
+    state["characters"][0]["at"] = [4, 5]
+    status, etag = put_state(bridge, "/characters", state, etag)
+    assert status == 204
+    expected["plans"][0]["lastPlayedAt"] = "2040-01-01T00:00:00+00:00"
+    expected["plans"][0]["levels"][1]["lastPlayedAt"] = "2040-01-01T00:00:00+00:00"
+    assert read_state(bridge, "/library")[0] == expected
+    state["characters"][0]["level"] = "original"
+    (tmp_path / "test-clock").write_text("2041-01-01T00:00:00+00:00")
+    assert put_state(bridge, "/characters", state, etag)[0] == 204
+    expected["plans"][0]["lastPlayedAt"] = "2041-01-01T00:00:00+00:00"
+    for level in expected["plans"][0]["levels"]:
+        level["lastPlayedAt"] = "2041-01-01T00:00:00+00:00"
+    assert read_state(bridge, "/library")[0] == expected
+    (tmp_path / "test-clock").write_text("2042-01-01T00:00:00+00:00")
+    state["characters"][0]["range"] = 12
+    assert put_state(bridge, "/characters", state, '"stale"')[0] == 412
+    assert read_state(bridge, "/library")[0] == expected
+
+
+def test_exploration_defaults_and_unused_revision_cache_are_not_play(dated_play):
+    bridge = dated_play
+    before, _ = read_state(bridge, "/library")
+    state, etag = read_state(bridge, "/exploration")
+    state.update(doors={}, visibilityPaused=False)
+    state["revisions"]["unused-model"] = {"name": "cached geometry"}
+    assert put_state(bridge, "/exploration", state, etag)[0] == 204
+    assert read_state(bridge, "/library")[0] == before
+
+
+def test_play_changes_characterise_pov_range_and_reset_resume_dates(
+    dated_play, tmp_path
+):
+    bridge = dated_play
+    state, etag = read_state(bridge, "/exploration?level=below")
+    for year, change in (
+        (
+            2036,
+            {
+                "observers": [{"id": "party", "at": [1, 2], "range": 6}],
+                "visibilityPaused": False,
+            },
+        ),
+        (2037, {"observers": [{"id": "party", "at": [1, 2], "range": 12}]}),
+        (
+            2038,
+            {
+                "observations": [
+                    {"at": [1, 2], "range": 12, "doors": {}, "revision": "room"}
+                ],
+                "revisions": {"room": {"name": "remembered room"}},
+            },
+        ),
+        (2039, {"observations": [], "revisions": {}, "visibilityPaused": True}),
+        (2040, {"visibilityPaused": False}),
+    ):
+        timestamp = f"{year}-01-01T00:00:00+00:00"
+        (tmp_path / "test-clock").write_text(timestamp)
+        state.update(change)
+        status, etag = put_state(bridge, "/exploration?level=below", state, etag)
+        assert status == 204
+        plan, _ = read_state(bridge, "/plan")
+        assert plan["lastPlayedAt"] == timestamp
+        assert plan["levels"][1]["lastPlayedAt"] == timestamp
+        assert plan["levels"][0]["lastPlayedAt"] == "2022-01-01T00:00:00+00:00"
+    state, etag = read_state(bridge, "/characters")
+    state["characters"] = [
+        {
+            "id": "scout",
+            "name": "Scout",
+            "kind": "pc",
+            "level": "below",
+            "at": [0, 0],
+            "range": 6,
+        },
+        {
+            "id": "pilot",
+            "name": "Pilot",
+            "kind": "pc",
+            "level": "original",
+            "at": [0, 0],
+            "range": 6,
+        },
+    ]
+    state["pov"] = "scout"
+    status, etag = put_state(bridge, "/characters", state, etag)
+    assert status == 204
+    state["pov"] = "pilot"
+    (tmp_path / "test-clock").write_text("2041-01-01T00:00:00+00:00")
+    status, etag = put_state(bridge, "/characters", state, etag)
+    assert status == 204
+    plan, _ = read_state(bridge, "/plan")
+    assert plan["lastPlayedAt"] == "2041-01-01T00:00:00+00:00"
+    assert [level["lastPlayedAt"] for level in plan["levels"]] == [
+        "2041-01-01T00:00:00+00:00"
+    ] * 2
+    (tmp_path / "test-clock").write_text("2042-01-01T00:00:00+00:00")
+    state["characters"].reverse()
+    assert put_state(bridge, "/characters", state, etag)[0] == 204
+    assert read_state(bridge, "/plan")[0] == plan
