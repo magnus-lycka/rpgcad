@@ -173,5 +173,32 @@ so they do not resolve remembered appearances through a later catalogue.
 
 Portable Geometry resolves the same instances for drawing, bounds, library
 thumbnails and 1:75 output alongside existing primitives. Furniture remains
-nonblocking in this slice. Component-specific sight properties, browse/search UI,
+nonblocking in this slice. Component-specific sight properties,
 custom geometry and assemblies are later tickets. No live plan has been converted.
+
+### Usable component catalogue
+
+Open **Component catalogue** from the plan library, or `/components.html` directly.
+Search names, aliases and tags to inspect original rendered previews, definition keys,
+variants, proposed metre dimensions, default/supported settings, placement/access
+advice and artwork/reference provenance. Each preview uses the saved-plan Geometry
+renderer on the permanent 1.5 m grid and fits its card independently. Select a name
+for a stable `/components.html?definition=bed%401` entry link. Continue placement
+through chat and saved drawing marks; browsing does not place or alter instances.
+
+Agents can read `GET /components?q=loose%20chair&limit=12&offset=0` without loading
+the full catalogue. The JSON result contains `total`, `offset`, `limit` and bounded
+`entries` of `{key, match, definition}`. Limits are 1–50 (default 12); offset is
+nonnegative. `GET /components?definition=bed%401` selects one exact definition,
+including all metadata and geometry needed to copy it into the plan-owned definitions.
+Unknown exact keys return 404, invalid pagination returns 400, no search matches
+return an empty page. Matches distinguish `exact-name`, `exact-alias`, `candidate`
+and `related-type`; aliases refer to one definition, while `related` contains keys
+of distinct alternatives and never establishes equivalence. Only explicitly listed
+relationships extend search results, by one step.
+
+New definitions use the same path. Optional `preview` metadata is a normal Geometry
+model containing the definition's preview instance and any required attachment wall
+or opening; the browser supplies its `componentDefinitions`. Otherwise it renders
+one default instance at `[0,0]` with zero rotation. Catalogue definitions and artwork
+are original AGPL v3; CC BY-NC reference attribution does not license imported artwork.

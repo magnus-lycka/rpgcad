@@ -2,6 +2,7 @@
   "entry": [
     "prototype/app.js",
     "prototype/library.js",
+    "prototype/components.js",
     "tests/*.test.js",
     "tests/browser/*.spec.js"
   ],

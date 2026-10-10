@@ -202,3 +202,27 @@ primitive model responses remain compatible. The initial proposed catalogue
 footprints are 0.9 × 2 m for a bed and 0.5 × 0.5 m for a chair; they are not calibrated
 Pearce source dimensions or universal Traveller measurements. Referee evaluation,
 additional component semantics and catalogue UI remain subsequent work.
+
+## Usable component discovery, ticket #12
+
+The separate catalogue page renders original component previews through the same
+Geometry path used by plans, rather than showing noncommercial source images.
+Desktop and 390 px mobile views were inspected, including full cards and expanded
+provenance. A separate disposable drawing confirmed the same bed/chair details at
+90/30 degrees and deliberately off-grid positions; the fullscreen drawing gained
+no catalogue controls. Preview cards fit independently, so their explicit metre
+footprints and 1.5 m grid matter more than comparing screen sizes.
+
+Names, aliases and tags support bounded agent JSON discovery. An exact alias for a
+pilot seat returned that definition and an explicitly related acceleration couch
+as distinct matches in an HTTP fixture, preserving their separate aliases. Named
+entry links and search survive reload. No-match search is explicit. The supported
+settings, proposed dimension status, local anchor/access guidance and original
+artwork license remain visible; CC BY-NC reference attribution is available in
+expanded provenance. Browsing does not place instances or consume drawing marks.
+
+A related type is an explicitly listed definition key, not an inferred synonym.
+Attachment-dependent definitions can supply a normal preview model with their
+wall/opening; later catalogue entries use the same page and JSON path. This does
+not validate every proposed symbol, dimension or variation: the separate Referee
+viability evaluation and catalogue-expansion gate remain pending.

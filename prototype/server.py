@@ -10,6 +10,7 @@ from pathlib import Path
 from threading import Lock
 from urllib.parse import parse_qs, urlsplit
 
+from component_catalogue import search_catalogue
 from plan_library import PlanLibrary, utc_now
 
 ROOT = Path(__file__).resolve().parent
@@ -143,50 +144,78 @@ def main(*, clock=utc_now):
                 "/library.html",
                 "/library.js",
                 "/library-search.js",
+                "/components",
+                "/components.html",
+                "/components.js",
                 "/app.js",
                 "/geometry.js",
             ):
                 self.send_error(404)
                 return
             try:
-                plan = self.selected_plan()
-                if plan is None:
-                    return
-                model = self.selected_model()
-                if model is None:
-                    return
-                source = {
-                    "/": ROOT / "index.html",
-                    "/app.js": ROOT / "app.js",
-                    "/geometry.js": ROOT / "geometry.js",
-                    "/model": model,
-                    "/exploration": exploration_path(model),
-                    "/sketch": sketch_path(model),
-                    "/characters": character_path(plan),
-                    "/library": library_file,
-                    "/library.html": ROOT / "library.html",
-                    "/library.js": ROOT / "library.js",
-                    "/library-search.js": ROOT / "library-search.js",
-                    "/plan": plan_file,
-                }[route]
-                body = (
-                    (source.read_bytes() if source.exists() else empty_characters)
-                    if route == "/characters"
-                    else json.dumps(library()).encode()
-                    if route == "/library"
-                    else json.dumps(plan).encode()
-                    if route == "/plan"
-                    else json.dumps(authored_model(model, plan)).encode()
-                    if route == "/model"
-                    else exploration_bytes(source)
-                    if route == "/exploration"
-                    else b"null"
-                    if route == "/sketch" and not source.exists()
-                    else source.read_bytes()
-                )
+                if route == "/components":
+                    body = json.dumps(
+                        search_catalogue(
+                            ROOT / "component-catalogue.json",
+                            parse_qs(urlsplit(self.path).query),
+                        )
+                    ).encode()
+                elif route in ("/components.html", "/components.js"):
+                    body = (ROOT / route[1:]).read_bytes()
+                else:
+                    body = self.plan_response(route)
+                    if body is None:
+                        return
+            except ValueError:
+                self.send_error(400, "Invalid catalogue request")
+                return
+            except KeyError:
+                self.send_error(404, "Unknown component definition")
+                return
             except OSError as error:
                 self.send_error(503, str(error))
                 return
+            self.send_body(route, body)
+
+        def plan_response(self, route):
+            plan = self.selected_plan()
+            if plan is None:
+                return
+            model = self.selected_model()
+            if model is None:
+                return
+            source = {
+                "/": ROOT / "index.html",
+                "/app.js": ROOT / "app.js",
+                "/geometry.js": ROOT / "geometry.js",
+                "/model": model,
+                "/exploration": exploration_path(model),
+                "/sketch": sketch_path(model),
+                "/characters": character_path(plan),
+                "/library": library_file,
+                "/library.html": ROOT / "library.html",
+                "/library.js": ROOT / "library.js",
+                "/library-search.js": ROOT / "library-search.js",
+                "/plan": plan_file,
+            }[route]
+            body = (
+                (source.read_bytes() if source.exists() else empty_characters)
+                if route == "/characters"
+                else json.dumps(library()).encode()
+                if route == "/library"
+                else json.dumps(plan).encode()
+                if route == "/plan"
+                else json.dumps(authored_model(model, plan)).encode()
+                if route == "/model"
+                else exploration_bytes(source)
+                if route == "/exploration"
+                else b"null"
+                if route == "/sketch" and not source.exists()
+                else source.read_bytes()
+            )
+            return body
+
+        def send_body(self, route, body):
             etag = '"' + hashlib.sha256(body).hexdigest() + '"'
             if self.headers.get("If-None-Match") == etag:
                 self.send_response(304)
@@ -199,7 +228,7 @@ def main(*, clock=utc_now):
                     "text/javascript; charset=utf-8"
                     if route.endswith(".js")
                     else "text/html; charset=utf-8"
-                    if route in ("/", "/library.html")
+                    if route in ("/", "/library.html", "/components.html")
                     else "application/json"
                 ),
             )

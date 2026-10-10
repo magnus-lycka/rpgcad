@@ -12,11 +12,21 @@ import pytest
 
 
 @pytest.fixture
-def bridge(tmp_path):
+def bridge(tmp_path, request):
     source = Path(__file__).resolve().parents[1] / "prototype"
-    for name in ("server.py", "plan_library.py", "index.html", "geometry.js", "app.js"):
+    for name in (
+        "server.py",
+        "plan_library.py",
+        "component_catalogue.py",
+        "component-catalogue.json",
+        "index.html",
+        "geometry.js",
+        "app.js",
+    ):
         if (source / name).exists():
             shutil.copy(source / name, tmp_path / name)
+    if hasattr(request, "param"):
+        (tmp_path / "component-catalogue.json").write_text(json.dumps(request.param))
     (tmp_path / "test-clock").write_text("2035-06-07T08:09:10+00:00")
     launcher = tmp_path / "launch_server.py"
     launcher.write_text(
@@ -866,3 +876,80 @@ def test_immediate_duplicate_model_edit_updates_level_and_plan_dates(
     assert changed["levels"][1] == copy["levels"][1]
     assert changed["createdAt"] == copy["createdAt"]
     assert changed["lastPlayedAt"] is None
+
+
+@pytest.mark.parametrize(
+    "bridge",
+    [
+        {
+            "license": "AGPL-3.0-only",
+            "definitions": {
+                "pilot-seat@1": {
+                    "id": "pilot-seat",
+                    "version": 1,
+                    "name": "Pilot seat",
+                    "family": "chair",
+                    "aliases": ["flight chair"],
+                    "tags": ["seating"],
+                    "related": ["acceleration-couch@1"],
+                },
+                "acceleration-couch@1": {
+                    "id": "acceleration-couch",
+                    "version": 1,
+                    "name": "Acceleration couch",
+                    "family": "chair",
+                    "aliases": ["G/couch"],
+                    "tags": ["seating"],
+                    "related": ["pilot-seat@1"],
+                },
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_agent_search_distinguishes_aliases_from_related_types(bridge):
+    bridge.request("GET", "/components?q=flight%20chair")
+    response = bridge.getresponse()
+    assert response.status == 200
+    result = json.loads(response.read())
+    assert [(entry["key"], entry["match"]) for entry in result["entries"]] == [
+        ("pilot-seat@1", "exact-alias"),
+        ("acceleration-couch@1", "related-type"),
+    ]
+    assert result["entries"][1]["definition"]["aliases"] == ["G/couch"]
+
+
+# Characterisation of the bounded discovery implemented with the first browser slice.
+def test_agent_search_is_paged_and_selected_definitions_keep_authored_metadata(bridge):
+    bridge.request("GET", "/components?q=furniture&limit=1")
+    response = bridge.getresponse()
+    assert response.status == 200
+    first = json.loads(response.read())
+    assert first["total"] >= 2
+    assert [entry["key"] for entry in first["entries"]] == ["chair@1"]
+    bridge.request("GET", "/components?q=furniture&limit=1&offset=1")
+    response = bridge.getresponse()
+    second = json.loads(response.read())
+    assert [entry["key"] for entry in second["entries"]] == ["bed@1"]
+    bridge.request("GET", "/components?definition=bed%401")
+    response = bridge.getresponse()
+    selected = json.loads(response.read())["entries"][0]
+    assert selected["definition"]["defaults"] == {"width": 0.9, "length": 2}
+    assert selected["definition"]["dimensions"]["status"] == "proposed"
+    assert selected["definition"]["license"] == "AGPL-3.0-only"
+    assert "CC BY-NC 4.0" in selected["definition"]["provenance"]["reference"]
+
+
+@pytest.mark.parametrize("query", ["limit=0", "limit=51", "offset=-1", "offset=bad"])
+def test_agent_discovery_rejects_invalid_page_requests(bridge, query):
+    bridge.request("GET", "/components?" + query)
+    response = bridge.getresponse()
+    assert response.status == 400
+    response.read()
+
+
+def test_unknown_component_identifier_is_explicit(bridge):
+    bridge.request("GET", "/components?definition=unknown%401")
+    response = bridge.getresponse()
+    assert response.status == 404
+    response.read()

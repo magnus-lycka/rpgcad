@@ -22,6 +22,7 @@ test("GM can add named PCs and NPCs and retain them after reloading", async ({
   await page.keyboard.press("Shift+F");
   await expect(page.locator("[data-character]")).toHaveCount(2);
   await page.reload();
+  await expect(page.locator("#viewport")).toContainText("Ada");
   await page.keyboard.press("Shift+F");
   await expect(page.locator("[data-character]")).toHaveCount(2);
   await expect(page.locator("#viewport")).toContainText("Ada");

@@ -23,6 +23,10 @@ def main():
             "library.html",
             "library.js",
             "library-search.js",
+            "component_catalogue.py",
+            "component-catalogue.json",
+            "components.html",
+            "components.js",
         ):
             shutil.copy(ROOT / "prototype" / name, target / name)
         shutil.copy(

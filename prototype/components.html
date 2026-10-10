@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RPGCAD · Component catalogue</title>
+  <style>
+    body {
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      max-width: 90rem;
+      background: #f1f5fa;
+      color: #27332e;
+      font-family: system-ui, sans-serif;
+    }
+    h1 {
+      margin-bottom: 0.4rem;
+    }
+    a {
+      color: #244c63;
+    }
+    input,
+    button {
+      font: inherit;
+      padding: 0.6rem;
+    }
+    input {
+      display: block;
+      width: min(32rem, 95%);
+      margin-top: 0.4rem;
+    }
+    #cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr));
+      gap: 1.25rem;
+    }
+    article {
+      background: white;
+      border: 1px solid #ccd4da;
+      border-radius: 0.4rem;
+      padding: 1.25rem;
+      overflow-wrap: anywhere;
+    }
+    h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+    }
+    svg {
+      width: 100%;
+      height: 210px;
+      background: white;
+    }
+    dl {
+      margin: 0;
+    }
+    dt {
+      font-weight: 600;
+      margin-top: 0.75rem;
+    }
+    dd {
+      margin: 0.2rem 0 0;
+      line-height: 1.5;
+    }
+    summary {
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    #pagination {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    #pagination[hidden] {
+      display: none;
+    }
+    .caption {
+      font-size: 0.85rem;
+      color: #55615b;
+    }
+  </style>
+  <nav><a href="/library.html">Plan library</a></nav>
+  <h1>Component catalogue</h1>
+  <p>
+    Original reusable drawings. Choose an identifier here, then describe its
+    placement in chat with your saved drawing marks.
+  </p>
+  <label
+    >Find components<input
+      id="search"
+      type="search"
+      placeholder="Name, alias or tag"
+  /></label>
+  <p class="caption">
+    Aliases name the same definition. Related types stay distinct; a similar
+    name does not make them interchangeable.
+  </p>
+  <p id="status" role="status"></p>
+  <section id="cards" aria-label="Components"></section>
+  <nav id="pagination" aria-label="Catalogue pages" hidden>
+    <button id="previous">Previous</button><button id="next">Next</button>
+  </nav>
+  <script type="module" src="/components.js"></script>
+</html>
