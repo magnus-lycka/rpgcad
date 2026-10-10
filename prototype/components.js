@@ -27,10 +27,12 @@ function readableKey(key) {
 /** @param {unknown} value @returns {string} */
 function description(value) {
   if (Array.isArray(value)) return value.map(description).join(", ");
-  if (value && typeof value === "object")
+  if (value && typeof value === "object") {
+    if (!Object.keys(value).length) return "None";
     return Object.entries(value)
       .map(([key, item]) => `${readableKey(key)}: ${description(item)}`)
       .join("; ");
+  }
   if (typeof value === "boolean") return value ? "Yes" : "No";
   return String(value ?? "Unspecified");
 }

@@ -67,6 +67,7 @@ test("catalogue previews the attached wall door and ceiling hatch with their set
   await expect(door.getByRole("img")).toBeVisible();
   await expect(door.locator("[data-wall]")).toHaveCount(2);
   await expect(door).toContainText("door@1");
+  await expect(door.getByText("None", { exact: true })).toBeVisible();
   await expect(door).not.toContainText("Preview unavailable");
   const hatch = page.getByRole("article", {
     name: "Ceiling hatch",
