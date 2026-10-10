@@ -9,7 +9,7 @@
  * @typedef {{id: string, at: Point, width: number, projection: number, radius: number, stroke?: number, direction?: number}} StepIron
  * @typedef {{id: string, at: Point, radius: number, treads: number, direction?: 'up'|'down', startAngle?: number, sweep?: number}} Stair
  * @typedef {{blocksPassage?:boolean,frontClearance?:number}} ComponentAccess
- * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number}, details:{headDepth?:number,leafThickness?:number}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
+ * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number,direction?:string}, details:{headDepth?:number,leafThickness?:number,profile?:string}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
  * @typedef {{id:string, definition:string, at?:Point, rotation?:number, opening?:string, blocksSight?:boolean, access?:ComponentAccess, settings?:{width?:number,length?:number,direction?:string,state?:string,seatCount?:number}}} ComponentInstance
  * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point, components?:ComponentInstance[], componentDefinitions?:Record<string, ComponentDefinition>}} Model
  * @typedef {Record<string, 'open'|'closed'>} Doors
@@ -174,11 +174,15 @@ const Geometry = (() => {
           "machinery",
           "door",
           "ceiling-hatch",
+          "iris-valve",
         ].includes(definition.family) ||
         !positive(definition.defaults?.width) ||
         !positive(definition.defaults?.length) ||
-        !(definition.family === "ceiling-hatch" || definition.family === "door"
-          ? definition.family === "ceiling-hatch" ||
+        (definition.defaults.direction !== undefined &&
+          !["up", "down", "up-down"].includes(definition.defaults.direction)) ||
+        !(["ceiling-hatch", "iris-valve"].includes(definition.family) ||
+        definition.family === "door"
+          ? ["ceiling-hatch", "iris-valve"].includes(definition.family) ||
             positive(definition.details?.leafThickness)
           : positive(definition.details?.headDepth)) ||
         typeof definition.blocksSight !== "boolean" ||
@@ -199,6 +203,7 @@ const Geometry = (() => {
           "machinery",
           "door",
           "ceiling-hatch",
+          "iris-valve",
         ].includes(definition.family) ||
         (definition.family !== "door" &&
           (!point(instance.at) || !finite(instance.rotation))) ||
@@ -217,7 +222,7 @@ const Geometry = (() => {
         Object.keys(instance.settings ?? {}).some(
           (key) =>
             !(
-              definition.family === "ceiling-hatch"
+              ["ceiling-hatch", "iris-valve"].includes(definition.family)
                 ? ["width", "length", "direction", "state"]
                 : definition.family === "console"
                   ? ["seatCount"]
@@ -231,9 +236,11 @@ const Geometry = (() => {
             (m.components ?? []).filter((i) => i.opening === instance.opening)
               .length > 1 ||
             Object.keys(instance.settings ?? {}).length > 0
-          : definition.family === "ceiling-hatch"
+          : ["ceiling-hatch", "iris-valve"].includes(definition.family)
             ? !["up", "down", "up-down"].includes(
-                instance.settings?.direction ?? "up",
+                instance.settings?.direction ??
+                  definition.defaults.direction ??
+                  "up",
               ) ||
               !["open", "closed"].includes(instance.settings?.state ?? "closed")
             : !positive(definition.details.headDepth))
@@ -241,6 +248,31 @@ const Geometry = (() => {
         fail(`Invalid component ${instance.id}`);
     }
     return m;
+  }
+  // A shared contour convention describes vertical access, not its open state.
+  function verticalAccessSymbol(family, width, length, direction) {
+    const contour = (inset, name, dashed) => {
+      const w = width - 2 * inset,
+        h = length - 2 * inset;
+      const style = `data-access-contour="${name}" stroke-dasharray="${dashed ? ".1 .07" : "none"}"`;
+      if (family === "iris-valve")
+        return `<ellipse ${style} cx="${width / 2}" cy="${length / 2}" rx="${w / 2}" ry="${h / 2}"/>`;
+      // Joined hinge and round leaf: omit the arc covered by the hinge.
+      const cx = width / 2,
+        cy = inset + h * 0.56,
+        rx = w * 0.48,
+        ry = h * 0.42;
+      const left = cx - rx * 0.22,
+        right = cx + rx * 0.22,
+        top = cy - ry * Math.sqrt(1 - 0.22 ** 2);
+      return `<path ${style} data-hatch-hinge="joined" d="M ${left} ${top} V ${inset + h * 0.04} H ${right} V ${top} A ${rx} ${ry} 0 1 1 ${left} ${top} Z"/>`;
+    };
+    let svg = contour(0, "outer", direction === "up");
+    if (direction === "up-down")
+      svg += contour(Math.min(width, length) * 0.09, "inner", true);
+    if (family === "ceiling-hatch")
+      svg += `<circle data-hatch-handle="round" cx="${width / 2}" cy="${length * 0.56}" r="${Math.min(width, length) * 0.065}"/>`;
+    return svg;
   }
   // Wall/offset/width remain authoritative on the existing opening.
   function accessOpening(m, opening) {
@@ -542,10 +574,23 @@ const Geometry = (() => {
         m,
         instance,
       );
-      if (family === "ceiling-hatch") {
-        const direction = instance.settings?.direction ?? "up",
+      if (["ceiling-hatch", "iris-valve"].includes(family)) {
+        const definition = m.componentDefinitions?.[instance.definition];
+        if (!definition)
+          throw Error(`Unknown component definition ${instance.definition}`);
+        const direction =
+            instance.settings?.direction ??
+            definition.defaults.direction ??
+            "up",
           state = instance.settings?.state ?? "closed";
-        s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})"><circle cx="${width / 2}" cy="${length / 2}" r="${Math.min(width, length) / 2}" fill="none" stroke="#27332e" stroke-width=".025" stroke-dasharray=".1 .07"/><text x="${width / 2}" y="${length / 2}" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size=".16" fill="#27332e">${direction.toUpperCase()}</text></g>`;
+        if (
+          family === "iris-valve" ||
+          definition.details.profile === "referee-2026-10-11"
+        )
+          s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025">${verticalAccessSymbol(family, width, length, direction)}</g>`;
+        else {
+          s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})"><circle cx="${width / 2}" cy="${length / 2}" r="${Math.min(width, length) / 2}" fill="none" stroke="#27332e" stroke-width=".025" stroke-dasharray=".1 .07"/><text x="${width / 2}" y="${length / 2}" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size=".16" fill="#27332e">${direction.toUpperCase()}</text></g>`;
+        }
         continue;
       }
       s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025"><rect width="${width}" height="${length}"/>`;
@@ -679,8 +724,9 @@ const Fog = (() => {
     for (const instance of m.components ?? [])
       if (
         !instance.opening &&
-        m.componentDefinitions?.[instance.definition]?.family !==
-          "ceiling-hatch" &&
+        !["ceiling-hatch", "iris-valve"].includes(
+          m.componentDefinitions?.[instance.definition]?.family ?? "",
+        ) &&
         Geometry.componentSemantics(m, instance).blocksSight === true
       )
         polygons.push(Geometry.componentPoints(m, instance));

@@ -74,7 +74,15 @@ def validate_components(model, definitions):
             not isinstance(defaults, dict)
             or not isinstance(details, dict)
             or definition.get("family")
-            not in ("bed", "chair", "console", "machinery", "door", "ceiling-hatch")
+            not in (
+                "bed",
+                "chair",
+                "console",
+                "machinery",
+                "door",
+                "ceiling-hatch",
+                "iris-valve",
+            )
             or not isinstance(definition.get("name"), str)
             or not definition.get("name")
             or key != f"{definition.get('id')}@{definition.get('version')}"
@@ -82,6 +90,10 @@ def validate_components(model, definitions):
             or definition["version"] < 1
             or not positive(defaults.get("width"))
             or not positive(defaults.get("length"))
+            or (
+                "direction" in defaults
+                and defaults["direction"] not in ("up", "down", "up-down")
+            )
             or (
                 definition.get("family") in ("bed", "chair", "console", "machinery")
                 and not positive(details.get("headDepth"))
@@ -152,7 +164,8 @@ def validate_components(model, definitions):
             or set(settings)
             - (
                 {"width", "length", "direction", "state"}
-                if definition and definition.get("family") == "ceiling-hatch"
+                if definition
+                and definition.get("family") in ("ceiling-hatch", "iris-valve")
                 else {"seatCount"}
                 if definition.get("family") == "console"
                 else {"width", "length"}

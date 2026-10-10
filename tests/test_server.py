@@ -1037,3 +1037,39 @@ def test_registered_demo_immediate_edit_dates_on_first_library_read(
     assert changed["lastPlayedAt"] is None
     assert changed["levels"][0]["lastPlayedAt"] is None
     assert current["modelRevisions"]["existing-history"] == "keep"
+
+
+def test_vertical_access_families_retain_direction_and_reject_invalid_defaults(bridge):
+    model = {
+        "wallThickness": 0.2,
+        "walls": [],
+        "openings": [],
+        "labels": [],
+        "components": [],
+        "componentDefinitions": {},
+    }
+    for family in ("ceiling-hatch", "iris-valve"):
+        for direction in ("up", "down", "up-down"):
+            key = f"{family}-{direction}@1"
+            model["componentDefinitions"][key] = {
+                "id": f"{family}-{direction}",
+                "version": 1,
+                "name": key,
+                "family": family,
+                "defaults": {"width": 1, "length": 1, "direction": direction},
+                "details": {"profile": "referee-2026-10-11"},
+                "blocksSight": False,
+            }
+            model["components"].append(
+                {"id": key, "definition": key, "at": [0, 0], "rotation": 0}
+            )
+    assert put_state(bridge, "/model", model, "")[0] == 204
+    saved = read_state(bridge, "/model")
+    assert saved[0]["componentDefinitions"] == model["componentDefinitions"]
+    metadata = read_state(bridge, "/library")
+    model["componentDefinitions"]["iris-valve-down@1"]["defaults"]["direction"] = (
+        "sideways"
+    )
+    assert put_state(bridge, "/model", model, saved[1] or "")[0] == 400
+    assert read_state(bridge, "/model") == saved
+    assert read_state(bridge, "/library") == metadata
