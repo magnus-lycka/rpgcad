@@ -280,3 +280,9 @@ centre farther towards the rear than the ends; a curve alone does not establish
 the right orientation. The console displays were also widened from 0.56 to 0.76 m
 per station, within the same 0.9 m station pitch. Both corrections have failing-first
 Geometry tests and were refreshed in the live demonstration.
+
+The hatch hinge was widened to 40% of its footprint width. In the through-hatch,
+the dashed hinge is inset from each side of the solid hinge by the same clearance
+as the inner contour. Scaling the hinge only by the inner circle radius gave
+insufficient side separation. A worked one-metre Geometry test checks the 0.40 m
+outer hinge and 0.22 m inner hinge with 0.09 m clearance at each side.

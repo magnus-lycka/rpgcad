@@ -262,9 +262,10 @@ const Geometry = (() => {
         cy = inset + h * 0.56,
         rx = w * 0.48,
         ry = h * 0.42;
-      const left = cx - rx * 0.22,
-        right = cx + rx * 0.22,
-        top = cy - ry * Math.sqrt(1 - 0.22 ** 2);
+      const hingeHalfWidth = width * 0.2 - inset,
+        left = cx - hingeHalfWidth,
+        right = cx + hingeHalfWidth,
+        top = cy - ry * Math.sqrt(1 - (hingeHalfWidth / rx) ** 2);
       return `<path ${style} data-hatch-hinge="joined" d="M ${left} ${top} V ${inset + h * 0.04} H ${right} V ${top} A ${rx} ${ry} 0 1 1 ${left} ${top} Z"/>`;
     };
     let svg = contour(0, "outer", direction === "up");

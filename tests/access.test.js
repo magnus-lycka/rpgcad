@@ -222,3 +222,37 @@ test("iris access uses circles without a hinge for every vertical direction", ()
     assert.equal(Fog.blockers(m, {}).polygons.length, 2);
   }
 });
+
+test("hatch hinge is broad with the through-hatch dashed hinge inset inside it", () => {
+  const model = accessModel();
+  model.componentDefinitions = {
+    "hatch@1": {
+      id: "hatch",
+      version: 1,
+      name: "Hatch",
+      family: "ceiling-hatch",
+      defaults: { width: 1, length: 1, direction: "up-down" },
+      details: { profile: "referee-2026-10-11" },
+      blocksSight: false,
+    },
+  };
+  model.components = [
+    { id: "hatch", definition: "hatch@1", at: [0, 0], rotation: 0 },
+  ];
+  const svg = Geometry.scene(Geometry.validate(model), {
+    x: -1,
+    y: -1,
+    w: 3,
+    h: 3,
+  });
+  const hinges = [
+    ...svg.matchAll(
+      /data-access-contour="(outer|inner)"[^>]*d="M ([\d.]+) [\d.]+ V [\d.]+ H ([\d.]+)/g,
+    ),
+  ];
+  assert.equal(hinges.length, 2);
+  // A one-metre hatch has a 40 cm hinge; its inner hinge has 9 cm side clearance.
+  const [outer, inner] = hinges.map((hinge) => hinge.slice(2).map(Number));
+  assert.deepEqual(outer, [0.3, 0.7]);
+  assert.deepEqual(inner, [0.39, 0.61]);
+});
