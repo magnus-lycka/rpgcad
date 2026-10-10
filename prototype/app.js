@@ -618,11 +618,7 @@ async function poll() {
       model = next;
       etag = response.headers.get("ETag") || "";
       loaded = true;
-      if (fogEnabled && exploration) {
-        recordObservation();
-        updateVisibility();
-        await saveExploration();
-      }
+      if (fogEnabled && exploration) updateVisibility();
       if (first) fit();
       else draw();
     }

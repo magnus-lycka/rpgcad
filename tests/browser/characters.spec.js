@@ -98,6 +98,7 @@ test("selecting a PC changes POV and range; dragging it reveals only its destina
     /"range":2/,
   );
   await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
+  await expect(page.locator("#reset-fog")).toBeEnabled();
   await page.locator('[data-character="ben"] circle').click();
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observers",
