@@ -9,7 +9,7 @@
  * @typedef {{id: string, at: Point, width: number, projection: number, radius: number, stroke?: number, direction?: number}} StepIron
  * @typedef {{id: string, at: Point, radius: number, treads: number, direction?: 'up'|'down', startAngle?: number, sweep?: number}} Stair
  * @typedef {{blocksPassage?:boolean,frontClearance?:number}} ComponentAccess
- * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number,direction?:string}, details:{headDepth?:number,leafThickness?:number,profile?:string}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
+ * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number,direction?:string}, details:{headDepth?:number,leafThickness?:number,profile?:string,desk?:boolean}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
  * @typedef {{id:string, definition:string, at?:Point, rotation?:number, opening?:string, blocksSight?:boolean, access?:ComponentAccess, settings?:{width?:number,length?:number,direction?:string,state?:string,seatCount?:number}}} ComponentInstance
  * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point, components?:ComponentInstance[], componentDefinitions?:Record<string, ComponentDefinition>}} Model
  * @typedef {Record<string, 'open'|'closed'>} Doors
@@ -601,7 +601,7 @@ const Geometry = (() => {
         m.componentDefinitions?.[instance.definition].details.profile ===
           "referee-2026-10-11"
       ) {
-        s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025">${family === "chair" ? chairSymbol(width, length) : family === "bed" ? bedSymbol(width, length, headDepth) : consoleSymbol(width, length, seatCount)}</g>`;
+        s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025">${family === "chair" ? chairSymbol(width, length) : family === "bed" ? bedSymbol(width, length, headDepth) : consoleSymbol(width, length, seatCount, m.componentDefinitions[instance.definition].details.desk === true)}</g>`;
         continue;
       }
       s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025"><rect width="${width}" height="${length}"/>`;
@@ -626,12 +626,14 @@ const Geometry = (() => {
       s += `<text x="${l.at[0]}" y="${l.at[1]}" font-family="sans-serif" font-size="${l.size ?? 0.4}" text-anchor="middle" dominant-baseline="central" fill="#263c30">${esc(l.text)}</text>`;
     return s;
   }
-  function consoleSymbol(width, length, seatCount) {
+  function consoleSymbol(width, length, seatCount, desk) {
     const depth = Math.min(0.55, length * 0.42);
-    let symbol = `<path data-console-desk="" d="M .06 0 H ${width - 0.06} Q ${width} 0 ${width} .06 V ${depth - 0.06} Q ${width / 2} ${depth + 0.04} 0 ${depth - 0.06} V .06 Q 0 0 .06 0 Z"/>`;
+    let symbol = desk
+      ? `<path data-console-desk="" d="M .06 0 H ${width - 0.06} Q ${width} 0 ${width} .06 V ${depth - 0.06} Q ${width / 2} ${depth + 0.04} 0 ${depth - 0.06} V .06 Q 0 0 .06 0 Z"/>`
+      : "";
     for (let i = 0; i < seatCount; i++) {
       const x = ((i + 0.5) * width) / seatCount;
-      symbol += `<g data-console-station="${i + 1}"><path data-console-display="${i + 1}" d="M ${x - 0.38} .15 Q ${x} 0 ${x + 0.38} .15 L ${x + 0.35} .23 Q ${x} .1 ${x - 0.35} .23 Z"/><rect data-console-keyboard="${i + 1}" x="${x - 0.2}" y="${depth - 0.21}" width=".4" height=".13" rx=".025"/><path d="M ${x - 0.16} ${depth - 0.16} h .32 M ${x - 0.12} ${depth - 0.12} h .24"/><g data-console-seat="${i + 1}" transform="translate(${x - 0.25} ${length - 0.6})">${chairSymbol(0.5, 0.55)}</g></g>`;
+      symbol += `<g data-console-station="${i + 1}"><path data-console-display="${i + 1}" d="M ${x - 0.38} .24 Q ${x} -.06 ${x + 0.38} .24"/><path data-console-support="${i + 1}" d="M ${x - 0.07} .1 L ${x - 0.06} .2 M ${x + 0.07} .1 L ${x + 0.06} .2"/><rect data-console-keyboard="${i + 1}" x="${x - 0.25}" y=".2" width=".5" height=".15" rx=".05"/><g data-console-seat="${i + 1}" transform="translate(${x - 0.3} ${length - 0.8})">${chairSymbol(0.6, 0.75)}</g></g>`;
     }
     return symbol;
   }
@@ -644,7 +646,8 @@ const Geometry = (() => {
   // Local front is toward negative Y; backrest stays behind the seated occupant.
   function chairSymbol(width, length) {
     const point = (x, y) => `${x * width} ${y * length}`;
-    return `<path data-chair-seat="" d="M ${point(0.17, 0.12)} Q ${point(0.08, 0.12)} ${point(0.08, 0.22)} L ${point(0.2, 0.65)} Q ${point(0.5, 0.75)} ${point(0.8, 0.65)} L ${point(0.92, 0.22)} Q ${point(0.92, 0.12)} ${point(0.83, 0.12)} Z"/><path data-chair-back="" d="M ${point(0.15, 0.7)} Q ${point(0.5, 0.84)} ${point(0.85, 0.7)} Q ${point(0.94, 0.76)} ${point(0.85, 0.83)} Q ${point(0.5, 0.97)} ${point(0.15, 0.83)} Q ${point(0.06, 0.76)} ${point(0.15, 0.7)} Z"/><rect data-chair-arm="left" x="0" y="${length * 0.28}" width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/><rect data-chair-arm="right" x="${width * 0.87}" y="${length * 0.28}" width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/>`;
+    const armAngle = (Math.atan2(width * 0.12, length * 0.43) * 180) / Math.PI;
+    return `<path data-chair-seat="" d="M ${point(0.17, 0.12)} Q ${point(0.08, 0.12)} ${point(0.08, 0.22)} L ${point(0.2, 0.65)} Q ${point(0.5, 0.75)} ${point(0.8, 0.65)} L ${point(0.92, 0.22)} Q ${point(0.92, 0.12)} ${point(0.83, 0.12)} Z"/><path data-chair-back="" d="M ${point(0.15, 0.7)} Q ${point(0.5, 0.84)} ${point(0.85, 0.7)} Q ${point(0.94, 0.76)} ${point(0.85, 0.83)} Q ${point(0.5, 0.97)} ${point(0.15, 0.83)} Q ${point(0.06, 0.76)} ${point(0.15, 0.7)} Z"/><g data-chair-arm="left" transform="translate(0 ${length * 0.26}) rotate(${-armAngle})"><rect width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/></g><g data-chair-arm="right" transform="translate(${width * 0.87} ${length * 0.26}) rotate(${armAngle})"><rect width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/></g>`;
   }
   const papers = {
     a4: { w: 297, h: 210, tw: 21, th: 15, name: "A4 landscape" },

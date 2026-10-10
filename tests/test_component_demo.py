@@ -43,6 +43,7 @@ def test_registration_preserves_existing_records_and_refuses_repeat(tmp_path):
         "door@1",
         "ceiling-hatch@1",
         "console@1",
+        "console-desk@1",
         "floor-hatch@1",
         "through-hatch@1",
         "iris-valve-up@1",

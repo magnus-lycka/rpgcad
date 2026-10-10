@@ -114,6 +114,7 @@ test("revised human and Aslan bed has a rounded frame, head pillow and blanket r
 test("revised console shows seats facing keyboards and curved displays on a dashboard without a floor box", () => {
   const model = revisedModel("console", 0.9, 1.35);
   model.components[0].settings = { seatCount: 2 };
+  model.componentDefinitions["console@1"].details.desk = true;
   const scene = Geometry.scene(Geometry.validate(model), {
     x: -1,
     y: -1,
@@ -131,11 +132,9 @@ test("revised console shows seats facing keyboards and curved displays on a dash
     ),
   ];
   assert.equal(seats.length, 2);
-  assert.deepEqual(
-    seats.map((seat) => Number(seat[2].split(" ")[0])),
-    [0.2, 1.1],
-  );
-  for (const seat of seats) near(Number(seat[2].split(" ")[1]), 0.75);
+  near(Number(seats[0][2].split(" ")[0]), 0.15);
+  near(Number(seats[1][2].split(" ")[0]), 1.05);
+  for (const seat of seats) near(Number(seat[2].split(" ")[1]), 0.55);
   for (const seat of seats) {
     const frontY = Number(
       match(seat[3], /data-chair-seat="" d="M [\d.]+ ([\d.]+)/)[1],
@@ -144,21 +143,56 @@ test("revised console shows seats facing keyboards and curved displays on a dash
       match(seat[3], /data-chair-back="" d="M [\d.]+ ([\d.]+)/)[1],
     );
     const originY = Number(seat[2].split(" ")[1]);
-    near(originY + frontY, 0.816);
-    near(originY + backY, 1.135);
+    near(originY + frontY, 0.64);
+    near(originY + backY, 1.075);
     assert.ok(frontY < backY, "chair front faces the dashboard at smaller Y");
   }
   const keyboardY = [
     ...scene.matchAll(/data-console-keyboard="\d+"[^>]*y="([^"]+)"/g),
   ].map((match) => Number(match[1]));
   assert.equal(keyboardY.length, 2);
-  for (const y of keyboardY) near(y, 0.34);
+  for (const y of keyboardY) near(y, 0.2);
   const display = match(
     scene,
-    /data-console-display="1" d="M ([\d.]+) ([\d.]+) Q ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+)/,
+    /data-console-display="1" d="M ([-\d.]+) ([-\d.]+) Q ([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)/,
   );
-  for (const [index, expected] of [0.07, 0.15, 0.45, 0, 0.83, 0.15].entries())
+  for (const [index, expected] of [
+    0.07, 0.24, 0.45, -0.06, 0.83, 0.24,
+  ].entries())
     near(Number(display.at(index + 1)), expected);
   assert.doesNotMatch(scene, /<rect width="1.8" height="1.35"/);
   assert.doesNotMatch(scene, /stroke-width="\.05"|<text/);
+});
+
+test("chair armrests follow the sloping seat sides", () => {
+  const model = revisedModel("chair", 0.5, 0.5);
+  const svg = Geometry.scene(Geometry.validate(model), {
+    x: -1,
+    y: -1,
+    w: 3,
+    h: 3,
+  });
+  const arms = [
+    ...svg.matchAll(
+      /data-chair-arm="(left|right)" transform="translate\([^)]+\) rotate\(([-\d.]+)\)"/g,
+    ),
+  ];
+  assert.equal(arms.length, 2);
+  assert.ok(Math.abs(Number(arms[0][2]) + 15.59) < 0.01);
+  assert.ok(Math.abs(Number(arms[1][2]) - 15.59) < 0.01);
+});
+
+test("console display connects to its input pad with an optional desk", () => {
+  const model = revisedModel("console", 0.9, 1.35);
+  const render = () =>
+    Geometry.scene(Geometry.validate(model), { x: -1, y: -1, w: 3, h: 3 });
+  const bare = render();
+  assert.doesNotMatch(bare, /data-console-desk/);
+  assert.match(bare, /data-console-support/);
+  assert.match(
+    bare,
+    /data-console-keyboard="1"[^>]*y="\.2" width="\.5" height="\.15"/,
+  );
+  model.componentDefinitions["console@1"].details.desk = true;
+  assert.match(render(), /data-console-desk/);
 });

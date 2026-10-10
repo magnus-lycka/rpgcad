@@ -291,3 +291,15 @@ The Referee also required the hatch leaf to be a true circle, rather than the
 initial oval. Both contours now use equal arc radii, including on a non-square
 footprint. Hinge width is limited by the circular leaf so wider footprints cannot
 produce invalid hinge/arc joins; the through-hatch retains its side clearance.
+
+The Referee requested armrests parallel to the tapered seat sides and found the
+chair small. The previous standard seat was 42 cm wide at the front, 30 cm at the
+rear and 29 cm deep, within a 50 × 50 cm whole-chair footprint. The new footprint
+is 60 × 75 cm: seat front 50.4 cm, rear 36 cm, depth 43.5 cm. Console chairs use
+the same larger geometry. Armrest angle follows the actual metre-scaled seat
+slope, preserving parallel sides when width/depth changes.
+
+The Referee's connected computer sketch replaces the standalone display and
+keyboard on a mandatory desk: an arched display joins a rounded input pad through
+two supports, with no keyboard key markings. The normal crew console has no desk;
+console-desk@1 supplies the same stations on an optional desk. The demo shows both.

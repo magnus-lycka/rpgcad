@@ -55,3 +55,12 @@ test("chair placement guidance agrees with its front facing negative local Y", a
   ).json();
   expect(entries[0].definition.placement.anchor).toContain("front faces -y");
 });
+
+test("the standard chair provides a larger seat footprint", async ({
+  request,
+}) => {
+  const { entries } = await (
+    await request.get("/components?definition=chair%401")
+  ).json();
+  expect(entries[0].definition.defaults).toEqual({ width: 0.6, length: 0.75 });
+});

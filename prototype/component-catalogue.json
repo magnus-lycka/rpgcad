@@ -57,8 +57,8 @@
       "aliases": ["loose chair"],
       "tags": ["furniture", "seating"],
       "defaults": {
-        "width": 0.5,
-        "length": 0.5
+        "width": 0.6,
+        "length": 0.75
       },
       "details": {
         "headDepth": 0.1,
@@ -101,7 +101,8 @@
       },
       "details": {
         "headDepth": 0.55,
-        "profile": "referee-2026-10-11"
+        "profile": "referee-2026-10-11",
+        "desk": false
       },
       "blocksSight": false,
       "access": {
@@ -118,7 +119,7 @@
         "seatCount": "Integer 1\u20136; adds fixed-size stations/seats at the proposed 0.9 m pitch."
       },
       "placement": {
-        "anchor": "Local [0,0] is the back-left; +x spans stations, operators sit towards +y and face the back.",
+        "anchor": "Local [0,0] is the back-left; +x spans connected display/input-pad stations, operators sit towards +y and face -y. No desk by default.",
         "access": "Leave the proposed 0.75 m approach beyond the seats at the +y front. This is guidance, not movement enforcement."
       },
       "license": "AGPL-3.0-only",
@@ -420,6 +421,49 @@
         "artwork": "Original RPGCAD line artwork; AGPL v3.",
         "reference": "Referee-specified hatch/iris and solid/down, dashed/up conventions.",
         "usage": "No imported or traced artwork."
+      }
+    },
+    "console-desk@1": {
+      "id": "console-desk",
+      "version": 1,
+      "name": "Crew console with desk",
+      "family": "console",
+      "aliases": ["console with desk"],
+      "tags": ["equipment", "control", "workstation"],
+      "defaults": {
+        "width": 0.9,
+        "length": 1.35,
+        "seatCount": 1
+      },
+      "details": {
+        "headDepth": 0.55,
+        "profile": "referee-2026-10-11",
+        "desk": true
+      },
+      "blocksSight": false,
+      "access": {
+        "blocksPassage": true,
+        "frontClearance": 0.75
+      },
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful schematic footprint; not a canonical Traveller measurement or equipment capacity."
+      },
+      "settings": {
+        "seatCount": "Integer 1\u20136; adds fixed-size stations/seats at the proposed 0.9 m pitch."
+      },
+      "placement": {
+        "anchor": "Local [0,0] is the back-left; connected display/input-pad stations sit on a shallow desk, with chairs facing -y.",
+        "access": "Leave the proposed 0.75 m approach beyond the seats at the +y front. This is guidance, not movement enforcement."
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Robert Pearce / Pearce Design Studio, LLC; Starship Symbols (2020), F05; CC BY-NC 4.0.",
+        "usage": "Equipment-family reference only; no imported or traced source artwork.",
+        "inventory": "docs/research/component-inventory.md"
       }
     }
   }
