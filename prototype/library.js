@@ -14,6 +14,33 @@ const cards = element("cards"),
   navigation = element("library-navigation"),
   status = element("library-status");
 
+/** @param {Plan} plan */
+function duplicateButton(plan) {
+  const button = document.createElement("button");
+  button.textContent = "Duplicate plan";
+  button.onclick = async () => {
+    button.disabled = true;
+    try {
+      const response = await fetch(
+        `/duplicate?${new URLSearchParams({ plan: plan.id })}`,
+        { method: "POST" },
+      );
+      if (!response.ok) throw Error("Could not duplicate plan");
+      const duplicate = await response.json();
+      plans = (await (await fetch("/library")).json()).plans;
+      history.pushState(
+        null,
+        "",
+        `/library.html?${new URLSearchParams({ plan: duplicate.id })}`,
+      );
+      await render(duplicate.id);
+    } catch (error) {
+      status.textContent = String(error);
+      button.disabled = false;
+    }
+  };
+  return button;
+}
 /** @param {Plan} plan @param {Level|null} level */
 function metadataButton(plan, level = null) {
   const button = document.createElement("button");
@@ -125,6 +152,7 @@ async function render(id = null) {
       heading,
       metadataDetails(selected, "Plan"),
       metadataButton(selected),
+      duplicateButton(selected),
     );
     for (const level of selected.levels) {
       const article = document.createElement("article");
@@ -158,7 +186,11 @@ async function render(id = null) {
         void render(plan.id);
       };
       article.append(button);
-      article.append(metadataDetails(plan, "Plan"), metadataButton(plan));
+      article.append(
+        metadataDetails(plan, "Plan"),
+        metadataButton(plan),
+        duplicateButton(plan),
+      );
       cards.append(article);
     }
 }

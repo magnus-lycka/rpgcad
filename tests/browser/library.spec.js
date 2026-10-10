@@ -154,3 +154,55 @@ test("library defaults to recently authored plans without inventing historical d
   );
   await request.patch("/metadata?plan=depot", { data: { description: "" } });
 });
+
+test("Referee duplicates every level and opens the independent variation", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/library.html?plan=default");
+  await page
+    .getByRole("button", { name: "Duplicate plan", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Referee building copy", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("svg[data-thumbnail]")).toHaveCount(2);
+  const copyId = new URL(page.url()).searchParams.get("plan");
+  expect(copyId).not.toBe("default");
+  const copy = await (await request.get(`/plan?plan=${copyId}`)).json();
+  expect(copy.levels.map((level) => level.id)).not.toContain("original");
+  expect(copy.levels.map((level) => level.id)).not.toContain("below");
+  const lowerCard = page.getByRole("article").filter({
+    has: page.getByRole("heading", { name: "below", exact: true }),
+  });
+  await lowerCard.getByRole("button", { name: "Edit level metadata" }).click();
+  await page.getByLabel("Level description").fill("Variation stores");
+  await page
+    .getByRole("button", { name: "Save metadata", exact: true })
+    .click();
+  await page.reload();
+  await expect(
+    page.getByText("Variation stores", { exact: true }),
+  ).toBeVisible();
+  const source = await (await request.get("/plan?plan=default")).json();
+  expect(source.levels[1].description).toBe("");
+  await page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "below", exact: true }) })
+    .getByRole("link", { name: "Edit", exact: true })
+    .click();
+  await expect(page.locator("#viewport")).toContainText("LOWER LEVEL");
+  await expect(page.locator("[data-sketch-stroke]")).toHaveCount(0);
+  await expect(page.locator("body")).toHaveAttribute("data-mode", "edit");
+  await page.getByRole("link", { name: "Library", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Referee building copy", exact: true })
+    .click();
+  await page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Ground", exact: true }) })
+    .getByRole("link", { name: "Play", exact: true })
+    .click();
+  await expect(page.locator("#viewport [data-character]")).toHaveCount(0);
+  await expect(page.locator("body")).toHaveAttribute("data-mode", "play");
+});
