@@ -934,7 +934,7 @@ def test_agent_search_is_paged_and_selected_definitions_keep_authored_metadata(b
     bridge.request("GET", "/components?definition=bed%401")
     response = bridge.getresponse()
     selected = json.loads(response.read())["entries"][0]
-    assert selected["definition"]["defaults"] == {"width": 0.9, "length": 2}
+    assert selected["definition"]["defaults"] == {"width": 1, "length": 2.25}
     assert selected["definition"]["dimensions"]["status"] == "proposed"
     assert selected["definition"]["license"] == "AGPL-3.0-only"
     assert "CC BY-NC 4.0" in selected["definition"]["provenance"]["reference"]

@@ -249,3 +249,27 @@ clear. A chair overlapping a bed in the disposable visual fixture was corrected
 before the final whole-plan inspection. The live building and play data were
 untouched. Human recognition/evaluation of the separate demonstration remains
 required before expanding the catalogue.
+
+## Referee symbol corrections, 11 October 2026
+
+Recognition of the first component drawings failed human evaluation despite their
+geometry tests passing. The Referee rejected generic machinery; it is removed from
+the usable catalogue and demonstration, with historical saved copies preserved.
+
+A circular contour is an iris valve. Hinged hatches need a distinct hinge and round
+handle. Both have up, down and through variants: dashed means up, solid means down,
+and an inner dashed contour inside the solid contour means both. Directional letters
+are unnecessary; reusable symbols should contain no text. All six variants belong
+in the evaluation rather than testing only the ceiling case.
+
+Chairs need recognizable seats, curved banana backs and thin uniform outlines.
+Consoles need chairs facing a dashboard with displays and data-entry surfaces;
+an enclosing floor rectangle obscures that meaning. The standard bed now uses
+1 × 2.25 m, with rounded frame, pillow and blanket reaching near the pillow.
+Door footprint covers the opening only; do not assume external storage for sliding
+leaves. Telescopic or folding mechanisms need no additional reserved plan area.
+
+Revised catalogue and demo definitions carry an explicit drawing profile; saved
+older definition snapshots remain unchanged. Automated tests cover directional
+contours, rotation and geometry, HTTP persistence and catalogue variants. Visual
+inspection complements these checks; only the Referee can approve recognisability.

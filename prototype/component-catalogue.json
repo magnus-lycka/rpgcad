@@ -19,11 +19,12 @@
       "aliases": ["bed"],
       "tags": ["furniture", "sleeping"],
       "defaults": {
-        "width": 0.9,
-        "length": 2
+        "width": 1,
+        "length": 2.25
       },
       "details": {
-        "headDepth": 0.3
+        "headDepth": 0.3,
+        "profile": "referee-2026-10-11"
       },
       "blocksSight": false,
       "dimensions": {
@@ -60,7 +61,8 @@
         "length": 0.5
       },
       "details": {
-        "headDepth": 0.1
+        "headDepth": 0.1,
+        "profile": "referee-2026-10-11"
       },
       "blocksSight": false,
       "dimensions": {
@@ -98,7 +100,8 @@
         "seatCount": 1
       },
       "details": {
-        "headDepth": 0.55
+        "headDepth": 0.55,
+        "profile": "referee-2026-10-11"
       },
       "blocksSight": false,
       "access": {
@@ -122,47 +125,6 @@
       "provenance": {
         "artwork": "Original RPGCAD line artwork; AGPL v3.",
         "reference": "Robert Pearce / Pearce Design Studio, LLC; Starship Symbols (2020), F05; CC BY-NC 4.0.",
-        "usage": "Equipment-family reference only; no imported or traced source artwork.",
-        "inventory": "docs/research/component-inventory.md"
-      }
-    },
-    "machinery@1": {
-      "id": "machinery",
-      "version": 1,
-      "name": "Service machinery",
-      "family": "machinery",
-      "aliases": ["generic machinery", "motor unit"],
-      "tags": ["equipment", "engineering", "machinery"],
-      "defaults": {
-        "width": 1.5,
-        "length": 2
-      },
-      "details": {
-        "headDepth": 0.3
-      },
-      "blocksSight": true,
-      "access": {
-        "blocksPassage": true,
-        "frontClearance": 0.75
-      },
-      "dimensions": {
-        "unit": "metres",
-        "status": "proposed",
-        "sourceDimensions": "unknown",
-        "note": "Useful schematic footprint; not a canonical Traveller measurement or equipment capacity."
-      },
-      "settings": {
-        "width": "Positive metre width; regenerates casing and motor core.",
-        "length": "Positive metre length; retains proposed service panel depth."
-      },
-      "placement": {
-        "anchor": "Local [0,0] is the back-left; +x spans width, service-panel front faces +y.",
-        "access": "Leave the proposed 0.75 m service approach at the +y panel face. No capacity, movement or collision simulation."
-      },
-      "license": "AGPL-3.0-only",
-      "provenance": {
-        "artwork": "Original RPGCAD line artwork; AGPL v3.",
-        "reference": "Robert Pearce / Pearce Design Studio, LLC; Starship Symbols (2020), M01; CC BY-NC 4.0.",
         "usage": "Equipment-family reference only; no imported or traced source artwork.",
         "inventory": "docs/research/component-inventory.md"
       }
@@ -191,7 +153,7 @@
       "settings": {},
       "placement": {
         "anchor": "Existing opening identity; wall, offset and width authoritative",
-        "access": "Deliberate access; no movement enforcement or automatic level travel"
+        "access": "Footprint is only the opening; no extra sliding-leaf storage reserved. No movement enforcement or automatic level travel."
       },
       "license": "AGPL-3.0-only",
       "provenance": {
@@ -205,14 +167,14 @@
           {
             "id": "wall",
             "a": [0, 0],
-            "b": [2, 0]
+            "b": [1, 0]
           }
         ],
         "openings": [
           {
             "id": "opening",
             "wall": "wall",
-            "offset": 0.5,
+            "offset": 0,
             "width": 1
           }
         ],
@@ -232,12 +194,15 @@
       "name": "Ceiling hatch",
       "family": "ceiling-hatch",
       "aliases": ["ceiling hatch"],
-      "tags": ["access", "ceiling"],
+      "tags": ["access", "up", "hinged hatch"],
       "defaults": {
         "width": 1,
-        "length": 1
+        "length": 1,
+        "direction": "up"
       },
-      "details": {},
+      "details": {
+        "profile": "referee-2026-10-11"
+      },
       "blocksSight": false,
       "dimensions": {
         "unit": "metres",
@@ -252,13 +217,208 @@
         "state": "open or closed"
       },
       "placement": {
-        "anchor": "Local top-left of footprint; circle centred within footprint",
+        "anchor": "Local top-left of footprint; hinged circular leaf with round handle.",
         "access": "Deliberate access; no movement enforcement or automatic level travel"
       },
       "license": "AGPL-3.0-only",
       "provenance": {
         "artwork": "Original RPGCAD line artwork; AGPL v3.",
-        "reference": "Accepted RPGCAD wall-door and ceiling-hatch drawing conventions.",
+        "reference": "Referee-specified hatch/iris and solid/down, dashed/up conventions.",
+        "usage": "No imported or traced artwork."
+      }
+    },
+    "floor-hatch@1": {
+      "id": "floor-hatch",
+      "version": 1,
+      "name": "Floor hatch",
+      "family": "ceiling-hatch",
+      "aliases": ["floor hatch"],
+      "tags": ["access", "down", "hinged hatch"],
+      "defaults": {
+        "width": 1,
+        "length": 1,
+        "direction": "down"
+      },
+      "details": {
+        "profile": "referee-2026-10-11"
+      },
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre height",
+        "direction": "up, down or up-down",
+        "state": "open or closed"
+      },
+      "placement": {
+        "anchor": "Local top-left of footprint; hinged circular leaf with round handle.",
+        "access": "Deliberate access; no movement enforcement or automatic level travel"
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Referee-specified hatch/iris and solid/down, dashed/up conventions.",
+        "usage": "No imported or traced artwork."
+      }
+    },
+    "through-hatch@1": {
+      "id": "through-hatch",
+      "version": 1,
+      "name": "Through hatch",
+      "family": "ceiling-hatch",
+      "aliases": ["through hatch"],
+      "tags": ["access", "up-down", "hinged hatch"],
+      "defaults": {
+        "width": 1,
+        "length": 1,
+        "direction": "up-down"
+      },
+      "details": {
+        "profile": "referee-2026-10-11"
+      },
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre height",
+        "direction": "up, down or up-down",
+        "state": "open or closed"
+      },
+      "placement": {
+        "anchor": "Local top-left of footprint; hinged circular leaf with round handle.",
+        "access": "Deliberate access; no movement enforcement or automatic level travel"
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Referee-specified hatch/iris and solid/down, dashed/up conventions.",
+        "usage": "No imported or traced artwork."
+      }
+    },
+    "iris-valve-up@1": {
+      "id": "iris-valve-up",
+      "version": 1,
+      "name": "Iris valve up",
+      "family": "iris-valve",
+      "aliases": ["iris valve up"],
+      "tags": ["access", "up", "iris valve"],
+      "defaults": {
+        "width": 1,
+        "length": 1,
+        "direction": "up"
+      },
+      "details": {
+        "profile": "referee-2026-10-11"
+      },
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre height",
+        "direction": "up, down or up-down",
+        "state": "open or closed"
+      },
+      "placement": {
+        "anchor": "Local top-left of footprint; circular iris valve without a hinge.",
+        "access": "Deliberate access; no movement enforcement or automatic level travel"
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Referee-specified hatch/iris and solid/down, dashed/up conventions.",
+        "usage": "No imported or traced artwork."
+      }
+    },
+    "iris-valve-down@1": {
+      "id": "iris-valve-down",
+      "version": 1,
+      "name": "Iris valve down",
+      "family": "iris-valve",
+      "aliases": ["iris valve down"],
+      "tags": ["access", "down", "iris valve"],
+      "defaults": {
+        "width": 1,
+        "length": 1,
+        "direction": "down"
+      },
+      "details": {
+        "profile": "referee-2026-10-11"
+      },
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre height",
+        "direction": "up, down or up-down",
+        "state": "open or closed"
+      },
+      "placement": {
+        "anchor": "Local top-left of footprint; circular iris valve without a hinge.",
+        "access": "Deliberate access; no movement enforcement or automatic level travel"
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Referee-specified hatch/iris and solid/down, dashed/up conventions.",
+        "usage": "No imported or traced artwork."
+      }
+    },
+    "iris-valve-up-down@1": {
+      "id": "iris-valve-up-down",
+      "version": 1,
+      "name": "Iris valve up/down",
+      "family": "iris-valve",
+      "aliases": ["iris valve up/down"],
+      "tags": ["access", "up-down", "iris valve"],
+      "defaults": {
+        "width": 1,
+        "length": 1,
+        "direction": "up-down"
+      },
+      "details": {
+        "profile": "referee-2026-10-11"
+      },
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre height",
+        "direction": "up, down or up-down",
+        "state": "open or closed"
+      },
+      "placement": {
+        "anchor": "Local top-left of footprint; circular iris valve without a hinge.",
+        "access": "Deliberate access; no movement enforcement or automatic level travel"
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Referee-specified hatch/iris and solid/down, dashed/up conventions.",
         "usage": "No imported or traced artwork."
       }
     }

@@ -43,7 +43,11 @@ def test_registration_preserves_existing_records_and_refuses_repeat(tmp_path):
         "door@1",
         "ceiling-hatch@1",
         "console@1",
-        "machinery@1",
+        "floor-hatch@1",
+        "through-hatch@1",
+        "iris-valve-up@1",
+        "iris-valve-down@1",
+        "iris-valve-up-down@1",
     }
     before = library.read_bytes()
     repeat = subprocess.run(command, capture_output=True, text=True)

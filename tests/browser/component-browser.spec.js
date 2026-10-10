@@ -12,7 +12,7 @@ test("Referee finds original usable component previews and placement description
     card.getByRole("img", { name: "Single bed preview" }),
   ).toBeVisible();
   await expect(card).toContainText("bed@1");
-  await expect(card).toContainText("0.9 × 2 m");
+  await expect(card).toContainText("1 × 2.25 m");
   await expect(card).toContainText("proposed");
   await expect(card).toContainText("head-left corner");
   await expect(card).toContainText("Positive metre width");
@@ -65,7 +65,7 @@ test("catalogue previews the attached wall door and ceiling hatch with their set
   await page.goto("/components.html");
   const door = page.getByRole("article", { name: "Wall door", exact: true });
   await expect(door.getByRole("img")).toBeVisible();
-  await expect(door.locator("[data-wall]")).toHaveCount(2);
+  await expect(door.locator("[data-wall]")).toHaveCount(0);
   await expect(door).toContainText("door@1");
   await expect(door.getByText("None", { exact: true })).toBeVisible();
   await expect(door).not.toContainText("Preview unavailable");
@@ -75,14 +75,14 @@ test("catalogue previews the attached wall door and ceiling hatch with their set
   });
   await expect(hatch.getByRole("img")).toBeVisible();
   await expect(hatch).toContainText("ceiling-hatch@1");
-  await expect(hatch).toContainText("UP");
+  await expect(hatch.locator("svg text")).toHaveCount(0);
   await expect(hatch).toContainText("up-down");
   await expect(hatch).toContainText("open");
   await expect(hatch).not.toContainText("Preview unavailable");
 });
 
 // Integrated-family characterisation: generic catalogue renderer supports equipment.
-test("catalogue renders console stations and machinery details with usable guidance", async ({
+test("catalogue renders console stations with usable guidance and omits rejected machinery", async ({
   page,
 }) => {
   await page.goto("/components.html");
@@ -98,8 +98,5 @@ test("catalogue renders console stations and machinery details with usable guida
     name: "Service machinery",
     exact: true,
   });
-  await expect(machine.getByRole("img")).toBeVisible();
-  await expect(machine.locator("[data-machinery-core]")).toHaveCount(1);
-  await expect(machine).toContainText("Blocks sight: Yes");
-  await expect(machine).not.toContainText("Preview unavailable");
+  await expect(machine).toHaveCount(0);
 });
