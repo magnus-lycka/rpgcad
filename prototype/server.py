@@ -300,7 +300,7 @@ def main():
                         or not isinstance(character.get("name"), str)
                         or not character["name"].strip()
                         or character.get("kind") not in ("pc", "npc")
-                        or character.get("level") not in {*models, "original"}
+                        or character.get("level") not in models
                         or not isinstance(at, list)
                         or len(at) != 2
                         or not all(

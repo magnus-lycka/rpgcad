@@ -161,3 +161,10 @@ Browser checks cover selecting the variation, independent level metadata edits s
 ## Library search and date controls, 2026-10-10
 
 A multi-plan disposable browser fixture verifies text matches and level identification, inherited AND tags without cross-level aggregation, combined date ranges and all four sorts. Ranges select plan dates and include the entire UTC day; unknown dates are an explicit opt-in for active ranges and sort last. Visual inspection exposed local date labels crossing a UTC filter boundary; library date labels now explicitly use UTC too. Search thumbnails use a matching level and preserve the existing Geometry renderer. Rapid changes invalidate earlier thumbnail renders so stale cards cannot repopulate filtered results.
+
+
+## Library review corrections, 2026-10-10
+
+A duplicated plan uses fresh level IDs, so a plan-only drawing URL must resolve its first level from the selected plan rather than assume `original`. A browser regression now creates a PC through that URL and verifies the marker remains visible when reopening the explicit first-level URL. Character saves reject every level ID absent from the owning plan, including `original` when it is not present; rejected saves preserve the roster and all dates. Existing building URLs still select their original levels.
+
+Duplicate publication now stores the copied models' canonical fingerprints together with the new library record. A controlled-clock HTTP regression edits the model path returned by POST before any further GET and verifies that the first read advances both the affected level's and the plan's edit dates. The other level, creation date and play date remain unchanged. The feedback-loop entry point now carries plan and level selectors through authoritative model discovery, sketch retrieval and timestamp-safe acknowledgement.

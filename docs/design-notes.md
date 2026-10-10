@@ -97,14 +97,14 @@ Requested direction, not implemented:
 
 ## Plan organisation
 
-Agreed requirements, not yet implemented:
+Agreed requirements, implemented in the current prototype:
 
 - A plan represents one location and contains its levels. Further floors of the current building belong to this same plan.
 - Campaign organisation appeared in earlier notes but is not a confirmed requirement. The Referee questioned its introduction on 2026-10-10; leave it outside the current plan-library scope.
 - Support arbitrary tags, text search, browsing, and creation/last-edit timestamps.
 - A separate catalogue view keeps organisation controls out of the drawing view.
 
-Agreed library interaction, 2026-10-10:
+Agreed library interaction, implemented in the current prototype on 2026-10-10:
 
 - Browse thumbnail cards showing plan name, tags, level count and last-edit date, initially sorted by most recently edited.
 - Opening a plan card shows its levels with thumbnails and editable names, allowing selection of the level to open.
@@ -120,10 +120,10 @@ Agreed library interaction, 2026-10-10:
 Proposed details still to validate:
 
 - One directory per plan, a metadata file, and separate model files per level; generated exports remain distinct from authored models.
-- Stable plan/level IDs, editable names, descriptions, level ordering, and a common coordinate system across levels.
-- A plan's last-edit timestamp reflects changes to any level; catalogue indexes and thumbnails can be rebuilt from stored plans.
+- Explicit level ordering controls and a common coordinate-system contract across levels. Stable plan/level IDs and editable names/descriptions are implemented.
+- Catalogue indexes and thumbnails can be rebuilt from stored plans. The prototype already propagates authored level edits to the plan's last-edit timestamp.
 - Explicit connections between levels, such as stairs, lifts, and ceiling hatches.
-- Exact metadata schema, campaign membership cardinality, and persistence implementation remain open.
+- The prototype persists metadata and canonical model fingerprints in a library record alongside separate model files. Production storage remains open; campaign organisation remains outside this scope.
 
 ## Reusable drawing components
 

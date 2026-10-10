@@ -107,7 +107,7 @@ uv run python prototype/server.py
 
 The level parameter selects both the model and its independent exploration state. Unknown IDs return 404 instead of displaying another level. The default/original level retains `exploration.PROTOTYPE.json`; the lower level saves `level-below.PROTOTYPE.exploration.json`. Fresh levels start fully fogged with no POV; click to place one, or use Shift-F to orient in GM view first. The plan manifest is read at server startup; restart after adding a new level entry.
 
-The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the original floor and has its own rooms and corridors. The original drawing is unchanged. These URLs replace the temporary port-8767 setup. A drawing-only level-switching control and a general plan library remain future work.
+The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the original floor and has its own rooms and corridors. The original drawing is unchanged. These URLs replace the temporary port-8767 setup. The plan library below provides level selection; a drawing-only level-switching control remains future work.
 
 ## Character markers in play (prototype)
 
@@ -117,7 +117,7 @@ Click a PC marker, or choose a PC on the current level in the Character selector
 
 Use the panel to rename/remove characters and change the POV PC's sight range. Choose a destination level and Move to level to transfer the selected character; the browser opens that level, preserving its coordinates so it can be dragged into place using GM full-plan view. Automatic stair/lift travel and combat integration are deferred. Shift-R clears exploration and closes doors while preserving character positions, ranges and selection; reveal pauses until POV selection or movement.
 
-`characters.PROTOTYPE.json` is scratch play state shared by all levels served by this prototype. It is separate from authored geometry and level-specific exploration. HTTP optimistic concurrency rejects stale saves. No sample characters are inserted into the Referee's plan.
+`characters.PROTOTYPE.json` is scratch play state shared by the existing building’s levels; other plans have their own rosters. It is separate from authored geometry and level-specific exploration. HTTP optimistic concurrency rejects stale saves. No sample characters are inserted into the Referee's plan.
 
 ## Plan library
 

@@ -125,23 +125,19 @@ function metadataButton(plan, level = null) {
   };
   return button;
 }
+/** @param {string|null} timestamp */
+function formatTimestamp(timestamp) {
+  return timestamp
+    ? new Date(timestamp).toLocaleString(undefined, { timeZone: "UTC" }) +
+        " UTC"
+    : "Unknown";
+}
 /** @param {Plan|Level} record @param {string} scope */
 function metadataDetails(record, scope) {
   const details = document.createElement("div");
-  const date = record.editedAt
-    ? new Date(record.editedAt).toLocaleString(undefined, { timeZone: "UTC" }) +
-      " UTC"
-    : "Unknown";
-  const created = record.createdAt
-    ? new Date(record.createdAt).toLocaleString(undefined, {
-        timeZone: "UTC",
-      }) + " UTC"
-    : "Unknown";
-  const played = record.lastPlayedAt
-    ? new Date(record.lastPlayedAt).toLocaleString(undefined, {
-        timeZone: "UTC",
-      }) + " UTC"
-    : "Unknown";
+  const date = formatTimestamp(record.editedAt);
+  const created = formatTimestamp(record.createdAt);
+  const played = formatTimestamp(record.lastPlayedAt);
   details.innerHTML = `<p>${Geometry.esc(record.description)}</p><p>${scope} tags: ${Geometry.esc(record.tags.join(", "))}</p><p>Created: ${Geometry.esc(created)}</p><p>Last edited: ${Geometry.esc(date)}</p><p>Last played: ${Geometry.esc(played)}</p>`;
   return details;
 }

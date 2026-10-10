@@ -206,3 +206,28 @@ test("Referee duplicates every level and opens the independent variation", async
   await expect(page.locator("#viewport [data-character]")).toHaveCount(0);
   await expect(page.locator("body")).toHaveAttribute("data-mode", "play");
 });
+
+test("plan-only play keeps a new marker on the selected plan's first level", async ({
+  page,
+  request,
+}) => {
+  const response = await request.post("/duplicate?plan=default");
+  expect(response.status()).toBe(201);
+  const copy = await response.json();
+  await page.goto(`/?plan=${copy.id}&mode=play`);
+  await expect(page.locator("#viewport")).toContainText("SECRET");
+  await page.keyboard.press("Shift+G");
+  await page.getByLabel("Character name").fill("Copy scout");
+  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await expect(page.locator("#viewport [data-character]")).toHaveCount(1);
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(`/characters?plan=${copy.id}`)).json())
+          .characters.length,
+    )
+    .toBe(1);
+  await page.goto(`/?plan=${copy.id}&level=${copy.levels[0].id}&mode=play`);
+  await expect(page.locator("#viewport [data-character]")).toHaveCount(1);
+  await expect(page.locator("#viewport")).toContainText("Copy scout");
+});
