@@ -196,3 +196,29 @@ test("console display connects to its input pad with an optional desk", () => {
   model.componentDefinitions["console@1"].details.desk = true;
   assert.match(render(), /data-console-desk/);
 });
+
+test("chair armrests cover the seat with white fill and black outlines", () => {
+  for (const family of ["chair", "console"]) {
+    const model = revisedModel(
+      family,
+      family === "chair" ? 0.6 : 0.9,
+      family === "chair" ? 0.75 : 1.35,
+    );
+    const svg = Geometry.scene(Geometry.validate(model), {
+      x: -1,
+      y: -1,
+      w: 3,
+      h: 3,
+    });
+    const arms = [...svg.matchAll(/<g data-chair-arm="(?:left|right)"[^>]*>/g)];
+    assert.equal(arms.length, 2);
+    for (const arm of arms) {
+      assert.match(arm[0], /fill="white"/);
+      assert.match(arm[0], /stroke="black"/);
+      assert.ok(
+        arm.index > svg.indexOf("data-chair-seat"),
+        "armrests paint over the seat",
+      );
+    }
+  }
+});

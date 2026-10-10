@@ -303,3 +303,8 @@ The Referee's connected computer sketch replaces the standalone display and
 keyboard on a mandatory desk: an arched display joins a rounded input pad through
 two supports, with no keyboard key markings. The normal crew console has no desk;
 console-desk@1 supplies the same stations on an optional desk. The demo shows both.
+
+Armrests must paint above the seat, with opaque white fill and black outlines.
+Transparent armrests showed the seat edges through them, making the sides look
+heavy. The shared chair geometry now masks those underlying edges in both loose
+chairs and console seats; the armrest direction and thin outline width remain.
