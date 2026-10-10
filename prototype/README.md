@@ -172,9 +172,9 @@ Sketch snapshots and exploration model revisions include the saved definitions,
 so they do not resolve remembered appearances through a later catalogue.
 
 Portable Geometry resolves the same instances for drawing, bounds, library
-thumbnails and 1:75 output alongside existing primitives. Furniture remains
-nonblocking in this slice. Component-specific sight properties,
-custom geometry and assemblies are later tickets. No live plan has been converted.
+thumbnails and 1:75 output alongside existing primitives. Furniture defaults to
+nonblocking. Equipment sight/access overrides are described below; custom geometry
+and assemblies remain later tickets. No live plan has been converted.
 
 ### Usable component catalogue
 
@@ -221,3 +221,36 @@ or `up-down` (default `up`); state is independently `open` or `closed` (default
 state is authored data, with no new play toggle, planar sight blocker, automatic
 level travel or movement enforcement. Historical observations retain the exact
 saved definitions and wall-door state seen at that time.
+
+
+### Configurable equipment (ticket #11)
+
+`console@1` is an original crew console with one to six stations, each with its
+own 0.5 m seat and control display. `settings: {seatCount: 3}` regenerates three
+stations at the proposed 0.9 m pitch, rather than stretching the single-seat art.
+Its proposed one-seat footprint is 0.9 × 1.35 m. The back is local y=0; the
+operator sits towards +y, facing the console. Console instances deliberately
+support seat count alone, rather than arbitrary footprint stretching.
+
+`machinery@1` is original generic service machinery, not a specified reactor,
+drive or pump capacity. The proposed footprint is 1.5 × 2 m; positive metre
+`width` and `length` settings regenerate its casing, central motor detail and
+front service panel. Local `[0,0]` is the back-left; service access faces +y.
+Both definitions retain the normal non-grid position and clockwise rotation.
+
+Console sight defaults to false; machinery defaults to true. Instance
+`blocksSight: false|true` overrides a saved definition, independently of
+appearance or sibling instances. Fog uses the transformed physical footprint,
+not stroke padding. Furniture also supports an explicit instance sight override.
+Equipment definitions carry `access: {blocksPassage: true, frontClearance: 0.75}`;
+instance `access` may override either property. Clearance is metres beyond the
+local +y front and remains guidance without movement/collision enforcement.
+`Geometry.componentSemantics(model, instance)` exposes the resolved sight/access
+properties to callers. Invalid access values or noninteger/out-of-range seat
+counts reject the whole save, preserving prior authored data and dates.
+
+Save/reload, independent duplication, thumbnails and monochrome 1:75 printing
+use the same authored geometry. Remembered observations retain the seat count,
+orientation, sight overrides and exact saved definitions previously seen.
+Dimensions and access defaults are proposals; Pearce F05/M01 are equipment-family
+references with unverified source dimensions, not imported or traced artwork.

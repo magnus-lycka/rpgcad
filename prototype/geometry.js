@@ -8,8 +8,9 @@
  * @typedef {{id: string, a: Point, b: Point, stroke?: number, blocksSight?: boolean}} Line
  * @typedef {{id: string, at: Point, width: number, projection: number, radius: number, stroke?: number, direction?: number}} StepIron
  * @typedef {{id: string, at: Point, radius: number, treads: number, direction?: 'up'|'down', startAngle?: number, sweep?: number}} Stair
- * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number}, details:{headDepth?:number,leafThickness?:number}, blocksSight:boolean}} ComponentDefinition
- * @typedef {{id:string, definition:string, at?:Point, rotation?:number, opening?:string, settings?:{width?:number,length?:number,direction?:string,state?:string}}} ComponentInstance
+ * @typedef {{blocksPassage?:boolean,frontClearance?:number}} ComponentAccess
+ * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number}, details:{headDepth?:number,leafThickness?:number}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
+ * @typedef {{id:string, definition:string, at?:Point, rotation?:number, opening?:string, blocksSight?:boolean, access?:ComponentAccess, settings?:{width?:number,length?:number,direction?:string,state?:string,seatCount?:number}}} ComponentInstance
  * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point, components?:ComponentInstance[], componentDefinitions?:Record<string, ComponentDefinition>}} Model
  * @typedef {Record<string, 'open'|'closed'>} Doors
  * @typedef {{id?: string, at: Point, range: number}} Observer
@@ -38,6 +39,8 @@ const Geometry = (() => {
   const length = (w) => Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]);
   const doorThickness = (m, o, w) =>
     o.thickness ?? Math.min(0.06, (w.thickness ?? m.wallThickness) * 0.4);
+  const seatCount = (n) =>
+    typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 6;
   const finite = (n) => typeof n === "number" && Number.isFinite(n);
   /** @param {Model} m */
   function validate(m) {
@@ -46,6 +49,17 @@ const Geometry = (() => {
       },
       positive = (n) => finite(n) && n > 0,
       point = (p) => Array.isArray(p) && p.length === 2 && p.every(finite);
+    const validAccess = (value) =>
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      Object.keys(value).every((key) =>
+        ["blocksPassage", "frontClearance"].includes(key),
+      ) &&
+      (value.blocksPassage === undefined ||
+        typeof value.blocksPassage === "boolean") &&
+      (value.frontClearance === undefined ||
+        (finite(value.frontClearance) && value.frontClearance >= 0));
     if (
       !m ||
       !Array.isArray(m.walls) ||
@@ -151,16 +165,24 @@ const Geometry = (() => {
         key !== `${definition.id}@${definition.version}` ||
         !Number.isInteger(definition.version) ||
         definition.version < 1 ||
-        !["bed", "chair", "door", "ceiling-hatch"].includes(
-          definition.family,
-        ) ||
+        ![
+          "bed",
+          "chair",
+          "console",
+          "machinery",
+          "door",
+          "ceiling-hatch",
+        ].includes(definition.family) ||
         !positive(definition.defaults?.width) ||
         !positive(definition.defaults?.length) ||
         !(definition.family === "ceiling-hatch" || definition.family === "door"
           ? definition.family === "ceiling-hatch" ||
             positive(definition.details?.leafThickness)
           : positive(definition.details?.headDepth)) ||
-        typeof definition.blocksSight !== "boolean"
+        typeof definition.blocksSight !== "boolean" ||
+        !validAccess(definition.access ?? {}) ||
+        (definition.family === "console" &&
+          !seatCount(definition.defaults.seatCount))
       )
         fail("Invalid component definition");
     }
@@ -168,17 +190,31 @@ const Geometry = (() => {
       const definition = m.componentDefinitions?.[instance.definition];
       if (
         !definition ||
-        !["bed", "chair", "door", "ceiling-hatch"].includes(
-          definition.family,
-        ) ||
+        ![
+          "bed",
+          "chair",
+          "console",
+          "machinery",
+          "door",
+          "ceiling-hatch",
+        ].includes(definition.family) ||
         (definition.family !== "door" &&
           (!point(instance.at) || !finite(instance.rotation))) ||
+        !validAccess(instance.access ?? {}) ||
+        (instance.blocksSight !== undefined &&
+          typeof instance.blocksSight !== "boolean") ||
+        (definition.family === "console" &&
+          !seatCount(
+            instance.settings?.seatCount ?? definition.defaults.seatCount,
+          )) ||
         Object.keys(instance.settings ?? {}).some(
           (key) =>
             !(
               definition.family === "ceiling-hatch"
                 ? ["width", "length", "direction", "state"]
-                : ["width", "length"]
+                : definition.family === "console"
+                  ? ["seatCount"]
+                  : ["width", "length"]
             ).includes(key),
         ) ||
         !positive(instance.settings?.width ?? definition.defaults.width) ||
@@ -222,10 +258,27 @@ const Geometry = (() => {
     if (!definition)
       throw Error(`Unknown component definition ${instance.definition}`);
     return {
-      width: instance.settings?.width ?? definition.defaults.width,
+      width:
+        definition.family === "console"
+          ? definition.defaults.width *
+            (instance.settings?.seatCount ?? definition.defaults.seatCount)
+          : (instance.settings?.width ?? definition.defaults.width),
+      seatCount: instance.settings?.seatCount ?? definition.defaults.seatCount,
       length: instance.settings?.length ?? definition.defaults.length,
       headDepth: definition.details.headDepth,
       family: definition.family,
+    };
+  }
+  /** Resolve authored sight/access independently; clearance is guidance, not movement enforcement.
+   * @param {Model} m @param {ComponentInstance} instance
+   */
+  function componentSemantics(m, instance) {
+    const definition = m.componentDefinitions?.[instance.definition];
+    if (!definition)
+      throw Error(`Unknown component definition ${instance.definition}`);
+    return {
+      blocksSight: instance.blocksSight ?? definition.blocksSight,
+      access: { ...definition.access, ...instance.access },
     };
   }
   function componentPoints(m, instance, padding = 0) {
@@ -473,7 +526,10 @@ const Geometry = (() => {
     for (const instance of m.components ?? []) {
       if (instance.opening) continue;
       if (!instance.at) throw Error(`Missing position ${instance.id}`);
-      const { width, length, headDepth, family } = furniture(m, instance);
+      const { width, length, headDepth, family, seatCount } = furniture(
+        m,
+        instance,
+      );
       if (family === "ceiling-hatch") {
         const direction = instance.settings?.direction ?? "up",
           state = instance.settings?.state ?? "closed";
@@ -483,7 +539,18 @@ const Geometry = (() => {
       s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025"><rect width="${width}" height="${length}"/>`;
       if (family === "bed")
         s += `<rect x="${width * 0.12}" y="${Math.min(0.06, length * 0.05)}" width="${width * 0.76}" height="${Math.min(headDepth, length * 0.3)}" rx=".04"/><path d="M 0 ${length * 0.4} H ${width}"/>`;
-      else
+      else if (family === "console") {
+        s += `<path d="M 0 ${headDepth} H ${width}"/>`;
+        for (let i = 0; i < seatCount; i++) {
+          const x = ((i + 0.5) * width) / seatCount;
+          s += `<rect data-console-station="${i + 1}" x="${x - 0.25}" y=".08" width="0.5" height=".3" rx=".03"/><rect data-console-seat="${i + 1}" x="${x - 0.25}" y="${length - 0.55}" width="0.5" height="0.5" rx=".04"/><path d="M ${x - 0.25} ${length - 0.1} h .5" stroke-width=".05"/>`;
+        }
+      } else if (family === "machinery") {
+        const panelDepth = Math.min(headDepth, length * 0.25),
+          inset = Math.min(0.06, width * 0.1),
+          radius = Math.min(width * 0.28, (length - panelDepth) * 0.28);
+        s += `<rect data-machinery-panel="front" x="${inset}" y="${length - panelDepth}" width="${width - inset * 2}" height="${panelDepth}"/><circle data-machinery-core="motor" cx="${width / 2}" cy="${(length - panelDepth) / 2}" r="${radius}"/><path d="M ${width / 2 - radius * 0.6} ${(length - panelDepth) / 2} h ${radius * 1.2}"/>`;
+      } else
         s += `<path d="M 0 ${Math.min(headDepth, length * 0.3)} H ${width}" stroke-width=".05"/>`;
       s += `</g>`;
     }
@@ -538,6 +605,8 @@ const Geometry = (() => {
     validate,
     bounds,
     scene,
+    componentPoints,
+    componentSemantics,
     papers,
     tiles,
     sheet,
@@ -595,6 +664,14 @@ const Fog = (() => {
             c.at[1] + c.radius * Math.sin((i * Math.PI) / 16),
           ]),
         );
+    for (const instance of m.components ?? [])
+      if (
+        !instance.opening &&
+        m.componentDefinitions?.[instance.definition]?.family !==
+          "ceiling-hatch" &&
+        Geometry.componentSemantics(m, instance).blocksSight === true
+      )
+        polygons.push(Geometry.componentPoints(m, instance));
     const edges = polygons.flatMap((p) =>
       p.map((a, i) => [a, p[(i + 1) % p.length]]),
     );
