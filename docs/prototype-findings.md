@@ -149,3 +149,10 @@ The metadata slice uses stable plan/level IDs independently of their names. Brow
 Controlled-date HTTP checks distinguish character/POV changes, movement, range, doors, observation history, reset and resuming reveal from no-op and stale writes. Character transfers affect both source and destination levels. Authoring dates and unrelated plans/levels remain unchanged. Unused model snapshots and explicit default-field serialization are housekeeping, not play.
 
 A browser check exposed an automatic exploration save when model polling loaded changed geometry. Polling now updates current visibility without recording or saving an observation; explicit play actions still record the current model revision. Browser checks cover entry, mode toggles, pan/zoom, temporary GM view, model refresh, reload and return to the library. Tests must await enabled mutation controls before a second POV click, because timestamp persistence extends an existing asynchronous save interval.
+
+
+## Independent plan variations, 2026-10-10
+
+The library's Duplicate plan action copies every authored model into separate files with fresh plan and level identities. Stable object IDs and references inside each authored model remain intact. Names, descriptions, tags and level order carry over; the new plan name adds “copy”. Creation and edit dates start together, while last played remains unknown. Characters, exploration and pending drawing marks start empty.
+
+Browser checks cover selecting the variation, independent level metadata edits surviving reload, and explicit Edit/Play opening. HTTP checks cover source characters, door overrides, historical observations/revisions and pending marks remaining unchanged, separate authored-file edits in both directions, and persistence in a new server process. Disposable thumbnails and the empty fullscreen play drawing were visually inspected. Library publication follows model-file copying under its shared lock, so metadata mutations reload the authoritative records before adding the copy.

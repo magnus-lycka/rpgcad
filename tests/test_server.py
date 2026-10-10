@@ -626,3 +626,137 @@ def test_play_changes_characterise_pov_range_and_reset_resume_dates(
     state["characters"].reverse()
     assert put_state(bridge, "/characters", state, etag)[0] == 204
     assert read_state(bridge, "/plan")[0] == plan
+
+
+def test_duplicate_preserves_authored_content_and_source_state_after_restart(
+    multiple_plans, tmp_path
+):
+    bridge = multiple_plans
+
+    def call(method, route, body=None):
+        headers = {}
+        if method == "PUT" and not route.startswith("/sketch"):
+            bridge.request("GET", route)
+            current = bridge.getresponse()
+            headers["If-Match"] = current.getheader("ETag")
+            current.read()
+        bridge.request(
+            method, route, json.dumps(body) if body is not None else None, headers
+        )
+        response = bridge.getresponse()
+        payload = response.read()
+        assert response.status in (200, 201, 204)
+        return json.loads(payload) if payload else None
+
+    data = json.loads((tmp_path / "library.PROTOTYPE.json").read_text())
+    source = data["plans"][0]
+    source.update(
+        description="Authored building",
+        tags=["ship"],
+        createdAt="2020-01-01T00:00:00+00:00",
+        editedAt="2021-01-01T00:00:00+00:00",
+        lastPlayedAt="2022-01-01T00:00:00+00:00",
+    )
+    source["levels"][1].update(description="Secure stores", tags=["cargo"], order=-1)
+    (tmp_path / "library.PROTOTYPE.json").write_text(json.dumps(data))
+    model = {
+        "walls": [{"id": "wall-a", "a": [0, 0], "b": [6, 0]}],
+        "openings": [{"id": "door-a", "wall": "wall-a", "offset": 2, "width": 1}],
+    }
+    (tmp_path / "below.json").write_text(json.dumps(model))
+    characters = {
+        "characters": [
+            {
+                "id": "ada",
+                "name": "Ada",
+                "kind": "pc",
+                "level": "below",
+                "at": [1, 2],
+                "range": 6,
+            }
+        ],
+        "pov": "ada",
+    }
+    call("PUT", "/characters", characters)
+    exploration = {
+        "version": 2,
+        "observers": [{"at": [1, 2], "range": 6}],
+        "doors": {"door-a": "open"},
+        "observations": [{"revision": "historic-layout", "at": [1, 2], "range": 6}],
+        "revisions": {"historic-layout": {"name": "Historical authored model"}},
+        "visibilityPaused": False,
+    }
+    call("PUT", "/exploration?level=below", exploration)
+    call("PUT", "/sketch?level=below", {"strokes": [[[1, 2], [2, 3]]]})
+    before = call("GET", "/plan")
+    marks = call("GET", "/sketch?level=below")
+    saved_play = call("GET", "/exploration?level=below")
+    copy = call("POST", "/duplicate?plan=default")
+    assert copy["id"] != before["id"]
+    assert copy["description"] == "Authored building"
+    assert copy["tags"] == ["ship"]
+    assert len(copy["levels"]) == 2
+    for level in copy["levels"]:
+        assert level["id"] not in ("original", "below")
+        assert level["model"] not in ("model.PROTOTYPE.json", "below.json")
+        assert level["createdAt"] == copy["createdAt"]
+        assert level["editedAt"] == copy["createdAt"]
+        assert level["lastPlayedAt"] is None
+    assert copy["createdAt"] == copy["editedAt"]
+    assert copy["createdAt"] > "2022-01-01"
+    assert copy["lastPlayedAt"] is None
+    lower = copy["levels"][1]
+    assert (lower["description"], lower["tags"], lower["order"]) == (
+        "Secure stores",
+        ["cargo"],
+        -1,
+    )
+    query = f"?plan={copy['id']}&level={lower['id']}"
+    assert call("GET", "/model" + query) == model
+    assert call("GET", "/characters" + query) == {"characters": [], "pov": None}
+    assert call("GET", "/exploration" + query) == {
+        "version": 2,
+        "observers": [],
+        "observations": [],
+        "revisions": {},
+        "doors": {},
+        "visibilityPaused": True,
+    }
+    assert call("GET", "/sketch" + query) is None
+    assert call("GET", "/plan") == before
+    assert call("GET", "/characters") == characters
+    assert call("GET", "/exploration?level=below") == saved_play
+    assert call("GET", "/sketch?level=below") == marks
+    call("PATCH", "/metadata" + query, {"description": "Copy only"})
+    (tmp_path / lower["model"]).write_text('{"name":"copy geometry"}')
+    assert call("GET", "/model?level=below") == model
+    call("PATCH", "/metadata?plan=default&level=below", {"name": "Source only"})
+    (tmp_path / "below.json").write_text('{"name":"source geometry"}')
+    assert call("GET", "/model" + query) == {"name": "copy geometry"}
+    assert (
+        call("GET", "/plan?plan=" + copy["id"])["levels"][1]["description"]
+        == "Copy only"
+    )
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    process = subprocess.Popen(
+        [sys.executable, str(tmp_path / "server.py"), "--port", str(port)],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert process.stdout is not None
+        assert "RPGCAD prototype" in process.stdout.readline()
+        reopened = HTTPConnection("127.0.0.1", port, timeout=3)
+        reopened.request("GET", "/plan?plan=" + copy["id"])
+        persisted = json.loads(reopened.getresponse().read())
+        assert persisted["levels"][1]["description"] == "Copy only"
+        assert persisted["createdAt"] == copy["createdAt"]
+        reopened.request("GET", "/model" + query)
+        assert json.loads(reopened.getresponse().read()) == {"name": "copy geometry"}
+        reopened.close()
+    finally:
+        process.terminate()
+        process.wait(timeout=5)

@@ -1,10 +1,12 @@
 """Authoritative plan records, metadata edits and authored-model change tracking."""
 
+import copy
 import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock
+from uuid import uuid4
 
 
 class PlanLibrary:
@@ -102,3 +104,40 @@ class PlanLibrary:
                 if level["id"] in level_ids:
                     level["lastPlayedAt"] = played_at
             self.write(data)
+
+    def duplicate(self, plan_id):
+        """Publish new authored files before their independent library record."""
+        with self.lock:
+            data = self.read()
+            source = next(p for p in data["plans"] if p["id"] == plan_id)
+            now = datetime.now(UTC).isoformat()
+            plan = {
+                key: copy.deepcopy(source[key])
+                for key in ("name", "description", "tags")
+            }
+            plan.update(
+                id=uuid4().hex,
+                name=source["name"] + " copy",
+                createdAt=now,
+                editedAt=now,
+                lastPlayedAt=None,
+                levels=[],
+            )
+            for original in source["levels"]:
+                level = {
+                    key: copy.deepcopy(original[key])
+                    for key in ("name", "description", "tags")
+                }
+                if "order" in original:
+                    level["order"] = original["order"]
+                level.update(
+                    id=uuid4().hex, createdAt=now, editedAt=now, lastPlayedAt=None
+                )
+                level["model"] = f"{plan['id']}-{level['id']}.json"
+                (self.root / level["model"]).write_bytes(
+                    (self.root / original["model"]).read_bytes()
+                )
+                plan["levels"].append(level)
+            data["plans"].append(plan)
+            self.write(data)
+            return plan
