@@ -142,3 +142,9 @@ The five left-hand cells on the second lower level have bunks, cupboards, desks/
 ## Library metadata and authoring dates, 2026-10-10
 
 The metadata slice uses stable plan/level IDs independently of their names. Browser forms distinguish plan and level tags, and agent PATCH requests update the same record. HTTP checks verify no-op metadata, rejected saves and saved exploration do not change authoring dates. Persisted semantic JSON fingerprints detect direct model-file edits without treating whitespace changes as new authoring. Initial migration fingerprints retain unknown historical dates. Browser checks verify rename persistence, retained drawing links and recent-edit ordering. An existing reload/keyboard test exposed a readiness race: tests must wait for rendered geometry before sending a shortcut after navigation.
+
+## Independent plan variations, 2026-10-10
+
+The library's Duplicate plan action copies every authored model into separate files with fresh plan and level identities. Stable object IDs and references inside each authored model remain intact. Names, descriptions, tags and level order carry over; the new plan name adds “copy”. Creation and edit dates start together, while last played remains unknown. Characters, exploration and pending drawing marks start empty.
+
+Browser checks cover selecting the variation, independent level metadata edits surviving reload, and explicit Edit/Play opening. HTTP checks cover source characters, door overrides, historical observations/revisions and pending marks remaining unchanged, separate authored-file edits in both directions, and persistence in a new server process. Disposable thumbnails and the empty fullscreen play drawing were visually inspected. Library publication follows model-file copying under its shared lock, so metadata mutations reload the authoritative records before adding the copy.
