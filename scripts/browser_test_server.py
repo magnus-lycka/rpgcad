@@ -1,6 +1,7 @@
 """Serve disposable browser-test data; never use the live exploration file."""
 
 import json
+import os
 import shutil
 import subprocess  # nosec B404
 import sys
@@ -13,7 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     with TemporaryDirectory(prefix="rpgcad-browser-") as directory:
         target = Path(directory)
-        for name in ("server.py", "index.html", "app.js", "geometry.js"):
+        for name in (
+            "server.py",
+            "index.html",
+            "app.js",
+            "geometry.js",
+            "library.html",
+            "library.js",
+        ):
             shutil.copy(ROOT / "prototype" / name, target / name)
         shutil.copy(
             ROOT / "tests" / "fixtures" / "browser-model.json",
@@ -38,6 +46,48 @@ def main():
                 }
             )
         )
+        (target / "depot.json").write_text(
+            json.dumps(
+                {
+                    "wallThickness": 0.15,
+                    "walls": [],
+                    "openings": [],
+                    "labels": [{"id": "depot-label", "at": [0, 0], "text": "DEPOT"}],
+                }
+            )
+        )
+        (target / "library.PROTOTYPE.json").write_text(
+            json.dumps(
+                {
+                    "plans": [
+                        {
+                            "id": "default",
+                            "name": "Referee building",
+                            "characters": "characters.PROTOTYPE.json",
+                            "levels": [
+                                {
+                                    "id": "original",
+                                    "name": "Ground",
+                                    "model": "model.PROTOTYPE.json",
+                                },
+                                {"id": "below", "name": "below", "model": "below.json"},
+                            ],
+                        },
+                        {
+                            "id": "depot",
+                            "name": "Depot",
+                            "levels": [
+                                {
+                                    "id": "original",
+                                    "name": "Depot floor",
+                                    "model": "depot.json",
+                                }
+                            ],
+                        },
+                    ]
+                }
+            )
+        )
         (target / "exploration.PROTOTYPE.json").write_text(
             json.dumps(
                 {
@@ -53,7 +103,12 @@ def main():
         try:
             # Only run our copied server with a fixed, dedicated test port.
             subprocess.run(  # nosec B603
-                [sys.executable, str(target / "server.py"), "--port", "8766"],
+                [
+                    sys.executable,
+                    str(target / "server.py"),
+                    "--port",
+                    os.environ.get("RPGCAD_TEST_PORT", "8766"),
+                ],
                 check=True,
             )
         except KeyboardInterrupt:

@@ -208,3 +208,114 @@ def test_characters_are_shared_across_levels_and_stale_saves_are_rejected(bridge
     response = bridge.getresponse()
     assert response.status == 412
     response.read()
+
+
+def test_library_lists_legacy_plan_and_rejects_unknown_plan(bridge):
+    bridge.request("GET", "/library")
+    response = bridge.getresponse()
+    assert response.status == 200
+    plans = json.loads(response.read())["plans"]
+    assert len(plans) == 1
+    assert [level["id"] for level in plans[0]["levels"]] == ["original", "below"]
+    bridge.request("GET", "/model?plan=missing")
+    response = bridge.getresponse()
+    assert response.status == 404
+    response.read()
+
+
+@pytest.fixture
+def multiple_plans(tmp_path, request):
+    request.getfixturevalue("bridge")
+    (tmp_path / "depot.json").write_text('{"name":"depot"}')
+    (tmp_path / "library.PROTOTYPE.json").write_text(
+        json.dumps(
+            {
+                "plans": [
+                    {
+                        "id": "default",
+                        "name": "Building",
+                        "characters": "characters.PROTOTYPE.json",
+                        "levels": [
+                            {
+                                "id": "original",
+                                "name": "Ground",
+                                "model": "model.PROTOTYPE.json",
+                            },
+                            {"id": "below", "name": "Basement", "model": "below.json"},
+                        ],
+                    },
+                    {
+                        "id": "depot",
+                        "name": "Depot",
+                        "levels": [
+                            {
+                                "id": "original",
+                                "name": "Depot floor",
+                                "model": "depot.json",
+                            }
+                        ],
+                    },
+                ]
+            }
+        )
+    )
+    return request.getfixturevalue("bridge")
+
+
+def test_different_plans_isolate_models_marks_exploration_and_characters(
+    multiple_plans,
+):
+    bridge = multiple_plans
+    bridge.request("GET", "/model?plan=depot&level=original")
+    response = bridge.getresponse()
+    assert json.loads(response.read())["name"] == "depot"
+    bridge.request(
+        "PUT", "/sketch?plan=depot&level=original", json.dumps({"strokes": [[[1, 2]]]})
+    )
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    bridge.request("GET", "/sketch")
+    response = bridge.getresponse()
+    assert json.loads(response.read()) is None
+    for route, state in [
+        (
+            "/exploration",
+            {
+                "version": 2,
+                "observers": [{"at": [1, 2], "range": 6}],
+                "observations": [],
+                "revisions": {},
+            },
+        ),
+        (
+            "/characters",
+            {
+                "characters": [
+                    {
+                        "id": "pc",
+                        "name": "Ada",
+                        "kind": "pc",
+                        "level": "original",
+                        "at": [1, 2],
+                        "range": 6,
+                    }
+                ],
+                "pov": "pc",
+            },
+        ),
+    ]:
+        bridge.request("GET", route + "?plan=depot")
+        response = bridge.getresponse()
+        etag = response.getheader("ETag")
+        response.read()
+        bridge.request(
+            "PUT", route + "?plan=depot", json.dumps(state), {"If-Match": etag}
+        )
+        response = bridge.getresponse()
+        assert response.status == 204
+        response.read()
+        bridge.request("GET", route)
+        response = bridge.getresponse()
+        original = json.loads(response.read())
+        assert original.get("characters", original.get("observers")) == []

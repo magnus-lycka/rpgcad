@@ -19,13 +19,31 @@ def main():
     parser.add_argument("--model", type=Path, default=ROOT / "model.PROTOTYPE.json")
     args = parser.parse_args()
     exploration_lock = Lock()
-    models = {"": args.model}
     plan_file = ROOT / "plan.PROTOTYPE.json"
-    if plan_file.exists():
-        for level in json.loads(plan_file.read_text())["levels"]:
-            models[level["id"]] = ROOT / level["model"]
+    library_file = ROOT / "library.PROTOTYPE.json"
+    legacy = json.loads(plan_file.read_text()) if plan_file.exists() else {}
+    legacy.setdefault("id", "default")
+    legacy.setdefault("name", "Referee building")
+    levels = legacy.setdefault("levels", [])
+    if not any(level["id"] == "original" for level in levels):
+        levels.insert(0, {"id": "original", "name": "Ground", "model": str(args.model)})
+    for level in levels:
+        level.setdefault("name", level["id"])
+    legacy["characters"] = "characters.PROTOTYPE.json"
 
-    character_file = ROOT / "characters.PROTOTYPE.json"
+    def library():
+        return (
+            json.loads(library_file.read_text())
+            if library_file.exists()
+            else {"plans": [legacy]}
+        )
+
+    def plan_models(plan):
+        return {level["id"]: ROOT / level["model"] for level in plan["levels"]}
+
+    def character_path(plan):
+        return ROOT / plan.get("characters", plan["id"] + ".characters.json")
+
     empty_characters = b'{"characters": [], "pov": null}\n'
 
     empty_exploration = (
@@ -55,9 +73,21 @@ def main():
         return model.with_name(model.stem + ".sketch.PROTOTYPE.json")
 
     class Handler(BaseHTTPRequestHandler):
+        def selected_plan(self):
+            pid = parse_qs(urlsplit(self.path).query).get("plan", [legacy["id"]])[0]
+            plan = next((p for p in library()["plans"] if p["id"] == pid), None)
+            if plan is None:
+                self.send_error(404, "Unknown plan")
+            return plan
+
         def selected_model(self):
-            level = parse_qs(urlsplit(self.path).query).get("level", [""])[0]
-            model = models.get(level)
+            plan = self.selected_plan()
+            if plan is None:
+                return None
+            level = parse_qs(urlsplit(self.path).query).get(
+                "level", [plan["levels"][0]["id"]]
+            )[0]
+            model = plan_models(plan).get(level)
             if model is None:
                 self.send_error(404, "Unknown level")
             return model
@@ -71,12 +101,18 @@ def main():
                 "/sketch",
                 "/characters",
                 "/plan",
+                "/library",
+                "/library.html",
+                "/library.js",
                 "/app.js",
                 "/geometry.js",
             ):
                 self.send_error(404)
                 return
             try:
+                plan = self.selected_plan()
+                if plan is None:
+                    return
                 model = self.selected_model()
                 if model is None:
                     return
@@ -87,21 +123,18 @@ def main():
                     "/model": model,
                     "/exploration": exploration_path(model),
                     "/sketch": sketch_path(model),
-                    "/characters": character_file,
+                    "/characters": character_path(plan),
+                    "/library": library_file,
+                    "/library.html": ROOT / "library.html",
+                    "/library.js": ROOT / "library.js",
                     "/plan": plan_file,
                 }[route]
                 body = (
                     (source.read_bytes() if source.exists() else empty_characters)
                     if route == "/characters"
-                    else json.dumps(
-                        {
-                            "levels": [
-                                {"id": key or "original", "name": key or "Ground"}
-                                for key in models
-                                if key != "original"
-                            ]
-                        }
-                    ).encode()
+                    else json.dumps(library()).encode()
+                    if route == "/library"
+                    else json.dumps(plan).encode()
                     if route == "/plan"
                     else exploration_bytes(source)
                     if route == "/exploration"
@@ -124,7 +157,7 @@ def main():
                     "text/javascript; charset=utf-8"
                     if route.endswith(".js")
                     else "text/html; charset=utf-8"
-                    if route == "/"
+                    if route in ("/", "/library.html")
                     else "application/json"
                 ),
             )
@@ -193,6 +226,11 @@ def main():
             self.end_headers()
 
         def save_characters(self):
+            plan = self.selected_plan()
+            if plan is None or self.selected_model() is None:
+                return
+            models = plan_models(plan)
+            character_file = character_path(plan)
             origin = self.headers.get("Origin")
             if origin and origin != f"http://{self.headers.get('Host')}":
                 self.send_error(403)

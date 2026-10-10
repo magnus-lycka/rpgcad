@@ -1,5 +1,14 @@
 import { test, expect } from "@playwright/test";
 
+test.beforeEach(async ({ request }) => {
+  for (const query of ["", "?level=below"]) {
+    const response = await request.put(`/sketch${query}`, {
+      data: { strokes: [] },
+    });
+    expect(response.status()).toBe(204);
+  }
+});
+
 test("drawing alone makes raw strokes available to the chat agent without editing the model", async ({
   page,
   request,
