@@ -3,10 +3,16 @@
 import copy
 import hashlib
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock
 from uuid import uuid4
+
+
+def utc_now() -> datetime:
+    """Return the production clock's current UTC time."""
+    return datetime.now(UTC)
 
 
 def model_fingerprint(path):
@@ -27,11 +33,14 @@ def _duplicate_authored_record(source, now):
 class PlanLibrary:
     """Keep stable identities and authored dates separate from play state."""
 
-    def __init__(self, root: Path, legacy: dict):
+    def __init__(
+        self, root: Path, legacy: dict, *, clock: Callable[[], datetime] = utc_now
+    ):
         self.root = root
         self.path = root / "library.PROTOTYPE.json"
         self.legacy = legacy
         self.lock = RLock()
+        self.clock = clock
 
     def read(self):
         with self.lock:
@@ -58,9 +67,9 @@ class PlanLibrary:
                         continue
                     if revisions.get(key) != revision:
                         if key in revisions:
-                            level["editedAt"] = plan["editedAt"] = datetime.now(
-                                UTC
-                            ).isoformat()
+                            level["editedAt"] = plan["editedAt"] = (
+                                self.clock().isoformat()
+                            )
                         revisions[key] = revision
                         changed = True
             if changed:
@@ -102,7 +111,7 @@ class PlanLibrary:
             )
             if any(record[key] != value for key, value in update.items()):
                 record.update(update)
-                record["editedAt"] = plan["editedAt"] = datetime.now(UTC).isoformat()
+                record["editedAt"] = plan["editedAt"] = self.clock().isoformat()
                 self.write(data)
 
     def record_play(self, plan_id, level_ids):
@@ -110,7 +119,7 @@ class PlanLibrary:
         with self.lock:
             data = self.read()
             plan = next(p for p in data["plans"] if p["id"] == plan_id)
-            played_at = datetime.now(UTC).isoformat()
+            played_at = self.clock().isoformat()
             plan["lastPlayedAt"] = played_at
             for level in plan["levels"]:
                 if level["id"] in level_ids:
@@ -122,7 +131,7 @@ class PlanLibrary:
         with self.lock:
             data = self.read()
             source = next(p for p in data["plans"] if p["id"] == plan_id)
-            now = datetime.now(UTC).isoformat()
+            now = self.clock().isoformat()
             plan = _duplicate_authored_record(source, now)
             plan.update(
                 name=source["name"] + " copy",

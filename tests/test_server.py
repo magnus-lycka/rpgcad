@@ -18,17 +18,15 @@ def bridge(tmp_path):
         if (source / name).exists():
             shutil.copy(source / name, tmp_path / name)
     (tmp_path / "test-clock").write_text("2035-06-07T08:09:10+00:00")
-    clock_module = tmp_path / "plan_library.py"
-    clock_module.write_text(
-        clock_module.read_text().replace(
-            "from datetime import UTC, datetime",
-            "from datetime import UTC, datetime as RealDatetime\n"
-            "class datetime(RealDatetime):\n"
-            "    @classmethod\n"
-            "    def now(cls, tz=None):\n"
-            "        return RealDatetime.fromisoformat(\n"
-            "            Path(__file__).with_name('test-clock').read_text())",
-        )
+    launcher = tmp_path / "launch_server.py"
+    launcher.write_text(
+        "from datetime import datetime\n"
+        "from pathlib import Path\n"
+        "from server import main\n\n"
+        "def read_test_clock():\n"
+        "    return datetime.fromisoformat(\n"
+        "        Path(__file__).with_name('test-clock').read_text())\n\n"
+        "main(clock=read_test_clock)\n"
     )
     (tmp_path / "model.PROTOTYPE.json").write_text('{"name":"test plan"}')
     (tmp_path / "exploration.PROTOTYPE.json").write_text(
@@ -42,7 +40,7 @@ def bridge(tmp_path):
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
     process = subprocess.Popen(
-        [sys.executable, str(tmp_path / "server.py"), "--port", str(port)],
+        [sys.executable, str(launcher), "--port", str(port)],
         stdout=subprocess.PIPE,
         text=True,
     )

@@ -10,12 +10,24 @@ from pathlib import Path
 from threading import Lock
 from urllib.parse import parse_qs, urlsplit
 
-from plan_library import PlanLibrary
+from plan_library import PlanLibrary, utc_now
 
 ROOT = Path(__file__).resolve().parent
 
 
-def main():
+def finite_number(value):
+    return type(value) in (int, float) and math.isfinite(value)
+
+
+def model_point(value):
+    return (
+        isinstance(value, list)
+        and len(value) == 2
+        and all(finite_number(coordinate) for coordinate in value)
+    )
+
+
+def main(*, clock=utc_now):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--model", type=Path, default=ROOT / "model.PROTOTYPE.json")
@@ -33,7 +45,7 @@ def main():
         level.setdefault("name", level["id"])
     legacy["characters"] = "characters.PROTOTYPE.json"
 
-    store = PlanLibrary(ROOT, legacy)
+    store = PlanLibrary(ROOT, legacy, clock=clock)
     library = store.read
 
     def plan_models(plan):
@@ -75,6 +87,7 @@ def main():
                 not isinstance(observation, dict)
                 or not isinstance(observation.get("revision"), str)
                 or observation["revision"] not in revisions
+                or not isinstance(revisions[observation["revision"]], dict)
             ):
                 raise ValueError("Each observation must reference a model revision")
         return {
@@ -233,6 +246,8 @@ def main():
                 if not 0 < size <= 5_000_000:
                     raise ValueError("Invalid exploration size")
                 state = json.loads(self.rfile.read(size))
+                if not isinstance(state, dict):
+                    raise ValueError("Expected exploration object")
                 if state.get("version") != 2 or "revealed" in state:
                     raise ValueError(
                         "Reload the viewer: observation-based exploration is required"
@@ -245,6 +260,21 @@ def main():
                     raise ValueError(
                         "Expected observers, observations and shared model revisions"
                     )
+                for observer in state["observers"] + state["observations"]:
+                    if (
+                        not isinstance(observer, dict)
+                        or not model_point(observer.get("at"))
+                        or not finite_number(observer.get("range"))
+                        or observer["range"] <= 0
+                    ):
+                        raise ValueError("Invalid observer position or range")
+                doors = state.get("doors", {})
+                if not isinstance(doors, dict) or any(
+                    value not in ("open", "closed") for value in doors.values()
+                ):
+                    raise ValueError("Expected open or closed door states")
+                if not isinstance(state.get("visibilityPaused", False), bool):
+                    raise ValueError("Expected boolean visibility pause")
                 body = (json.dumps(state, indent=2, allow_nan=False) + "\n").encode()
                 target = exploration_path(model)
                 with exploration_lock:
@@ -313,13 +343,8 @@ def main():
                         or not character["name"].strip()
                         or character.get("kind") not in ("pc", "npc")
                         or character.get("level") not in models
-                        or not isinstance(at, list)
-                        or len(at) != 2
-                        or not all(
-                            isinstance(n, (float, int)) and math.isfinite(n) for n in at
-                        )
-                        or not isinstance(character.get("range"), (float, int))
-                        or not math.isfinite(character["range"])
+                        or not model_point(at)
+                        or not finite_number(character.get("range"))
                         or character["range"] <= 0
                     ):
                         raise ValueError("Invalid character")
@@ -389,14 +414,7 @@ def main():
                     if not isinstance(stroke, list) or not stroke:
                         raise ValueError("Empty stroke")
                     for point in stroke:
-                        if (
-                            not isinstance(point, list)
-                            or len(point) != 2
-                            or not all(
-                                isinstance(v, (int, float)) and math.isfinite(v)
-                                for v in point
-                            )
-                        ):
+                        if not model_point(point):
                             raise ValueError(
                                 "Stroke points must be finite model coordinates"
                             )
@@ -440,6 +458,8 @@ def main():
                 update = json.loads(self.rfile.read(size))
                 if update.get("status") not in ("working", "applied", "question"):
                     raise ValueError("Invalid feedback status")
+                if not isinstance(update.get("reply", ""), str):
+                    raise ValueError("Feedback reply must be text")
                 target = sketch_path(model)
                 with exploration_lock:
                     sketch = json.loads(target.read_bytes())
@@ -447,7 +467,7 @@ def main():
                         self.send_error(409, "A newer instruction has arrived")
                         return
                     sketch["status"] = update["status"]
-                    sketch["reply"] = str(update.get("reply", ""))
+                    sketch["reply"] = update.get("reply", "")
                     temporary = target.with_suffix(".tmp")
                     temporary.write_text(json.dumps(sketch, indent=2) + "\n")
                     temporary.replace(target)
