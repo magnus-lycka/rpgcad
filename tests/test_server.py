@@ -556,6 +556,60 @@ def test_exploration_defaults_and_unused_revision_cache_are_not_play(dated_play)
     assert read_state(bridge, "/library")[0] == before
 
 
+def test_invalid_observation_is_rejected_without_saving_or_recording_play(dated_play):
+    bridge = dated_play
+    before, etag = read_state(bridge, "/exploration")
+    library, _ = read_state(bridge, "/library")
+    invalid = {**before, "observations": [{"at": [0, 0], "range": 6}]}
+
+    assert put_state(bridge, "/exploration", invalid, etag)[0] == 400
+    assert read_state(bridge, "/exploration") == (before, etag)
+    assert read_state(bridge, "/library")[0] == library
+
+
+@pytest.mark.parametrize("revision", [None, "missing-model"])
+def test_observation_requires_a_saved_model_revision(dated_play, revision):
+    bridge = dated_play
+    before, etag = read_state(bridge, "/exploration")
+    invalid = {
+        **before,
+        "observations": [{"at": [0, 0], "range": 6, "revision": revision}],
+    }
+
+    assert put_state(bridge, "/exploration", invalid, etag)[0] == 400
+    assert read_state(bridge, "/exploration") == (before, etag)
+
+
+def test_reset_recovers_malformed_saved_history_and_records_play(dated_play, tmp_path):
+    bridge = dated_play
+    (tmp_path / "below.exploration.json").write_text(
+        json.dumps(
+            {
+                "version": 2,
+                "observers": [],
+                "observations": [{"at": [0, 0], "range": 6}],
+                "revisions": {},
+            }
+        )
+    )
+    _, etag = read_state(bridge, "/exploration?level=below")
+    reset = {
+        "version": 2,
+        "observers": [],
+        "observations": [],
+        "revisions": {},
+        "doors": {},
+        "visibilityPaused": True,
+    }
+
+    assert put_state(bridge, "/exploration?level=below", reset, etag)[0] == 204
+    assert read_state(bridge, "/exploration?level=below")[0] == reset
+    plan, _ = read_state(bridge, "/plan")
+    assert plan["lastPlayedAt"] == "2035-06-07T08:09:10+00:00"
+    assert plan["levels"][1]["lastPlayedAt"] == "2035-06-07T08:09:10+00:00"
+    assert plan["levels"][0]["lastPlayedAt"] == "2022-01-01T00:00:00+00:00"
+
+
 def test_play_changes_characterise_pov_range_and_reset_resume_dates(
     dated_play, tmp_path
 ):

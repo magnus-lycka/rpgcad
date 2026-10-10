@@ -70,6 +70,13 @@ def main():
     def meaningful_exploration(state):
         """Ignore default serialization and snapshots unused by observation history."""
         revisions = state["revisions"]
+        for observation in state["observations"]:
+            if (
+                not isinstance(observation, dict)
+                or not isinstance(observation.get("revision"), str)
+                or observation["revision"] not in revisions
+            ):
+                raise ValueError("Each observation must reference a model revision")
         return {
             "observers": state["observers"],
             "observations": state["observations"],
@@ -249,12 +256,17 @@ def main():
                             "Exploration changed; reload before saving",
                         )
                         return
+                    current = meaningful_exploration(state)
+                    try:
+                        old = meaningful_exploration(json.loads(previous))
+                    except ValueError:
+                        # A valid save can replace history accepted by older servers.
+                        old = None
+                    changed = old != current
                     temporary = target.with_suffix(".tmp")
                     temporary.write_bytes(body)
                     temporary.replace(target)
-                    if meaningful_exploration(
-                        json.loads(previous)
-                    ) != meaningful_exploration(state):
+                    if changed:
                         plan = self.selected_plan()
                         store.record_play(
                             plan["id"],

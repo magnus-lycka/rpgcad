@@ -15,6 +15,15 @@ def model_fingerprint(path):
     return hashlib.sha256(json.dumps(model, sort_keys=True).encode()).hexdigest()
 
 
+def _duplicate_authored_record(source, now):
+    """Copy authored metadata into a fresh identity with no play history."""
+    record = {
+        key: copy.deepcopy(source[key]) for key in ("name", "description", "tags")
+    }
+    record.update(id=uuid4().hex, createdAt=now, editedAt=now, lastPlayedAt=None)
+    return record
+
+
 class PlanLibrary:
     """Keep stable identities and authored dates separate from play state."""
 
@@ -114,28 +123,15 @@ class PlanLibrary:
             data = self.read()
             source = next(p for p in data["plans"] if p["id"] == plan_id)
             now = datetime.now(UTC).isoformat()
-            plan = {
-                key: copy.deepcopy(source[key])
-                for key in ("name", "description", "tags")
-            }
+            plan = _duplicate_authored_record(source, now)
             plan.update(
-                id=uuid4().hex,
                 name=source["name"] + " copy",
-                createdAt=now,
-                editedAt=now,
-                lastPlayedAt=None,
                 levels=[],
             )
             for original in source["levels"]:
-                level = {
-                    key: copy.deepcopy(original[key])
-                    for key in ("name", "description", "tags")
-                }
+                level = _duplicate_authored_record(original, now)
                 if "order" in original:
                     level["order"] = original["order"]
-                level.update(
-                    id=uuid4().hex, createdAt=now, editedAt=now, lastPlayedAt=None
-                )
                 level["model"] = f"{plan['id']}-{level['id']}.json"
                 (self.root / level["model"]).write_bytes(
                     (self.root / original["model"]).read_bytes()

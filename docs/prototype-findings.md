@@ -171,3 +171,9 @@ Duplicate publication now stores the copied models' canonical fingerprints toget
 
 
 The selected-plan view's hidden filter form was still visible because its flex display rule overrode the browser's hidden-attribute styling. A browser regression now checks hiding on plan entry and restoring the unchanged text, tags, date and sort controls on All plans. Compact selected-plan metadata spacing was visually inspected with isolated copies of all three building levels at 1200 × 720: all three thumbnails and their Edit/Play actions fit above the fold.
+
+## Review corrections, 2026-10-10
+
+The library review exposed exploration saves being committed before observation revision lookup. Missing revision references caused a disconnected response after persistence, and the malformed saved history caused the next reset to fail and miss its play date. HTTP regressions were run red before each correction: invalid observations now return 400 without changing saved state or dates; valid resets can replace that older malformed history and update the affected level and plan's play dates. Observation references must be strings pointing to a saved model revision. Validation and comparison happen before replacing the exploration file.
+
+Plan and level duplication now share the authored-metadata copy and fresh-identity/date policy. This is a behaviour-preserving refactor covered by the existing HTTP and browser duplication tests, rather than a new red-green behaviour. The complete gate passed with 25 HTTP, 5 JavaScript and 29 browser tests. Tests used disposable plans; the Referee's live drawings and play state were untouched.
