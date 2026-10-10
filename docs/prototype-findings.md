@@ -273,3 +273,10 @@ Revised catalogue and demo definitions carry an explicit drawing profile; saved
 older definition snapshots remain unchanged. Automated tests cover directional
 contours, rotation and geometry, HTTP persistence and catalogue variants. Visual
 inspection complements these checks; only the Referee can approve recognisability.
+
+The Referee immediately corrected the first banana backrests: they bowed towards
+the sitter instead of wrapping around the sitter. Reverse the curvature, with the
+centre farther towards the rear than the ends; a curve alone does not establish
+the right orientation. The console displays were also widened from 0.56 to 0.76 m
+per station, within the same 0.9 m station pitch. Both corrections have failing-first
+Geometry tests and were refreshed in the live demonstration.

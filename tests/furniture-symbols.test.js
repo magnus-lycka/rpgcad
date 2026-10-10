@@ -71,7 +71,15 @@ test("revised chair draws a tapered seat with curved backrest and uniform thin o
   assert.ok(
     frontRight[0] - Number(frontLeft[3]) > rearRight[0] - Number(rearLeft[1]),
   );
-  assert.match(backPath, /^M 0.075 0.42 Q 0.25 0.35 0.425 0.42/);
+  // The back bows away from the sitter: its centre is farther towards +Y.
+  const curve = match(
+    backPath,
+    /^M ([\d.]+) ([\d.]+) Q ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+)/,
+  );
+  assert.ok(
+    Number(curve[4]) > Number(curve[2]),
+    "backrest must wrap around the sitter",
+  );
   const chair = scene.slice(scene.indexOf('<g data-component="chair"'));
   const widths = [...chair.matchAll(/stroke-width="([^"]+)"/g)].map((match) =>
     Number(match[1]),
@@ -137,7 +145,7 @@ test("revised console shows seats facing keyboards and curved displays on a dash
     );
     const originY = Number(seat[2].split(" ")[1]);
     near(originY + frontY, 0.816);
-    near(originY + backY, 1.212);
+    near(originY + backY, 1.135);
     assert.ok(frontY < backY, "chair front faces the dashboard at smaller Y");
   }
   const keyboardY = [
@@ -149,7 +157,7 @@ test("revised console shows seats facing keyboards and curved displays on a dash
     scene,
     /data-console-display="1" d="M ([\d.]+) ([\d.]+) Q ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+)/,
   );
-  for (const [index, expected] of [0.17, 0.15, 0.45, 0, 0.73, 0.15].entries())
+  for (const [index, expected] of [0.07, 0.15, 0.45, 0, 0.83, 0.15].entries())
     near(Number(display.at(index + 1)), expected);
   assert.doesNotMatch(scene, /<rect width="1.8" height="1.35"/);
   assert.doesNotMatch(scene, /stroke-width="\.05"|<text/);

@@ -628,7 +628,7 @@ const Geometry = (() => {
     let symbol = `<path data-console-desk="" d="M .06 0 H ${width - 0.06} Q ${width} 0 ${width} .06 V ${depth - 0.06} Q ${width / 2} ${depth + 0.04} 0 ${depth - 0.06} V .06 Q 0 0 .06 0 Z"/>`;
     for (let i = 0; i < seatCount; i++) {
       const x = ((i + 0.5) * width) / seatCount;
-      symbol += `<g data-console-station="${i + 1}"><path data-console-display="${i + 1}" d="M ${x - 0.28} .15 Q ${x} 0 ${x + 0.28} .15 L ${x + 0.25} .23 Q ${x} .1 ${x - 0.25} .23 Z"/><rect data-console-keyboard="${i + 1}" x="${x - 0.2}" y="${depth - 0.21}" width=".4" height=".13" rx=".025"/><path d="M ${x - 0.16} ${depth - 0.16} h .32 M ${x - 0.12} ${depth - 0.12} h .24"/><g data-console-seat="${i + 1}" transform="translate(${x - 0.25} ${length - 0.6})">${chairSymbol(0.5, 0.55)}</g></g>`;
+      symbol += `<g data-console-station="${i + 1}"><path data-console-display="${i + 1}" d="M ${x - 0.38} .15 Q ${x} 0 ${x + 0.38} .15 L ${x + 0.35} .23 Q ${x} .1 ${x - 0.35} .23 Z"/><rect data-console-keyboard="${i + 1}" x="${x - 0.2}" y="${depth - 0.21}" width=".4" height=".13" rx=".025"/><path d="M ${x - 0.16} ${depth - 0.16} h .32 M ${x - 0.12} ${depth - 0.12} h .24"/><g data-console-seat="${i + 1}" transform="translate(${x - 0.25} ${length - 0.6})">${chairSymbol(0.5, 0.55)}</g></g>`;
     }
     return symbol;
   }
@@ -641,7 +641,7 @@ const Geometry = (() => {
   // Local front is toward negative Y; backrest stays behind the seated occupant.
   function chairSymbol(width, length) {
     const point = (x, y) => `${x * width} ${y * length}`;
-    return `<path data-chair-seat="" d="M ${point(0.17, 0.12)} Q ${point(0.08, 0.12)} ${point(0.08, 0.22)} L ${point(0.2, 0.65)} Q ${point(0.5, 0.75)} ${point(0.8, 0.65)} L ${point(0.92, 0.22)} Q ${point(0.92, 0.12)} ${point(0.83, 0.12)} Z"/><path data-chair-back="" d="M ${point(0.15, 0.84)} Q ${point(0.5, 0.7)} ${point(0.85, 0.84)} Q ${point(0.94, 0.9)} ${point(0.85, 0.97)} Q ${point(0.5, 0.83)} ${point(0.15, 0.97)} Q ${point(0.06, 0.9)} ${point(0.15, 0.84)} Z"/><rect data-chair-arm="left" x="0" y="${length * 0.28}" width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/><rect data-chair-arm="right" x="${width * 0.87}" y="${length * 0.28}" width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/>`;
+    return `<path data-chair-seat="" d="M ${point(0.17, 0.12)} Q ${point(0.08, 0.12)} ${point(0.08, 0.22)} L ${point(0.2, 0.65)} Q ${point(0.5, 0.75)} ${point(0.8, 0.65)} L ${point(0.92, 0.22)} Q ${point(0.92, 0.12)} ${point(0.83, 0.12)} Z"/><path data-chair-back="" d="M ${point(0.15, 0.7)} Q ${point(0.5, 0.84)} ${point(0.85, 0.7)} Q ${point(0.94, 0.76)} ${point(0.85, 0.83)} Q ${point(0.5, 0.97)} ${point(0.15, 0.83)} Q ${point(0.06, 0.76)} ${point(0.15, 0.7)} Z"/><rect data-chair-arm="left" x="0" y="${length * 0.28}" width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/><rect data-chair-arm="right" x="${width * 0.87}" y="${length * 0.28}" width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/>`;
   }
   const papers = {
     a4: { w: 297, h: 210, tw: 21, th: 15, name: "A4 landscape" },
