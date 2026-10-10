@@ -100,9 +100,22 @@ Requested direction, not implemented:
 Agreed requirements, not yet implemented:
 
 - A plan represents one location and contains its levels. Further floors of the current building belong to this same plan.
-- Several plans can belong to the same campaign.
+- Campaign organisation appeared in earlier notes but is not a confirmed requirement. The Referee questioned its introduction on 2026-10-10; leave it outside the current plan-library scope.
 - Support arbitrary tags, text search, browsing, and creation/last-edit timestamps.
 - A separate catalogue view keeps organisation controls out of the drawing view.
+
+Agreed library interaction, 2026-10-10:
+
+- Browse thumbnail cards showing plan name, tags, level count and last-edit date, initially sorted by most recently edited.
+- Opening a plan card shows its levels with thumbnails and editable names, allowing selection of the level to open.
+- Names, descriptions and tags can be edited directly in the library or through the agent. Geometry design continues through the drawing/chat loop.
+- Text search covers plan and level names, descriptions and tags. Results identify a matching level when appropriate.
+- Separate tag filters require all selected tags to match. Date filters support creation and last-edit ranges; sorting supports name, creation date and last edit.
+- Edit mode and play mode are distinct. Authored layout/metadata edits determine creation/last-edit metadata; moving characters, doors and fog are play activity.
+- Track last played for levels and plans, with sorting and date filtering. Update it when a meaningful change to play state is successfully saved. Opening play mode alone, navigation, pan/zoom, temporary GM viewing, unchanged saves and background polling do not count. Re-selecting the same POV counts only when state changes, such as resuming reveal after reset.
+- Levels have their own tags; their effective tags combine those with the parent plan's tags. Keep tag scopes distinguishable.
+- Each level offers explicit Edit and Play actions. Return to the library through the edit palette or on-demand GM panel, retaining fullscreen play when that panel is closed.
+- Duplicate plan creates an independent copy of the layout and metadata with new identities and creation dates, without characters or exploration history. Subsequent edits do not propagate between copies.
 
 Proposed details still to validate:
 
