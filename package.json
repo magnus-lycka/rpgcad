@@ -7,8 +7,8 @@
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "format:check": "prettier --check prototype/*.js prototype/index.html \"tests/**/*.js\" *.mjs *.json .github/**/*.yml tests/fixtures/*.json",
-    "format": "prettier --write prototype/*.js prototype/index.html \"tests/**/*.js\" *.mjs *.json .github/**/*.yml tests/fixtures/*.json",
+    "format:check": "prettier --check prototype/*.js prototype/*.html \"tests/**/*.js\" *.mjs *.json .github/**/*.yml tests/fixtures/*.json",
+    "format": "prettier --write prototype/*.js prototype/*.html \"tests/**/*.js\" *.mjs *.json .github/**/*.yml tests/fixtures/*.json",
     "typecheck": "tsc --noEmit",
     "dependencies:check": "knip",
     "test": "node --test tests/*.test.js",

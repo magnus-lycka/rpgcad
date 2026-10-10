@@ -134,8 +134,14 @@ function switchMode(edit) {
   updateEditTools();
   draw();
 }
-const levelQuery = settings.get("level")
-  ? `?${new URLSearchParams({ level: settings.get("level") || "" })}`
+const scope = new URLSearchParams();
+for (const key of ["plan", "level"]) {
+  const value = settings.get(key);
+  if (value) scope.set(key, value);
+}
+const levelQuery = scope.size ? `?${scope}` : "";
+const planQuery = settings.get("plan")
+  ? `?${new URLSearchParams({ plan: settings.get("plan") || "" })}`
   : "";
 /** @type {Exploration|null} */
 let exploration = null;
@@ -235,7 +241,7 @@ element("remove-character").addEventListener("click", async () => {
   await saveExploration();
 });
 async function loadLevels() {
-  const response = await fetch("/plan");
+  const response = await fetch(`/plan${planQuery}`);
   if (!response.ok) return;
   const plan = await response.json();
   const select = /** @type {HTMLSelectElement} */ (element("character-level"));
@@ -261,7 +267,7 @@ element("transfer-character").addEventListener("click", async () => {
   if (c.id === characterState.pov) await saveExploration();
   if (!characterEtag) return;
   location.assign(
-    `?${new URLSearchParams({ level, mode: "play", character: c.id })}`,
+    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: c.id })}`,
   );
 });
 loadLevels();
@@ -282,7 +288,7 @@ function characterDrawing() {
 }
 async function pollCharacters() {
   if (!fogEnabled || savingCharacters || characterDrag) return;
-  const response = await fetch("/characters", {
+  const response = await fetch(`/characters${levelQuery}`, {
     headers: characterEtag ? { "If-None-Match": characterEtag } : {},
   });
   if (response.status === 304) return;
@@ -317,7 +323,7 @@ async function saveCharacters() {
   savingCharacters = true;
   updateBusyControls();
   try {
-    const response = await fetch("/characters", {
+    const response = await fetch(`/characters${levelQuery}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -840,5 +846,16 @@ window.addEventListener("beforeprint", () => {
   }
 });
 new ResizeObserver(() => draw()).observe(viewport);
+async function restoreMarks() {
+  const response = await fetch(`/sketch${levelQuery}`, { cache: "no-store" });
+  if (!response.ok) return;
+  const saved = await response.json();
+  if (saved && saved.status !== "applied" && Array.isArray(saved.strokes)) {
+    strokes = saved.strokes;
+    savedSketchId = saved.submittedAt;
+    draw();
+  }
+}
 fit();
+await restoreMarks();
 poll();

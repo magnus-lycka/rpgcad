@@ -118,3 +118,11 @@ Click a PC marker, or choose a PC on the current level in the Character selector
 Use the panel to rename/remove characters and change the POV PC's sight range. Choose a destination level and Move to level to transfer the selected character; the browser opens that level, preserving its coordinates so it can be dragged into place using GM full-plan view. Automatic stair/lift travel and combat integration are deferred. Shift-R clears exploration and closes doors while preserving character positions, ranges and selection; reveal pauses until POV selection or movement.
 
 `characters.PROTOTYPE.json` is scratch play state shared by all levels served by this prototype. It is separate from authored geometry and level-specific exploration. HTTP optimistic concurrency rejects stale saves. No sample characters are inserted into the Referee's plan.
+
+## Plan library
+
+Open `/library.html` to browse plan thumbnails, then choose a level's Edit or Play action. The edit palette and on-demand GM panel link back to the library. Pending raw drawing marks are restored when reopening their level. Play still has no permanent toolbar.
+
+The optional `library.PROTOTYPE.json` record contains `plans`, each with stable `id`, `name`, and `levels` (`id`, `name`, `model` path relative to the server directory). An optional plan `characters` path locates its shared roster; otherwise `<plan id>.characters.json` is used. Without this record the existing plan manifest supplies the library, preserving original geometry and play-state paths. `GET /library` and `GET /plan?plan=<id>` expose these records. Drawing/state routes take `plan` and `level` selection; character rosters are scoped to a plan and validate level references within it. Legacy URLs without plan selection continue to open the existing building.
+
+Browser tests use disposable data on port 8766 by default; `RPGCAD_TEST_PORT` selects another port for parallel worktrees.
