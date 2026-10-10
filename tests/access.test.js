@@ -256,3 +256,38 @@ test("hatch hinge is broad with the through-hatch dashed hinge inset inside it",
   assert.deepEqual(outer, [0.3, 0.7]);
   assert.deepEqual(inner, [0.39, 0.61]);
 });
+
+test("hinged hatch leaf is circular rather than oval", () => {
+  const model = accessModel();
+  model.componentDefinitions = {
+    "hatch@1": {
+      id: "hatch",
+      version: 1,
+      name: "Hatch",
+      family: "ceiling-hatch",
+      defaults: { width: 1, length: 1, direction: "up-down" },
+      details: { profile: "referee-2026-10-11" },
+      blocksSight: false,
+    },
+  };
+  model.components = [
+    { id: "hatch", definition: "hatch@1", at: [0, 0], rotation: 0 },
+  ];
+  const svg = Geometry.scene(Geometry.validate(model), {
+    x: -1,
+    y: -1,
+    w: 3,
+    h: 3,
+  });
+  const arcs = [...svg.matchAll(/ A ([\d.]+) ([\d.]+) 0 1 1/g)];
+  assert.equal(arcs.length, 2);
+  for (const arc of arcs) assert.equal(Number(arc[1]), Number(arc[2]));
+  model.componentDefinitions["hatch@1"].defaults.width = 3;
+  const wide = Geometry.scene(Geometry.validate(model), {
+    x: -1,
+    y: -1,
+    w: 5,
+    h: 3,
+  });
+  assert.doesNotMatch(wide, /NaN/);
+});

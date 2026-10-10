@@ -260,9 +260,11 @@ const Geometry = (() => {
       // Joined hinge and round leaf: omit the arc covered by the hinge.
       const cx = width / 2,
         cy = inset + h * 0.56,
-        rx = w * 0.48,
-        ry = h * 0.42;
-      const hingeHalfWidth = width * 0.2 - inset,
+        rx = Math.min(w * 0.48, h * 0.42),
+        ry = rx;
+      const hingeHalfWidth =
+          Math.min(width * 0.2, Math.min(width * 0.48, length * 0.42) / 2) -
+          inset,
         left = cx - hingeHalfWidth,
         right = cx + hingeHalfWidth,
         top = cy - ry * Math.sqrt(1 - (hingeHalfWidth / rx) ** 2);

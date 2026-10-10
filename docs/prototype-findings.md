@@ -286,3 +286,8 @@ the dashed hinge is inset from each side of the solid hinge by the same clearanc
 as the inner contour. Scaling the hinge only by the inner circle radius gave
 insufficient side separation. A worked one-metre Geometry test checks the 0.40 m
 outer hinge and 0.22 m inner hinge with 0.09 m clearance at each side.
+
+The Referee also required the hatch leaf to be a true circle, rather than the
+initial oval. Both contours now use equal arc radii, including on a non-square
+footprint. Hinge width is limited by the circular leaf so wider footprints cannot
+produce invalid hinge/arc joins; the through-hatch retains its side clearance.
