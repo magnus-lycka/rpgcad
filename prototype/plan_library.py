@@ -73,7 +73,8 @@ def validate_components(model, definitions):
         if (
             not isinstance(defaults, dict)
             or not isinstance(details, dict)
-            or definition.get("family") not in ("bed", "chair", "console", "machinery")
+            or definition.get("family")
+            not in ("bed", "chair", "console", "machinery", "door", "ceiling-hatch")
             or not isinstance(definition.get("name"), str)
             or not definition.get("name")
             or key != f"{definition.get('id')}@{definition.get('version')}"
@@ -81,7 +82,14 @@ def validate_components(model, definitions):
             or definition["version"] < 1
             or not positive(defaults.get("width"))
             or not positive(defaults.get("length"))
-            or not positive(details.get("headDepth"))
+            or (
+                definition.get("family") in ("bed", "chair", "console", "machinery")
+                and not positive(details.get("headDepth"))
+            )
+            or (
+                definition.get("family") == "door"
+                and not positive(details.get("leafThickness"))
+            )
             or not isinstance(definition.get("blocksSight"), bool)
             or not valid_access(definition.get("access", {}))
             or (
@@ -112,37 +120,87 @@ def validate_components(model, definitions):
             raise ValueError("Expected component instance object")
         definition = definitions.get(instance.get("definition"))
         at = instance.get("at")
+        attached = definition and definition.get("family") == "door"
         settings = instance.get("settings", {})
         if (
             not definition
             or not isinstance(instance.get("id"), str)
             or not instance["id"]
             or instance["id"] in ids
-            or not isinstance(at, list)
-            or len(at) != 2
-            or not all(finite(n) for n in at)
-            or not finite(instance.get("rotation"))
-            or not valid_access(instance.get("access", {}))
-            or not isinstance(settings, dict)
-            or set(settings)
-            - (
-                {"seatCount"}
-                if definition.get("family") == "console"
-                else {"width", "length"}
+            or (
+                not attached
+                and (
+                    not isinstance(at, list)
+                    or len(at) != 2
+                    or not all(finite(n) for n in at)
+                    or not finite(instance.get("rotation"))
+                )
             )
+            or not valid_access(instance.get("access", {}))
+            or (
+                "blocksSight" in instance
+                and not isinstance(instance["blocksSight"], bool)
+            )
+            or not isinstance(settings, dict)
             or (
                 definition.get("family") == "console"
                 and not seat_count(
                     settings.get("seatCount", definition["defaults"]["seatCount"])
                 )
             )
-            or (
-                "blocksSight" in instance
-                and not isinstance(instance["blocksSight"], bool)
+            or set(settings)
+            - (
+                {"width", "length", "direction", "state"}
+                if definition and definition.get("family") == "ceiling-hatch"
+                else {"seatCount"}
+                if definition.get("family") == "console"
+                else {"width", "length"}
             )
-            or not all(positive(value) for value in settings.values())
+            or not all(
+                positive(value)
+                for key, value in settings.items()
+                if key in ("width", "length")
+            )
+            or (settings.get("direction", "up") not in ("up", "down", "up-down"))
+            or (settings.get("state", "closed") not in ("open", "closed"))
+            or (
+                attached
+                and (
+                    settings
+                    or not any(
+                        o.get("id") == instance.get("opening")
+                        for o in model.get("openings", [])
+                    )
+                )
+            )
         ):
             raise ValueError("Invalid component instance")
+        if (
+            attached
+            and sum(i.get("opening") == instance.get("opening") for i in instances) != 1
+        ):
+            raise ValueError("An opening can have only one component door")
+        if attached:
+            opening = next(
+                o for o in model["openings"] if o.get("id") == instance.get("opening")
+            )
+            wall = next(
+                (
+                    w
+                    for w in model.get("walls", [])
+                    if w.get("id") == opening.get("wall")
+                ),
+                None,
+            )
+            if (
+                not wall
+                or not positive(opening.get("width"))
+                or not finite(opening.get("offset"))
+                or opening["offset"] < 0
+                or opening["offset"] + opening["width"]
+                > math.dist(wall["a"], wall["b"]) + 1e-8
+            ):
+                raise ValueError("Component door must fit its wall opening")
         ids.add(instance["id"])
 
 

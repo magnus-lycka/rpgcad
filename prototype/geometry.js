@@ -9,8 +9,8 @@
  * @typedef {{id: string, at: Point, width: number, projection: number, radius: number, stroke?: number, direction?: number}} StepIron
  * @typedef {{id: string, at: Point, radius: number, treads: number, direction?: 'up'|'down', startAngle?: number, sweep?: number}} Stair
  * @typedef {{blocksPassage?:boolean,frontClearance?:number}} ComponentAccess
- * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number}, details:{headDepth:number}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
- * @typedef {{id:string, definition:string, at:Point, rotation:number, blocksSight?:boolean, access?:ComponentAccess, settings?:{width?:number,length?:number,seatCount?:number}}} ComponentInstance
+ * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number}, details:{headDepth?:number,leafThickness?:number}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
+ * @typedef {{id:string, definition:string, at?:Point, rotation?:number, opening?:string, blocksSight?:boolean, access?:ComponentAccess, settings?:{width?:number,length?:number,direction?:string,state?:string,seatCount?:number}}} ComponentInstance
  * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point, components?:ComponentInstance[], componentDefinitions?:Record<string, ComponentDefinition>}} Model
  * @typedef {Record<string, 'open'|'closed'>} Doors
  * @typedef {{id?: string, at: Point, range: number}} Observer
@@ -165,10 +165,20 @@ const Geometry = (() => {
         key !== `${definition.id}@${definition.version}` ||
         !Number.isInteger(definition.version) ||
         definition.version < 1 ||
-        !["bed", "chair", "console", "machinery"].includes(definition.family) ||
+        ![
+          "bed",
+          "chair",
+          "console",
+          "machinery",
+          "door",
+          "ceiling-hatch",
+        ].includes(definition.family) ||
         !positive(definition.defaults?.width) ||
         !positive(definition.defaults?.length) ||
-        !positive(definition.details?.headDepth) ||
+        !(definition.family === "ceiling-hatch" || definition.family === "door"
+          ? definition.family === "ceiling-hatch" ||
+            positive(definition.details?.leafThickness)
+          : positive(definition.details?.headDepth)) ||
         typeof definition.blocksSight !== "boolean" ||
         !validAccess(definition.access ?? {}) ||
         (definition.family === "console" &&
@@ -180,31 +190,67 @@ const Geometry = (() => {
       const definition = m.componentDefinitions?.[instance.definition];
       if (
         !definition ||
-        !["bed", "chair", "console", "machinery"].includes(definition.family) ||
-        !point(instance.at) ||
-        !finite(instance.rotation) ||
+        ![
+          "bed",
+          "chair",
+          "console",
+          "machinery",
+          "door",
+          "ceiling-hatch",
+        ].includes(definition.family) ||
+        (definition.family !== "door" &&
+          (!point(instance.at) || !finite(instance.rotation))) ||
         !validAccess(instance.access ?? {}) ||
         (instance.blocksSight !== undefined &&
           typeof instance.blocksSight !== "boolean") ||
+        (definition.family === "console" &&
+          !seatCount(
+            instance.settings?.seatCount ?? definition.defaults.seatCount,
+          )) ||
         Object.keys(instance.settings ?? {}).some(
           (key) =>
             !(
-              definition.family === "console"
-                ? ["seatCount"]
-                : ["width", "length"]
+              definition.family === "ceiling-hatch"
+                ? ["width", "length", "direction", "state"]
+                : definition.family === "console"
+                  ? ["seatCount"]
+                  : ["width", "length"]
             ).includes(key),
         ) ||
         !positive(instance.settings?.width ?? definition.defaults.width) ||
         !positive(instance.settings?.length ?? definition.defaults.length) ||
-        !positive(definition.details.headDepth) ||
-        (definition.family === "console" &&
-          !seatCount(
-            instance.settings?.seatCount ?? definition.defaults.seatCount,
-          ))
+        (definition.family === "door"
+          ? !m.openings.some((o) => o.id === instance.opening) ||
+            (m.components ?? []).filter((i) => i.opening === instance.opening)
+              .length > 1 ||
+            Object.keys(instance.settings ?? {}).length > 0
+          : definition.family === "ceiling-hatch"
+            ? !["up", "down", "up-down"].includes(
+                instance.settings?.direction ?? "up",
+              ) ||
+              !["open", "closed"].includes(instance.settings?.state ?? "closed")
+            : !positive(definition.details.headDepth))
       )
         fail(`Invalid component ${instance.id}`);
     }
     return m;
+  }
+  // Wall/offset/width remain authoritative on the existing opening.
+  function accessOpening(m, opening) {
+    const instance = (m.components ?? []).find((i) => i.opening === opening.id);
+    const definition =
+      instance && m.componentDefinitions?.[instance.definition];
+    if (definition?.family !== "door") return opening;
+    const wall = m.walls.find((w) => w.id === opening.wall);
+    return {
+      ...opening,
+      type: "double-closed",
+      thickness: Math.min(
+        opening.thickness ?? definition.details.leafThickness,
+        (wall?.thickness ?? m.wallThickness) * 0.4,
+      ),
+      blocksSight: opening.blocksSight ?? definition.blocksSight,
+    };
   }
   // Family settings change the footprint while retaining a physical head/back depth.
   function furniture(m, instance) {
@@ -236,6 +282,7 @@ const Geometry = (() => {
     };
   }
   function componentPoints(m, instance, padding = 0) {
+    if (instance.opening) return [];
     const { width, length } = furniture(m, instance),
       angle = (instance.rotation * Math.PI) / 180,
       c = Math.cos(angle),
@@ -379,12 +426,14 @@ const Geometry = (() => {
       } else
         s += `<rect data-outline="${esc(r.id)}" x="${r.at[0]}" y="${r.at[1]}" width="${r.width}" height="${r.height}" fill="none" stroke="#27332e" stroke-width="${r.stroke ?? 0.025}"${r.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
     }
-    for (const o of m.openings.filter(
-      (o) =>
-        o.type === "sliding" ||
-        o.type === "double-closed" ||
-        o.type === "single-closed",
-    )) {
+    for (const o of m.openings
+      .map((o) => accessOpening(m, o))
+      .filter(
+        (o) =>
+          o.type === "sliding" ||
+          o.type === "double-closed" ||
+          o.type === "single-closed",
+      )) {
       const open = doorStates[o.id] === "open";
       const w = m.walls.find((w) => w.id === o.wall);
       if (!w) throw Error(`Unknown wall ${o.wall}`);
@@ -392,6 +441,9 @@ const Geometry = (() => {
         ux = (w.b[0] - w.a[0]) / len,
         uy = (w.b[1] - w.a[1]) / len;
       const half = doorThickness(m, o, w) / 2;
+      const instance = (m.components ?? []).find((i) => i.opening === o.id);
+      if (instance)
+        s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}">`;
       const panels = o.type === "single-closed" ? 1 : 2;
       for (let i = 0; i < panels; i++) {
         const a = o.offset + (i * o.width) / panels + 0.01,
@@ -404,6 +456,7 @@ const Geometry = (() => {
         ].map(([d, n]) => [w.a[0] + ux * d - uy * n, w.a[1] + uy * d + ux * n]);
         s += `<polygon data-door="${esc(o.id)}" data-door-state="${open ? "open" : "closed"}" points="${points.map((p) => p.join(",")).join(" ")}" fill="${open ? "none" : "#eef1ef"}" stroke="${open ? "#536158" : "#27332e"}" stroke-width=".025"${open ? ' stroke-dasharray=".08 .06"' : ""}/>`;
       }
+      if (instance) s += "</g>";
     }
     for (const o of m.openings.filter((o) => o.type === "double-swing")) {
       const w = m.walls.find((w) => w.id === o.wall);
@@ -471,10 +524,18 @@ const Geometry = (() => {
       s += `<rect x="${cx - 1.05}" y="${cy + 0.3}" width=".86" height=".26" fill="white" stroke="none"/><text x="${cx - 0.62}" y="${cy + 0.49}" text-anchor="middle" font-family="sans-serif" font-size=".2" fill="#27332e" stroke="none">${stair.direction === "up" ? "UP" : "DOWN"}</text></g>`;
     }
     for (const instance of m.components ?? []) {
+      if (instance.opening) continue;
+      if (!instance.at) throw Error(`Missing position ${instance.id}`);
       const { width, length, headDepth, family, seatCount } = furniture(
         m,
         instance,
       );
+      if (family === "ceiling-hatch") {
+        const direction = instance.settings?.direction ?? "up",
+          state = instance.settings?.state ?? "closed";
+        s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})"><circle cx="${width / 2}" cy="${length / 2}" r="${Math.min(width, length) / 2}" fill="none" stroke="#27332e" stroke-width=".025" stroke-dasharray=".1 .07"/><text x="${width / 2}" y="${length / 2}" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size=".16" fill="#27332e">${direction.toUpperCase()}</text></g>`;
+        continue;
+      }
       s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025"><rect width="${width}" height="${length}"/>`;
       if (family === "bed")
         s += `<rect x="${width * 0.12}" y="${Math.min(0.06, length * 0.05)}" width="${width * 0.76}" height="${Math.min(headDepth, length * 0.3)}" rx=".04"/><path d="M 0 ${length * 0.4} H ${width}"/>`;
@@ -540,6 +601,7 @@ const Geometry = (() => {
     esc,
     length,
     doorThickness,
+    accessOpening,
     validate,
     bounds,
     scene,
@@ -563,7 +625,8 @@ const Fog = (() => {
     for (const w of m.walls)
       if (w.blocksSight !== false)
         polygons.push(...Geometry.wallPolygons(m, w));
-    for (const o of m.openings) {
+    for (const opening of m.openings) {
+      const o = Geometry.accessOpening(m, opening);
       if (
         o.blocksSight === false ||
         doors[o.id] === "open" ||
@@ -602,7 +665,12 @@ const Fog = (() => {
           ]),
         );
     for (const instance of m.components ?? [])
-      if (Geometry.componentSemantics(m, instance).blocksSight === true)
+      if (
+        !instance.opening &&
+        m.componentDefinitions?.[instance.definition]?.family !==
+          "ceiling-hatch" &&
+        Geometry.componentSemantics(m, instance).blocksSight === true
+      )
         polygons.push(Geometry.componentPoints(m, instance));
     const edges = polygons.flatMap((p) =>
       p.map((a, i) => [a, p[(i + 1) % p.length]]),

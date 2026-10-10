@@ -528,7 +528,9 @@ async function toggleDoor(at) {
   /** @type {import("./geometry.js").Opening|null} */
   let closest = null;
   let best = 0.6;
-  for (const o of model.openings.filter((o) => o.type)) {
+  for (const o of model.openings.filter(
+    (o) => Geometry.accessOpening(model, o).type,
+  )) {
     const w = model.walls.find((w) => w.id === o.wall);
     if (!w) continue;
     const length = Geometry.length(w),

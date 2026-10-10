@@ -202,3 +202,26 @@ primitive model responses remain compatible. The initial proposed catalogue
 footprints are 0.9 × 2 m for a bed and 0.5 × 0.5 m for a chair; they are not calibrated
 Pearce source dimensions or universal Traveller measurements. Referee evaluation,
 additional component semantics and catalogue UI remain subsequent work.
+
+## Configurable equipment, ticket #11
+
+Original crew-console and generic service-machinery definitions now use the
+plan-owned component path. Console seat count regenerates one fixed-size seat
+and display per station; machinery width/length changes retain its motor core
+and front service panel. Proposed dimensions and clearances remain schematic
+metre defaults, not calibrated source dimensions or equipment capacities.
+
+Disposable browser plans verified orientation, local overrides, save/reload,
+independent duplication and matching thumbnails. Rendered fog pixels behind
+opaque machinery remained unknown; an explicit nonblocking instance override
+made the same point visible. Remembered observations retained the old console
+seat count and service-panel definition after later authored edits. Access and
+sight properties resolve independently and never enforce character movement.
+
+Whole-plan and console/machinery details were visually inspected alongside the
+bed/chair and door/hatch families. The rotated console kept three individual
+stations; 180-degree machinery service faces and their approaches remained
+clear. A chair overlapping a bed in the disposable visual fixture was corrected
+before the final whole-plan inspection. The live building and play data were
+untouched. Human recognition/evaluation of the separate demonstration remains
+required before expanding the catalogue.

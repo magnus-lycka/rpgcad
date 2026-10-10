@@ -166,6 +166,101 @@
         "usage": "Equipment-family reference only; no imported or traced source artwork.",
         "inventory": "docs/research/component-inventory.md"
       }
+    },
+    "door@1": {
+      "id": "door",
+      "version": 1,
+      "name": "Wall door",
+      "family": "door",
+      "aliases": ["wall door"],
+      "tags": ["access", "wall"],
+      "defaults": {
+        "width": 1,
+        "length": 0.06
+      },
+      "details": {
+        "leafThickness": 0.06
+      },
+      "blocksSight": true,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {},
+      "placement": {
+        "anchor": "Existing opening identity; wall, offset and width authoritative",
+        "access": "Deliberate access; no movement enforcement or automatic level travel"
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Accepted RPGCAD wall-door and ceiling-hatch drawing conventions.",
+        "usage": "No imported or traced artwork."
+      },
+      "preview": {
+        "wallThickness": 0.15,
+        "walls": [
+          {
+            "id": "wall",
+            "a": [0, 0],
+            "b": [2, 0]
+          }
+        ],
+        "openings": [
+          {
+            "id": "opening",
+            "wall": "wall",
+            "offset": 0.5,
+            "width": 1
+          }
+        ],
+        "labels": [],
+        "components": [
+          {
+            "id": "preview",
+            "definition": "door@1",
+            "opening": "opening"
+          }
+        ]
+      }
+    },
+    "ceiling-hatch@1": {
+      "id": "ceiling-hatch",
+      "version": 1,
+      "name": "Ceiling hatch",
+      "family": "ceiling-hatch",
+      "aliases": ["ceiling hatch"],
+      "tags": ["access", "ceiling"],
+      "defaults": {
+        "width": 1,
+        "length": 1
+      },
+      "details": {},
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre height",
+        "direction": "up, down or up-down",
+        "state": "open or closed"
+      },
+      "placement": {
+        "anchor": "Local top-left of footprint; circle centred within footprint",
+        "access": "Deliberate access; no movement enforcement or automatic level travel"
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Accepted RPGCAD wall-door and ceiling-hatch drawing conventions.",
+        "usage": "No imported or traced artwork."
+      }
     }
   }
 }
