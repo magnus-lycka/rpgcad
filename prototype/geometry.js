@@ -8,7 +8,9 @@
  * @typedef {{id: string, a: Point, b: Point, stroke?: number, blocksSight?: boolean}} Line
  * @typedef {{id: string, at: Point, width: number, projection: number, radius: number, stroke?: number, direction?: number}} StepIron
  * @typedef {{id: string, at: Point, radius: number, treads: number, direction?: 'up'|'down', startAngle?: number, sweep?: number}} Stair
- * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point}} Model
+ * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number}, details:{headDepth:number}, blocksSight:boolean}} ComponentDefinition
+ * @typedef {{id:string, definition:string, at:Point, rotation:number, settings?:{width?:number,length?:number}}} ComponentInstance
+ * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point, components?:ComponentInstance[], componentDefinitions?:Record<string, ComponentDefinition>}} Model
  * @typedef {Record<string, 'open'|'closed'>} Doors
  * @typedef {{id?: string, at: Point, range: number}} Observer
  * @typedef {{at: Point, range: number, doors: Doors, revision: string}} Observation
@@ -66,6 +68,7 @@ const Geometry = (() => {
       ...(m.lines ?? []),
       ...(m.stepIrons ?? []),
       ...(m.spiralStairs ?? []),
+      ...(m.components ?? []),
     ]) {
       if (!o || typeof o.id !== "string" || !o.id || ids.has(o.id))
         fail("Every object needs a unique id.");
@@ -138,7 +141,68 @@ const Geometry = (() => {
         stair.treads < 3
       )
         fail(`Invalid spiral stair ${stair.id}`);
+    if (m.components !== undefined && !Array.isArray(m.components))
+      fail("Expected component instances");
+    for (const [key, definition] of Object.entries(
+      m.componentDefinitions ?? {},
+    )) {
+      if (
+        !definition ||
+        key !== `${definition.id}@${definition.version}` ||
+        !Number.isInteger(definition.version) ||
+        definition.version < 1 ||
+        !["bed", "chair"].includes(definition.family) ||
+        !positive(definition.defaults?.width) ||
+        !positive(definition.defaults?.length) ||
+        !positive(definition.details?.headDepth) ||
+        typeof definition.blocksSight !== "boolean"
+      )
+        fail("Invalid component definition");
+    }
+    for (const instance of m.components ?? []) {
+      const definition = m.componentDefinitions?.[instance.definition];
+      if (
+        !definition ||
+        !["bed", "chair"].includes(definition.family) ||
+        !point(instance.at) ||
+        !finite(instance.rotation) ||
+        Object.keys(instance.settings ?? {}).some(
+          (key) => !["width", "length"].includes(key),
+        ) ||
+        !positive(instance.settings?.width ?? definition.defaults.width) ||
+        !positive(instance.settings?.length ?? definition.defaults.length) ||
+        !positive(definition.details.headDepth)
+      )
+        fail(`Invalid component ${instance.id}`);
+    }
     return m;
+  }
+  // Family settings change the footprint while retaining a physical head/back depth.
+  function furniture(m, instance) {
+    const definition = m.componentDefinitions?.[instance.definition];
+    if (!definition)
+      throw Error(`Unknown component definition ${instance.definition}`);
+    return {
+      width: instance.settings?.width ?? definition.defaults.width,
+      length: instance.settings?.length ?? definition.defaults.length,
+      headDepth: definition.details.headDepth,
+      family: definition.family,
+    };
+  }
+  function componentPoints(m, instance, padding = 0) {
+    const { width, length } = furniture(m, instance),
+      angle = (instance.rotation * Math.PI) / 180,
+      c = Math.cos(angle),
+      s = Math.sin(angle);
+    return [
+      [-padding, -padding],
+      [width + padding, -padding],
+      [width + padding, length + padding],
+      [-padding, length + padding],
+    ].map(([x, y]) => [
+      instance.at[0] + x * c - y * s,
+      instance.at[1] + x * s + y * c,
+    ]);
   }
   /** @param {Model} m @param {Wall} w */
   function wallPolygons(m, w) {
@@ -204,6 +268,8 @@ const Geometry = (() => {
         half = l.text.length * s * 0.34;
       pts.push([l.at[0] - half, l.at[1] - s], [l.at[0] + half, l.at[1] + s]);
     }
+    for (const instance of m.components ?? [])
+      pts.push(...componentPoints(m, instance, 0.0125));
     if (!pts.length) return { x: 0, y: 0, w: 21, h: 15 };
     const xs = pts.map((p) => p[0]),
       ys = pts.map((p) => p[1]);
@@ -357,6 +423,15 @@ const Geometry = (() => {
         normal = [Math.cos(angle) * 0.075, Math.sin(angle) * 0.075];
       s += `<path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke="white" stroke-width=".1"/><path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke-width=".035"/><polygon points="${tip.join(",")} ${[back[0] + normal[0], back[1] + normal[1]].join(",")} ${[back[0] - normal[0], back[1] - normal[1]].join(",")}" fill="#27332e" stroke="none"/>`;
       s += `<rect x="${cx - 1.05}" y="${cy + 0.3}" width=".86" height=".26" fill="white" stroke="none"/><text x="${cx - 0.62}" y="${cy + 0.49}" text-anchor="middle" font-family="sans-serif" font-size=".2" fill="#27332e" stroke="none">${stair.direction === "up" ? "UP" : "DOWN"}</text></g>`;
+    }
+    for (const instance of m.components ?? []) {
+      const { width, length, headDepth, family } = furniture(m, instance);
+      s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025"><rect width="${width}" height="${length}"/>`;
+      if (family === "bed")
+        s += `<rect x="${width * 0.12}" y="${Math.min(0.06, length * 0.05)}" width="${width * 0.76}" height="${Math.min(headDepth, length * 0.3)}" rx=".04"/><path d="M 0 ${length * 0.4} H ${width}"/>`;
+      else
+        s += `<path d="M 0 ${Math.min(headDepth, length * 0.3)} H ${width}" stroke-width=".05"/>`;
+      s += `</g>`;
     }
     for (const l of m.labels)
       s += `<text x="${l.at[0]}" y="${l.at[1]}" font-family="sans-serif" font-size="${l.size ?? 0.4}" text-anchor="middle" dominant-baseline="central" fill="#263c30">${esc(l.text)}</text>`;

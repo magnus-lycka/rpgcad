@@ -1,0 +1,89 @@
+{
+  "license": "AGPL-3.0-only",
+  "artwork": "Original RPGCAD metre-based drawings; no imported or traced reference artwork.",
+  "references": [
+    {
+      "author": "Robert Pearce / Pearce Design Studio, LLC",
+      "title": "Starship Symbols (2020), furniture families F01 and F06",
+      "inventory": "docs/research/component-inventory.md",
+      "license": "CC BY-NC 4.0",
+      "usage": "Equipment-family reference only; source physical dimensions unverified."
+    }
+  ],
+  "definitions": {
+    "bed@1": {
+      "id": "bed",
+      "version": 1,
+      "name": "Single bed",
+      "family": "bed",
+      "aliases": ["bed"],
+      "tags": ["furniture", "sleeping"],
+      "defaults": {
+        "width": 0.9,
+        "length": 2
+      },
+      "details": {
+        "headDepth": 0.3
+      },
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre length"
+      },
+      "placement": {
+        "anchor": "Local [0,0] is the head-left corner; +x across width, +y towards the foot.",
+        "access": "Leave deliberate access along a side or the foot; no collision or snapping enforcement."
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Robert Pearce / Pearce Design Studio, LLC; Starship Symbols (2020), F01; CC BY-NC 4.0.",
+        "usage": "Equipment-family reference only; no imported or traced source artwork.",
+        "inventory": "docs/research/component-inventory.md"
+      }
+    },
+    "chair@1": {
+      "id": "chair",
+      "version": 1,
+      "name": "Chair",
+      "family": "chair",
+      "aliases": ["loose chair"],
+      "tags": ["furniture", "seating"],
+      "defaults": {
+        "width": 0.5,
+        "length": 0.5
+      },
+      "details": {
+        "headDepth": 0.1
+      },
+      "blocksSight": false,
+      "dimensions": {
+        "unit": "metres",
+        "status": "proposed",
+        "sourceDimensions": "unknown",
+        "note": "Useful initial footprint, not a canonical Traveller measurement."
+      },
+      "settings": {
+        "width": "Positive metre width",
+        "length": "Positive metre seat depth"
+      },
+      "placement": {
+        "anchor": "Local [0,0] is the back-left corner; +x across width, front faces +y.",
+        "access": "Leave access in front; no collision or snapping enforcement."
+      },
+      "license": "AGPL-3.0-only",
+      "provenance": {
+        "artwork": "Original RPGCAD line artwork; AGPL v3.",
+        "reference": "Robert Pearce / Pearce Design Studio, LLC; Starship Symbols (2020), F06; CC BY-NC 4.0.",
+        "usage": "Equipment-family reference only; no imported or traced source artwork.",
+        "inventory": "docs/research/component-inventory.md"
+      }
+    }
+  }
+}

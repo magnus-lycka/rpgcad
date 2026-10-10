@@ -5,3 +5,5 @@ tmp/
 output/
 prototype/*.json
 package-lock.json
+
+!prototype/component-catalogue.json

@@ -134,3 +134,44 @@ Records carry nullable `createdAt`, `editedAt`, and `lastPlayedAt` timestamps. E
 Library search includes names, descriptions and tags at plan and level scope. Required tags are entered one per line and all must match a single level's own plus inherited plan tags. Matching levels link directly to Edit. Text and tags combine with independent plan creation, edit and play date ranges; date bounds include whole UTC days. Unknown dates remain visible without a range and can be included explicitly when a range is active. Reversed ranges show no matches. Sort by name (A–Z) or creation/edit/play dates (newest first), with unknown dates last and name breaking date ties.
 
 Successful meaningful character or exploration saves update `lastPlayedAt` on the affected levels and owning plan, independently of authoring dates. Transfers update both the source and destination level; POV changes update levels of the old and new POV. Unchanged saves, unused historical snapshot housekeeping and rejected writes do not count. Entering play, reading/polling, camera changes, temporary GM viewing and reopening do not count either. Model polling refreshes current visibility without recording observations; the next explicit play action records its view.
+
+## Reusable furniture (ticket #9)
+
+`component-catalogue.json` contains original AGPL v3 bed/chair definitions. Their
+metre dimensions are proposed defaults; Pearce reference dimensions remain unknown.
+The drawings are original line artwork, not imported or traced source assets.
+
+Read `GET /model?plan=<id>&level=<id>` before an agent edit. Add the desired exact
+catalogue entries to `componentDefinitions` (keys such as `bed@1`), and place
+`components` in the level model:
+
+```json
+{"id":"bunk-room-bed","definition":"bed@1","at":[1.13,2.27],"rotation":90,"settings":{"width":1.2,"length":2.2}}
+```
+
+Positions and settings use metres, rotation uses clockwise degrees in stored
+screen-down coordinates, and placement does not snap to the grid. Local `[0,0]`
+is the head/back-left corner; the bed foot and chair front point along local +y.
+`width` and `length` change the footprint while retaining a physical pillow/back
+depth. Instances have unique IDs across the level's primitives and components.
+
+Save the resulting whole model with `PUT /model` using the same selectors. It
+returns 204, or 400 before saving invalid component definitions/references/settings.
+The server stores definitions once in the plan's library record and instances in
+the selected level's authoritative JSON file; `GET /model` hydrates that record for
+rendering and agent editing. `GET /plan` exposes the owning definitions and model
+paths. Catalogue edits never automatically replace saved definitions. Direct file
+edits remain possible: edit instances in the selected level file and definitions
+in that plan's `componentDefinitions` record, not in every level file.
+
+Definition edits validate every saved level and date only levels referencing a
+changed definition; adding an unused definition dates the plan only. Instance edits
+date their level and plan. No-op saves preserve dates; play dates remain separate.
+Plan duplication copies definitions and instances into independent authored data.
+Sketch snapshots and exploration model revisions include the saved definitions,
+so they do not resolve remembered appearances through a later catalogue.
+
+Portable Geometry resolves the same instances for drawing, bounds, library
+thumbnails and 1:75 output alongside existing primitives. Furniture remains
+nonblocking in this slice. Component-specific sight properties, browse/search UI,
+custom geometry and assemblies are later tickets. No live plan has been converted.

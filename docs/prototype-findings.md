@@ -185,3 +185,20 @@ Subagents expanded public HTTP rejection coverage: 56 new cases check the error 
 Controlled-clock tests now launch unchanged production code with an explicitly injected clock. Authoring, duplication and play dates use that dependency; normal execution retains the UTC clock. Existing date assertions stayed unchanged through this refactor.
 
 The local TDD skill now agrees with the repository's red-green-refactor workflow. Development guidance records the resolved CodeQL upload gap and provides scoped writable uv-cache and filtered CI-log commands. The integrated gate passed: 81 HTTP, 5 JavaScript and 29 browser tests, plus the configured lint, formatting, type, security and dependency checks. Live plans and play state were not used as writable fixtures.
+
+## Reusable furniture foundation, ticket #9
+
+Disposable browser plans verified independently identified beds/chairs at deliberate
+non-grid positions and rotations, supported metre footprint changes, persistence,
+library thumbnails, independent duplication and preservation of sibling/source
+instances. Definition data is retained once per owning plan; reload and feedback
+snapshots use that authored copy. Plan-wide saves reject missing references on any
+level. Unused definitions do not change level dates; instance/used-definition edits
+change affected level and parent authoring dates without changing play dates.
+
+A worked 90-degree case verified a 1.2 × 2.2 m bed at `[1.13,2.27]`, including its
+0.025 m outline stroke in bounds, and normal A4/grid/1:75 print output. Existing
+primitive model responses remain compatible. The initial proposed catalogue
+footprints are 0.9 × 2 m for a bed and 0.5 × 0.5 m for a chair; they are not calibrated
+Pearce source dimensions or universal Traveller measurements. Referee evaluation,
+additional component semantics and catalogue UI remain subsequent work.

@@ -51,6 +51,12 @@ def main(*, clock=utc_now):
     def plan_models(plan):
         return {level["id"]: ROOT / level["model"] for level in plan["levels"]}
 
+    def authored_model(path, plan):
+        model = json.loads(path.read_bytes())
+        if plan.get("componentDefinitions"):
+            model["componentDefinitions"] = plan["componentDefinitions"]
+        return model
+
     def character_path(plan):
         return ROOT / plan.get("characters", plan["id"] + ".characters.json")
 
@@ -170,6 +176,8 @@ def main(*, clock=utc_now):
                     if route == "/library"
                     else json.dumps(plan).encode()
                     if route == "/plan"
+                    else json.dumps(authored_model(model, plan)).encode()
+                    if route == "/model"
                     else exploration_bytes(source)
                     if route == "/exploration"
                     else b"null"
@@ -201,6 +209,35 @@ def main(*, clock=utc_now):
             self.end_headers()
             self.wfile.write(body)
 
+        def save_model(self):
+            origin = self.headers.get("Origin")
+            if origin and origin != f"http://{self.headers.get('Host')}":
+                self.send_error(403)
+                return
+            plan = self.selected_plan()
+            model = self.selected_model()
+            if plan is None or model is None:
+                return
+            try:
+                size = int(self.headers.get("Content-Length", 0))
+                if not 0 < size <= 5_000_000:
+                    raise ValueError("Invalid model size")
+                authored = json.loads(self.rfile.read(size))
+                if not isinstance(authored, dict):
+                    raise ValueError("Expected authored model object")
+                definitions = authored.pop(
+                    "componentDefinitions", plan.get("componentDefinitions", {})
+                )
+                store.save_model(plan["id"], model, authored, definitions)
+            except (ValueError, TypeError) as error:
+                self.send_error(400, str(error))
+                return
+            except OSError as error:
+                self.send_error(503, str(error))
+                return
+            self.send_response(204)
+            self.end_headers()
+
         def do_POST(self):
             if urlsplit(self.path).path != "/duplicate":
                 self.send_error(404)
@@ -225,6 +262,9 @@ def main(*, clock=utc_now):
             self.wfile.write(body)
 
         def do_PUT(self):
+            if urlsplit(self.path).path == "/model":
+                self.save_model()
+                return
             if urlsplit(self.path).path == "/characters":
                 self.save_characters()
                 return
@@ -423,7 +463,7 @@ def main(*, clock=utc_now):
                 )[0]
                 sketch["submittedAt"] = datetime.now(UTC).isoformat()
                 sketch["status"] = "pending"
-                sketch["model"] = json.loads(model.read_bytes())
+                sketch["model"] = authored_model(model, self.selected_plan())
                 body = json.dumps(sketch, indent=2, allow_nan=False) + "\n"
                 target = sketch_path(model)
                 with exploration_lock:

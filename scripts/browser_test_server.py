@@ -6,7 +6,7 @@ import shutil
 import subprocess  # nosec B404
 import sys
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, gettempdir
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -110,6 +110,11 @@ def main():
                 }
             )
         )
+        port = os.environ.get("RPGCAD_TEST_PORT", "8766")
+        if port == "8765":
+            raise ValueError("The disposable fixture must not use the live port")
+        marker = Path(gettempdir()) / f"rpgcad-browser-fixture-{port}.json"
+        marker.write_text(json.dumps({"root": str(target), "port": port}))
         try:
             # Only run our copied server with a fixed, dedicated test port.
             subprocess.run(  # nosec B603
@@ -117,12 +122,14 @@ def main():
                     sys.executable,
                     str(target / "server.py"),
                     "--port",
-                    os.environ.get("RPGCAD_TEST_PORT", "8766"),
+                    port,
                 ],
                 check=True,
             )
         except KeyboardInterrupt:
             pass
+        finally:
+            marker.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

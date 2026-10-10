@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import math
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,10 +16,95 @@ def utc_now() -> datetime:
     return datetime.now(UTC)
 
 
-def model_fingerprint(path):
+def model_fingerprint(path, definitions=None):
     """Hash authored content independently of JSON formatting."""
     model = json.loads(path.read_text())
+    if model.get("components"):
+        model["componentDefinitions"] = {
+            instance["definition"]: (definitions or {}).get(instance["definition"])
+            for instance in model["components"]
+        }
     return hashlib.sha256(json.dumps(model, sort_keys=True).encode()).hexdigest()
+
+
+def validate_components(model, definitions):
+    """Reject malformed furniture before replacing any authored files."""
+
+    def positive(value):
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+            and value > 0
+        )
+
+    def finite(value):
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+        )
+
+    if not isinstance(definitions, dict):
+        raise ValueError("Expected component definitions")
+    for key, definition in definitions.items():
+        if not isinstance(definition, dict):
+            raise ValueError("Expected component definition object")
+        defaults = definition.get("defaults", {})
+        details = definition.get("details", {})
+        if (
+            not isinstance(defaults, dict)
+            or not isinstance(details, dict)
+            or definition.get("family") not in ("bed", "chair")
+            or not isinstance(definition.get("name"), str)
+            or not definition.get("name")
+            or key != f"{definition.get('id')}@{definition.get('version')}"
+            or not isinstance(definition.get("version"), int)
+            or definition["version"] < 1
+            or not positive(defaults.get("width"))
+            or not positive(defaults.get("length"))
+            or not positive(details.get("headDepth"))
+            or not isinstance(definition.get("blocksSight"), bool)
+        ):
+            raise ValueError("Invalid component definition")
+    instances = model.get("components", [])
+    if not isinstance(instances, list):
+        raise ValueError("Expected component instances")
+    ids = {
+        item.get("id")
+        for kind in (
+            "walls",
+            "openings",
+            "labels",
+            "outlines",
+            "circles",
+            "lines",
+            "stepIrons",
+            "spiralStairs",
+        )
+        for item in model.get(kind, [])
+    }
+    for instance in instances:
+        if not isinstance(instance, dict):
+            raise ValueError("Expected component instance object")
+        definition = definitions.get(instance.get("definition"))
+        at = instance.get("at")
+        settings = instance.get("settings", {})
+        if (
+            not definition
+            or not isinstance(instance.get("id"), str)
+            or not instance["id"]
+            or instance["id"] in ids
+            or not isinstance(at, list)
+            or len(at) != 2
+            or not all(finite(n) for n in at)
+            or not finite(instance.get("rotation"))
+            or not isinstance(settings, dict)
+            or set(settings) - {"width", "length"}
+            or not all(positive(value) for value in settings.values())
+        ):
+            raise ValueError("Invalid component instance")
+        ids.add(instance["id"])
 
 
 def _duplicate_authored_record(source, now):
@@ -62,7 +148,10 @@ class PlanLibrary:
                 for level in plan["levels"]:
                     key = json.dumps([plan["id"], level["id"]])
                     try:
-                        revision = model_fingerprint(self.root / level["model"])
+                        revision = model_fingerprint(
+                            self.root / level["model"],
+                            plan.get("componentDefinitions", {}),
+                        )
                     except (OSError, ValueError):
                         continue
                     if revisions.get(key) != revision:
@@ -126,6 +215,60 @@ class PlanLibrary:
                     level["lastPlayedAt"] = played_at
             self.write(data)
 
+    def save_model(self, plan_id, path, model, definitions):
+        """Save an agent-authored level and its exact plan-owned definitions."""
+        if not isinstance(definitions, dict):
+            raise ValueError("Expected component definitions")
+        if any(
+            not isinstance(model.get(key), list)
+            for key in ("walls", "openings", "labels")
+        ):
+            raise ValueError("Expected walls, openings and labels")
+        validate_components(model, definitions)
+        encoded = json.dumps(model, indent=2, allow_nan=False) + "\n"
+        json.dumps(definitions, allow_nan=False)
+        with self.lock:
+            data = self.read()
+            plan = next(p for p in data["plans"] if p["id"] == plan_id)
+            old_definitions = plan.get("componentDefinitions", {})
+            definitions_changed = old_definitions != definitions
+            changed_levels = set()
+            for level in plan["levels"]:
+                candidate = (
+                    model
+                    if self.root / level["model"] == path
+                    else json.loads((self.root / level["model"]).read_text())
+                )
+                validate_components(candidate, definitions)
+                for instance in candidate.get("components", []):
+                    reference = instance.get("definition")
+                    if reference not in definitions:
+                        raise ValueError(
+                            "Unknown component definition on a saved level"
+                        )
+                    if old_definitions.get(reference) != definitions[reference]:
+                        changed_levels.add(level["id"])
+            model_changed = json.loads(path.read_text()) != model
+            if not definitions_changed and not model_changed:
+                return
+            if model_changed:
+                temporary = path.with_suffix(".tmp")
+                temporary.write_text(encoded)
+                temporary.replace(path)
+            plan["componentDefinitions"] = copy.deepcopy(definitions)
+            now = self.clock().isoformat()
+            plan["editedAt"] = now
+            for level in plan["levels"]:
+                if (self.root / level["model"] == path and model_changed) or level[
+                    "id"
+                ] in changed_levels:
+                    level["editedAt"] = now
+                    key = json.dumps([plan_id, level["id"]])
+                    data["modelRevisions"][key] = model_fingerprint(
+                        self.root / level["model"], definitions
+                    )
+            self.write(data)
+
     def duplicate(self, plan_id):
         """Publish new authored files before their independent library record."""
         with self.lock:
@@ -136,6 +279,9 @@ class PlanLibrary:
             plan.update(
                 name=source["name"] + " copy",
                 levels=[],
+                componentDefinitions=copy.deepcopy(
+                    source.get("componentDefinitions", {})
+                ),
             )
             for original in source["levels"]:
                 level = _duplicate_authored_record(original, now)
@@ -147,7 +293,7 @@ class PlanLibrary:
                 )
                 key = json.dumps([plan["id"], level["id"]])
                 data["modelRevisions"][key] = model_fingerprint(
-                    self.root / level["model"]
+                    self.root / level["model"], plan["componentDefinitions"]
                 )
                 plan["levels"].append(level)
             data["plans"].append(plan)
