@@ -258,3 +258,11 @@ use the same authored geometry. Remembered observations retain the seat count,
 orientation, sight overrides and exact saved definitions previously seen.
 Dimensions and access defaults are proposals; Pearce F05/M01 are equipment-family
 references with unverified source dimensions, not imported or traced artwork.
+
+## Component demonstration
+
+The separate saved [Component demonstration](../docs/component-demonstration.md)
+exercises the six initial reusable seed families through catalogue discovery,
+local variations, saved drawing updates, reload, and door/fog play. It includes
+an explicit non-overwriting registration command and Referee feedback steps.
+Its dimensions are proposals and ticket #13 remains a human evaluation gate.
