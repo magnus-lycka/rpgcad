@@ -28,7 +28,7 @@ def model_fingerprint(path, definitions=None):
 
 
 def validate_components(model, definitions):
-    """Reject malformed furniture before replacing any authored files."""
+    """Reject malformed components before replacing any authored files."""
 
     def positive(value):
         return (
@@ -45,6 +45,24 @@ def validate_components(model, definitions):
             and math.isfinite(value)
         )
 
+    def seat_count(value):
+        return (
+            isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= 6
+        )
+
+    def valid_access(value):
+        return (
+            isinstance(value, dict)
+            and not set(value) - {"blocksPassage", "frontClearance"}
+            and (
+                "blocksPassage" not in value or isinstance(value["blocksPassage"], bool)
+            )
+            and (
+                "frontClearance" not in value
+                or (finite(value["frontClearance"]) and value["frontClearance"] >= 0)
+            )
+        )
+
     if not isinstance(definitions, dict):
         raise ValueError("Expected component definitions")
     for key, definition in definitions.items():
@@ -55,7 +73,7 @@ def validate_components(model, definitions):
         if (
             not isinstance(defaults, dict)
             or not isinstance(details, dict)
-            or definition.get("family") not in ("bed", "chair")
+            or definition.get("family") not in ("bed", "chair", "console", "machinery")
             or not isinstance(definition.get("name"), str)
             or not definition.get("name")
             or key != f"{definition.get('id')}@{definition.get('version')}"
@@ -65,6 +83,11 @@ def validate_components(model, definitions):
             or not positive(defaults.get("length"))
             or not positive(details.get("headDepth"))
             or not isinstance(definition.get("blocksSight"), bool)
+            or not valid_access(definition.get("access", {}))
+            or (
+                definition.get("family") == "console"
+                and not seat_count(defaults.get("seatCount"))
+            )
         ):
             raise ValueError("Invalid component definition")
     instances = model.get("components", [])
@@ -99,8 +122,24 @@ def validate_components(model, definitions):
             or len(at) != 2
             or not all(finite(n) for n in at)
             or not finite(instance.get("rotation"))
+            or not valid_access(instance.get("access", {}))
             or not isinstance(settings, dict)
-            or set(settings) - {"width", "length"}
+            or set(settings)
+            - (
+                {"seatCount"}
+                if definition.get("family") == "console"
+                else {"width", "length"}
+            )
+            or (
+                definition.get("family") == "console"
+                and not seat_count(
+                    settings.get("seatCount", definition["defaults"]["seatCount"])
+                )
+            )
+            or (
+                "blocksSight" in instance
+                and not isinstance(instance["blocksSight"], bool)
+            )
             or not all(positive(value) for value in settings.values())
         ):
             raise ValueError("Invalid component instance")
