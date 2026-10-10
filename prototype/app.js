@@ -157,7 +157,7 @@ let fogEnabled = !editing,
 let characterState = { characters: [], pov: null };
 let characterEtag = "",
   savingCharacters = false;
-const currentLevel = settings.get("level") || "original";
+let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
 /** @type {{id:string,x:number,y:number,at:number[]}|null} */
 let characterDrag = null;
@@ -244,6 +244,7 @@ async function loadLevels() {
   const response = await fetch(`/plan${planQuery}`);
   if (!response.ok) return;
   const plan = await response.json();
+  currentLevel = settings.get("level") || plan.levels[0].id;
   const select = /** @type {HTMLSelectElement} */ (element("character-level"));
   select.innerHTML = plan.levels
     .map(
@@ -270,7 +271,7 @@ element("transfer-character").addEventListener("click", async () => {
     `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: c.id })}`,
   );
 });
-loadLevels();
+await loadLevels();
 function characterDrawing() {
   return characterState.characters
     .filter(

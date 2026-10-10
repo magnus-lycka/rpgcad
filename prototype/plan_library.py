@@ -9,6 +9,12 @@ from threading import RLock
 from uuid import uuid4
 
 
+def model_fingerprint(path):
+    """Hash authored content independently of JSON formatting."""
+    model = json.loads(path.read_text())
+    return hashlib.sha256(json.dumps(model, sort_keys=True).encode()).hexdigest()
+
+
 class PlanLibrary:
     """Keep stable identities and authored dates separate from play state."""
 
@@ -38,12 +44,9 @@ class PlanLibrary:
                 for level in plan["levels"]:
                     key = json.dumps([plan["id"], level["id"]])
                     try:
-                        model = json.loads((self.root / level["model"]).read_text())
+                        revision = model_fingerprint(self.root / level["model"])
                     except (OSError, ValueError):
                         continue
-                    revision = hashlib.sha256(
-                        json.dumps(model, sort_keys=True).encode()
-                    ).hexdigest()
                     if revisions.get(key) != revision:
                         if key in revisions:
                             level["editedAt"] = plan["editedAt"] = datetime.now(
@@ -136,6 +139,10 @@ class PlanLibrary:
                 level["model"] = f"{plan['id']}-{level['id']}.json"
                 (self.root / level["model"]).write_bytes(
                     (self.root / original["model"]).read_bytes()
+                )
+                key = json.dumps([plan["id"], level["id"]])
+                data["modelRevisions"][key] = model_fingerprint(
+                    self.root / level["model"]
                 )
                 plan["levels"].append(level)
             data["plans"].append(plan)

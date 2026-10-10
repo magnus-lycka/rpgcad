@@ -760,3 +760,57 @@ def test_duplicate_preserves_authored_content_and_source_state_after_restart(
     finally:
         process.terminate()
         process.wait(timeout=5)
+
+
+@pytest.mark.parametrize("foreign_level", ["original", "below", "unknown-level"])
+def test_duplicate_rejects_foreign_character_levels_without_changing_dates(
+    multiple_plans, tmp_path, foreign_level
+):
+    bridge = multiple_plans
+    bridge.request("POST", "/duplicate?plan=default")
+    response = bridge.getresponse()
+    assert response.status == 201
+    copy = json.loads(response.read())
+    route = "/characters?plan=" + copy["id"]
+    before, etag = read_state(bridge, route)
+    (tmp_path / "test-clock").write_text("2040-01-01T00:00:00+00:00")
+    state = {
+        "characters": [
+            {
+                "id": "scout",
+                "name": "Scout",
+                "kind": "pc",
+                "level": foreign_level,
+                "at": [0, 0],
+                "range": 6,
+            }
+        ],
+        "pov": "scout",
+    }
+    bridge.request("PUT", route, json.dumps(state), {"If-Match": etag})
+    response = bridge.getresponse()
+    assert response.status == 400
+    response.read()
+    assert read_state(bridge, route)[0] == before
+    assert read_state(bridge, "/plan?plan=" + copy["id"])[0] == copy
+
+
+def test_immediate_duplicate_model_edit_updates_level_and_plan_dates(
+    multiple_plans, tmp_path
+):
+    bridge = multiple_plans
+    bridge.request("POST", "/duplicate?plan=default")
+    response = bridge.getresponse()
+    assert response.status == 201
+    copy = json.loads(response.read())
+    level = copy["levels"][0]
+    assert copy["editedAt"] == level["editedAt"] == "2035-06-07T08:09:10+00:00"
+    # Act directly on the authored path returned by POST, before another GET.
+    (tmp_path / "test-clock").write_text("2040-01-01T00:00:00+00:00")
+    (tmp_path / level["model"]).write_text('{"name":"immediate variation"}')
+    changed, _ = read_state(bridge, "/plan?plan=" + copy["id"])
+    assert changed["editedAt"] == "2040-01-01T00:00:00+00:00"
+    assert changed["levels"][0]["editedAt"] == "2040-01-01T00:00:00+00:00"
+    assert changed["levels"][1] == copy["levels"][1]
+    assert changed["createdAt"] == copy["createdAt"]
+    assert changed["lastPlayedAt"] is None
