@@ -53,6 +53,7 @@ test("ceiling hatch labels vertical direction independently of its open state", 
   const m = accessModel();
   assert.ok(m.componentDefinitions);
   assert.ok(m.components);
+  assert.ok(m.componentDefinitions);
   m.componentDefinitions["hatch@1"] = {
     id: "hatch",
     version: 1,
@@ -148,4 +149,76 @@ test("door semantics inherit opening sight settings when the instance has no ove
     false,
   );
   assert.equal(Geometry.accessOpening(m, m.openings[0]).blocksSight, false);
+});
+
+test("reviewed hatch is hinged and letter-free, with solid descent and dashed ascent contours", () => {
+  const m = accessModel();
+  assert.ok(m.componentDefinitions);
+  m.componentDefinitions["hatch@1"] = {
+    id: "hatch",
+    version: 1,
+    name: "Hinged hatch",
+    family: "ceiling-hatch",
+    defaults: { width: 1, length: 1, direction: "down" },
+    details: { profile: "referee-2026-10-11" },
+    blocksSight: false,
+  };
+  m.components = [
+    { id: "reviewed", definition: "hatch@1", at: [0, 0], rotation: 0 },
+  ];
+  const render = () =>
+    Geometry.scene(Geometry.validate(m), { x: -1, y: -1, w: 3, h: 3 });
+  const down = render();
+  assert.doesNotMatch(down, /<text/);
+  assert.match(down, /data-access-direction="down"/);
+  assert.match(down, /data-hatch-hinge/);
+  assert.match(down, /data-hatch-handle/);
+  assert.doesNotMatch(down, /stroke-dasharray=".1 .07"/);
+  m.components[0].settings = { direction: "up" };
+  assert.match(
+    render(),
+    /data-access-contour="outer"[^>]*stroke-dasharray=".1 .07"/,
+  );
+  m.components[0].settings.direction = "up-down";
+  assert.match(
+    render(),
+    /data-access-contour="outer"[^>]*stroke-dasharray="none"/,
+  );
+  assert.match(
+    render(),
+    /data-access-contour="inner"[^>]*stroke-dasharray=".1 .07"/,
+  );
+});
+
+test("iris access uses circles without a hinge for every vertical direction", () => {
+  for (const direction of ["up", "down", "up-down"]) {
+    const m = accessModel();
+    assert.ok(m.componentDefinitions);
+    m.componentDefinitions["iris@1"] = {
+      id: "iris",
+      version: 1,
+      name: "Iris",
+      family: "iris-valve",
+      defaults: { width: 1, length: 1, direction },
+      details: { profile: "referee-2026-10-11" },
+      blocksSight: false,
+    };
+    m.components = [
+      { id: "iris", definition: "iris@1", at: [0, 0], rotation: 30 },
+    ];
+    const svg = Geometry.scene(Geometry.validate(m), {
+      x: -1,
+      y: -1,
+      w: 3,
+      h: 3,
+    });
+    assert.match(svg, /<ellipse data-access-contour="outer"/);
+    assert.doesNotMatch(svg, /data-hatch|<text/);
+    assert.equal(
+      (svg.match(/data-access-contour/g) ?? []).length,
+      direction === "up-down" ? 2 : 1,
+    );
+    assert.ok(svg.includes(`data-access-direction="${direction}"`));
+    assert.equal(Fog.blockers(m, {}).polygons.length, 2);
+  }
 });
