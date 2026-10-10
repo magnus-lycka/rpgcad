@@ -156,3 +156,8 @@ A browser check exposed an automatic exploration save when model polling loaded 
 The library's Duplicate plan action copies every authored model into separate files with fresh plan and level identities. Stable object IDs and references inside each authored model remain intact. Names, descriptions, tags and level order carry over; the new plan name adds “copy”. Creation and edit dates start together, while last played remains unknown. Characters, exploration and pending drawing marks start empty.
 
 Browser checks cover selecting the variation, independent level metadata edits surviving reload, and explicit Edit/Play opening. HTTP checks cover source characters, door overrides, historical observations/revisions and pending marks remaining unchanged, separate authored-file edits in both directions, and persistence in a new server process. Disposable thumbnails and the empty fullscreen play drawing were visually inspected. Library publication follows model-file copying under its shared lock, so metadata mutations reload the authoritative records before adding the copy.
+
+
+## Library search and date controls, 2026-10-10
+
+A multi-plan disposable browser fixture verifies text matches and level identification, inherited AND tags without cross-level aggregation, combined date ranges and all four sorts. Ranges select plan dates and include the entire UTC day; unknown dates are an explicit opt-in for active ranges and sort last. Visual inspection exposed local date labels crossing a UTC filter boundary; library date labels now explicitly use UTC too. Search thumbnails use a matching level and preserve the existing Geometry renderer. Rapid changes invalidate earlier thumbnail renders so stale cards cannot repopulate filtered results.
