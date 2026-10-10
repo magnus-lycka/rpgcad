@@ -111,3 +111,41 @@ test("sort selection orders matching plans by name and known dates with unknown 
   await page.getByLabel("Required tags").fill("");
   await expect(names).toHaveText(["Outpost", "Citadel", "Ancient wreck"]);
 });
+
+test("saved play activity becomes visible in last-played filters and ordering without changing authoring dates", async ({
+  page,
+  request,
+}) => {
+  const before = await (await request.get("/plan?plan=ancient")).json();
+  await page.goto("/library.html");
+  await page.getByLabel("Search plans and levels").fill("Ancient wreck");
+  await page.getByLabel("Last played from", { exact: true }).fill("2000-01-01");
+  await expect(page.getByRole("status")).toHaveText(
+    "No plans match these filters.",
+  );
+  await page.goto("/?plan=ancient&level=original&mode=play");
+  await expect(page.locator("#viewport")).toContainText("DEPOT");
+  await page.keyboard.press("Shift+G");
+  await page.getByLabel("Character name").fill("Wreck sentinel");
+  await page.getByRole("button", { name: "Add NPC", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/plan?plan=ancient")).json()).lastPlayedAt,
+    )
+    .not.toBeNull();
+  await page.getByRole("link", { name: "Library", exact: true }).click();
+  await page.getByLabel("Last played from", { exact: true }).fill("2000-01-01");
+  await page.getByLabel("Sort plans").selectOption("lastPlayedAt");
+  await expect(page.getByRole("article").first()).toContainText(
+    "Ancient wreck",
+  );
+  await page.getByLabel("Search plans and levels").fill("Ancient wreck");
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await expect(page.getByRole("article")).not.toContainText(
+    "Last played: Unknown",
+  );
+  const after = await (await request.get("/plan?plan=ancient")).json();
+  expect(after.createdAt).toBe(before.createdAt);
+  expect(after.editedAt).toBe(before.editedAt);
+});
