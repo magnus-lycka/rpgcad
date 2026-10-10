@@ -129,13 +129,18 @@ function metadataButton(plan, level = null) {
 function metadataDetails(record, scope) {
   const details = document.createElement("div");
   const date = record.editedAt
-    ? new Date(record.editedAt).toLocaleString()
+    ? new Date(record.editedAt).toLocaleString(undefined, { timeZone: "UTC" }) +
+      " UTC"
     : "Unknown";
   const created = record.createdAt
-    ? new Date(record.createdAt).toLocaleString()
+    ? new Date(record.createdAt).toLocaleString(undefined, {
+        timeZone: "UTC",
+      }) + " UTC"
     : "Unknown";
   const played = record.lastPlayedAt
-    ? new Date(record.lastPlayedAt).toLocaleString()
+    ? new Date(record.lastPlayedAt).toLocaleString(undefined, {
+        timeZone: "UTC",
+      }) + " UTC"
     : "Unknown";
   details.innerHTML = `<p>${Geometry.esc(record.description)}</p><p>${scope} tags: ${Geometry.esc(record.tags.join(", "))}</p><p>Created: ${Geometry.esc(created)}</p><p>Last edited: ${Geometry.esc(date)}</p><p>Last played: ${Geometry.esc(played)}</p>`;
   return details;
@@ -176,7 +181,9 @@ async function render(id = null) {
     );
     for (const level of selected.levels) {
       const article = document.createElement("article");
-      article.innerHTML = `${await thumbnail(selected, level)}<h2>${Geometry.esc(level.name)}</h2>`;
+      const preview = await thumbnail(selected, level);
+      if (revision !== renderRevision) return;
+      article.innerHTML = `${preview}<h2>${Geometry.esc(level.name)}</h2>`;
       article.append(
         metadataDetails(level, "Level"),
         metadataButton(selected, level),

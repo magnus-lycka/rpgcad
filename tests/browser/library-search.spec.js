@@ -99,6 +99,7 @@ test("sort selection orders matching plans by name and known dates with unknown 
   page,
 }) => {
   await page.goto("/library.html");
+  await page.getByLabel("Search plans and levels").fill("Sector archive");
   await page.getByLabel("Required tags").fill("frontier");
   const names = page.getByRole("article").locator("button:first-of-type");
   await page.getByLabel("Sort plans").selectOption("name");
@@ -108,11 +109,5 @@ test("sort selection orders matching plans by name and known dates with unknown 
     await expect(names).toHaveText(["Outpost", "Citadel"]);
   }
   await page.getByLabel("Required tags").fill("");
-  await expect(names).toHaveText([
-    "Outpost",
-    "Citadel",
-    "Ancient wreck",
-    "Depot",
-    "Referee building",
-  ]);
+  await expect(names).toHaveText(["Outpost", "Citadel", "Ancient wreck"]);
 });

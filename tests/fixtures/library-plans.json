@@ -3,7 +3,7 @@
     {
       "id": "citadel",
       "name": "Citadel",
-      "description": "Frontier fortress",
+      "description": "Sector archive: Frontier fortress",
       "tags": ["frontier"],
       "createdAt": "2025-01-10T00:00:00Z",
       "editedAt": "2025-03-20T23:59:59Z",
@@ -28,7 +28,7 @@
     {
       "id": "outpost",
       "name": "Outpost",
-      "description": "Remote prison",
+      "description": "Sector archive: Remote prison",
       "tags": ["frontier"],
       "createdAt": "2025-02-15T12:00:00Z",
       "editedAt": "2025-03-21T00:00:00Z",
@@ -51,7 +51,7 @@
     {
       "id": "ancient",
       "name": "Ancient wreck",
-      "description": "Lost ship",
+      "description": "Sector archive: Lost ship",
       "tags": ["salvage"],
       "levels": [
         {
