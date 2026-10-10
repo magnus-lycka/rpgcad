@@ -1,9 +1,23 @@
+import { searchLibrary } from "./library-search.js";
 import { Geometry } from "./geometry.js";
 
-/** @typedef {{id:string,name:string,model:string,description:string,tags:string[],createdAt:string|null,editedAt:string|null}} Level */
-/** @typedef {{id:string,name:string,levels:Level[],description:string,tags:string[],createdAt:string|null,editedAt:string|null}} Plan */
+/** @typedef {{id:string,name:string,model:string,description:string,tags:string[],createdAt:string|null,editedAt:string|null,lastPlayedAt:string|null}} Level */
+/** @typedef {{id:string,name:string,levels:Level[],description:string,tags:string[],createdAt:string|null,editedAt:string|null,lastPlayedAt:string|null}} Plan */
 /** @type {Plan[]} */
 let plans = [];
+const search = /** @type {HTMLInputElement} */ (element("search"));
+const tags = /** @type {HTMLTextAreaElement} */ (element("required-tags"));
+const dateKeys = /** @type {const} */ ([
+  "createdAt",
+  "editedAt",
+  "lastPlayedAt",
+]);
+const unknownDates = /** @type {HTMLInputElement} */ (element("unknown-dates"));
+const sort = /** @type {HTMLSelectElement} */ (element("sort"));
+element("library-filters").oninput = () => void render();
+element("library-filters").onchange = () => void render();
+element("library-filters").onsubmit = (event) => event.preventDefault();
+let renderRevision = 0;
 /** @param {string} id */
 function element(id) {
   const node = document.getElementById(id);
@@ -93,7 +107,10 @@ function metadataDetails(record, scope) {
   const created = record.createdAt
     ? new Date(record.createdAt).toLocaleString()
     : "Unknown";
-  details.innerHTML = `<p>${Geometry.esc(record.description)}</p><p>${scope} tags: ${Geometry.esc(record.tags.join(", "))}</p><p>Created: ${Geometry.esc(created)}</p><p>Last edited: ${Geometry.esc(date)}</p>`;
+  const played = record.lastPlayedAt
+    ? new Date(record.lastPlayedAt).toLocaleString()
+    : "Unknown";
+  details.innerHTML = `<p>${Geometry.esc(record.description)}</p><p>${scope} tags: ${Geometry.esc(record.tags.join(", "))}</p><p>Created: ${Geometry.esc(created)}</p><p>Last edited: ${Geometry.esc(date)}</p><p>Last played: ${Geometry.esc(played)}</p>`;
   return details;
 }
 
@@ -108,6 +125,9 @@ async function thumbnail(plan, level) {
 }
 /** @param {string|null} id */
 async function render(id = null) {
+  const revision = ++renderRevision;
+  element("library-filters").hidden = Boolean(id);
+  status.textContent = "";
   cards.replaceChildren();
   navigation.replaceChildren();
   const selected = plans.find((p) => p.id === id);
@@ -142,11 +162,23 @@ async function render(id = null) {
       cards.append(article);
     }
   } else
-    for (const plan of [...plans].sort((a, b) =>
-      (b.editedAt || "").localeCompare(a.editedAt || ""),
+    for (const { plan, levels, filtered } of searchLibrary(
+      plans,
+      search.value,
+      tags.value,
+      dateKeys.map((key) => ({
+        key,
+        from: /** @type {HTMLInputElement} */ (element(`${key}-from`)).value,
+        through: /** @type {HTMLInputElement} */ (element(`${key}-through`))
+          .value,
+      })),
+      unknownDates.checked,
+      sort.value,
     )) {
+      const preview = await thumbnail(plan, levels[0]);
+      if (revision !== renderRevision) return;
       const article = document.createElement("article");
-      article.innerHTML = `${await thumbnail(plan, plan.levels[0])}<p>${plan.levels.length} ${plan.levels.length === 1 ? "level" : "levels"}</p>`;
+      article.innerHTML = `${preview}<p>${plan.levels.length} ${plan.levels.length === 1 ? "level" : "levels"}</p>`;
       const button = document.createElement("button");
       button.textContent = plan.name;
       button.onclick = () => {
@@ -159,8 +191,18 @@ async function render(id = null) {
       };
       article.append(button);
       article.append(metadataDetails(plan, "Plan"), metadataButton(plan));
+      if (filtered) {
+        for (const level of levels) {
+          const link = document.createElement("a");
+          link.textContent = `Matching level: ${level.name}`;
+          link.href = `/?${new URLSearchParams({ plan: plan.id, level: level.id, mode: "edit" })}`;
+          article.append(link);
+        }
+      }
       cards.append(article);
     }
+  if (!selected && !cards.children.length)
+    status.textContent = "No plans match these filters.";
 }
 try {
   const response = await fetch("/library");

@@ -1,0 +1,65 @@
+{
+  "plans": [
+    {
+      "id": "citadel",
+      "name": "Citadel",
+      "description": "Frontier fortress",
+      "tags": ["frontier"],
+      "createdAt": "2025-01-10T00:00:00Z",
+      "editedAt": "2025-03-20T23:59:59Z",
+      "lastPlayedAt": "2025-04-30T23:59:59Z",
+      "levels": [
+        {
+          "id": "cells",
+          "name": "Detention deck",
+          "description": "Locked prison cells",
+          "tags": ["secure", "prison"],
+          "model": "depot.json"
+        },
+        {
+          "id": "stores",
+          "name": "Stores",
+          "description": "Supply lockers",
+          "tags": ["cargo"],
+          "model": "below.json"
+        }
+      ]
+    },
+    {
+      "id": "outpost",
+      "name": "Outpost",
+      "description": "Remote prison",
+      "tags": ["frontier"],
+      "createdAt": "2025-02-15T12:00:00Z",
+      "editedAt": "2025-03-21T00:00:00Z",
+      "lastPlayedAt": "2025-05-01T00:00:00Z",
+      "levels": [
+        {
+          "id": "cells",
+          "name": "Holding area",
+          "tags": ["prison"],
+          "model": "depot.json"
+        },
+        {
+          "id": "vault",
+          "name": "Vault",
+          "tags": ["secure"],
+          "model": "below.json"
+        }
+      ]
+    },
+    {
+      "id": "ancient",
+      "name": "Ancient wreck",
+      "description": "Lost ship",
+      "tags": ["salvage"],
+      "levels": [
+        {
+          "id": "original",
+          "name": "Bridge",
+          "model": "depot.json"
+        }
+      ]
+    }
+  ]
+}

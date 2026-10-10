@@ -102,6 +102,7 @@ def main():
                 "/library",
                 "/library.html",
                 "/library.js",
+                "/library-search.js",
                 "/app.js",
                 "/geometry.js",
             ):
@@ -125,6 +126,7 @@ def main():
                     "/library": library_file,
                     "/library.html": ROOT / "library.html",
                     "/library.js": ROOT / "library.js",
+                    "/library-search.js": ROOT / "library-search.js",
                     "/plan": plan_file,
                 }[route]
                 body = (

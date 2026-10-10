@@ -49,6 +49,22 @@
     textarea {
       min-height: 4rem;
     }
+    #library-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: start;
+    }
+    #library-filters label {
+      margin: 0.5rem 0;
+    }
+    #library-filters input[type="checkbox"] {
+      display: inline;
+      width: auto;
+    }
+    fieldset {
+      border: 1px solid #ccd4da;
+    }
     h2 {
       font-size: 1.1rem;
     }
@@ -57,6 +73,52 @@
     }
   </style>
   <h1>Plan library</h1>
+  <form id="library-filters">
+    <label>Search plans and levels<input id="search" type="search" /></label
+    ><label
+      >Required tags<textarea
+        id="required-tags"
+        placeholder="One required tag per line"
+      ></textarea>
+    </label>
+    <fieldset>
+      <legend>Created (UTC)</legend>
+      <label>Created from<input type="date" id="createdAt-from" /></label
+      ><label
+        >Created through<input type="date" id="createdAt-through"
+      /></label>
+    </fieldset>
+    <fieldset>
+      <legend>Last edited (UTC)</legend>
+      <label>Last edited from<input type="date" id="editedAt-from" /></label
+      ><label
+        >Last edited through<input type="date" id="editedAt-through"
+      /></label>
+    </fieldset>
+    <fieldset>
+      <legend>Last played (UTC)</legend>
+      <label>Last played from<input type="date" id="lastPlayedAt-from" /></label
+      ><label
+        >Last played through<input type="date" id="lastPlayedAt-through"
+      /></label>
+    </fieldset>
+    <label
+      ><input type="checkbox" id="unknown-dates" />Include unknown dates</label
+    >
+    <p>
+      Date ranges apply to plan dates. Bounds include the whole UTC day. Unknown
+      dates are excluded from active ranges unless selected.
+    </p>
+    <label
+      >Sort plans<select id="sort">
+        <option value="editedAt">Last edited (newest first)</option>
+        <option value="name">Name (A–Z)</option>
+        <option value="createdAt">Created (newest first)</option>
+        <option value="lastPlayedAt">Last played (newest first)</option>
+      </select></label
+    >
+    <p>Unknown dates sort last; matching dates sort by name.</p>
+  </form>
   <nav id="library-navigation"></nav>
   <p id="library-status" role="status"></p>
   <section id="cards" aria-label="Plans"></section>

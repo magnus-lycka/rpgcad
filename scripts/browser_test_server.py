@@ -22,6 +22,7 @@ def main():
             "geometry.js",
             "library.html",
             "library.js",
+            "library-search.js",
         ):
             shutil.copy(ROOT / "prototype" / name, target / name)
         shutil.copy(
@@ -89,6 +90,14 @@ def main():
                 }
             )
         )
+        library_path = target / "library.PROTOTYPE.json"
+        library = json.loads(library_path.read_text())
+        library["plans"].extend(
+            json.loads((ROOT / "tests/fixtures/library-plans.json").read_text())[
+                "plans"
+            ]
+        )
+        library_path.write_text(json.dumps(library))
         (target / "exploration.PROTOTYPE.json").write_text(
             json.dumps(
                 {
