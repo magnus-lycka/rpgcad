@@ -231,3 +231,37 @@ test("plan-only play keeps a new marker on the selected plan's first level", asy
   await expect(page.locator("#viewport [data-character]")).toHaveCount(1);
   await expect(page.locator("#viewport")).toContainText("Copy scout");
 });
+
+test("opening a plan hides library filters and returning preserves their values", async ({
+  page,
+}) => {
+  await page.goto("/library.html");
+  await page.getByLabel("Search plans and levels").fill("Sector archive");
+  await page.getByLabel("Required tags").fill("frontier");
+  await page.getByLabel("Created from", { exact: true }).fill("2025-01-01");
+  await page.getByLabel("Sort plans").selectOption("name");
+  await page.getByRole("button", { name: "Citadel", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Citadel", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Search plans and levels")).toBeHidden();
+  await page.getByRole("button", { name: "All plans", exact: true }).click();
+  await expect(page.getByLabel("Search plans and levels")).toBeVisible();
+  await expect(page.getByLabel("Search plans and levels")).toHaveValue(
+    "Sector archive",
+  );
+  await expect(page.getByLabel("Required tags")).toHaveValue("frontier");
+  await expect(page.getByLabel("Created from", { exact: true })).toHaveValue(
+    "2025-01-01",
+  );
+  await expect(page.getByLabel("Sort plans")).toHaveValue("name");
+  await expect(
+    page.getByRole("button", { name: "Citadel", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Outpost", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Depot", exact: true }),
+  ).toHaveCount(0);
+});

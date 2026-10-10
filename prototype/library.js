@@ -159,6 +159,7 @@ async function render(id = null) {
   cards.replaceChildren();
   navigation.replaceChildren();
   const selected = plans.find((p) => p.id === id);
+  document.body.classList.toggle("level-browsing", Boolean(selected));
   if (selected) {
     const back = document.createElement("button");
     back.textContent = "All plans";
