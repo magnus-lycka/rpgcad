@@ -16,6 +16,7 @@ def main():
         target = Path(directory)
         for name in (
             "server.py",
+            "plan_library.py",
             "index.html",
             "app.js",
             "geometry.js",

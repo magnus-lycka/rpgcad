@@ -66,6 +66,7 @@ test("characters added to another plan stay there on reload and library navigati
   await page.goto("/library.html");
   await page.getByRole("button", { name: "Depot", exact: true }).click();
   await page.getByRole("link", { name: "Play", exact: true }).click();
+  await expect(page.locator("#viewport")).toContainText("DEPOT");
   await page.keyboard.press("Shift+G");
   await page.getByLabel("Character name").fill("Depot guard");
   await page.getByRole("button", { name: "Add NPC", exact: true }).click();
@@ -77,6 +78,7 @@ test("characters added to another plan stay there on reload and library navigati
     )
     .toBe(1);
   await page.reload();
+  await expect(page.locator("#viewport")).toContainText("DEPOT");
   await page.keyboard.press("Shift+G");
   await expect(page.getByLabel("Character").locator("option")).toContainText([
     "Choose character",
@@ -84,4 +86,71 @@ test("characters added to another plan stay there on reload and library navigati
   ]);
   const original = await (await request.get("/characters")).json();
   expect(original.characters.some((c) => c.name === "Depot guard")).toBe(false);
+});
+
+test("Referee edits distinct plan and level metadata while drawing identities stay stable", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/library.html");
+  const depotCard = page
+    .getByRole("article")
+    .filter({ has: page.getByRole("button", { name: "Depot", exact: true }) });
+  await depotCard.getByRole("button", { name: "Edit plan metadata" }).click();
+  await page.getByLabel("Plan name", { exact: true }).fill("Supply depot");
+  await page.getByLabel("Plan description").fill("Orbital cargo");
+  await page.getByLabel("Plan tags").fill("station\nsupplies");
+  await page
+    .getByRole("button", { name: "Save metadata", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Supply depot", exact: true }).click();
+  await page.getByRole("button", { name: "Edit level metadata" }).click();
+  await page.getByLabel("Level name", { exact: true }).fill("Cargo floor");
+  await page.getByLabel("Level description").fill("Sealed stores");
+  await page.getByLabel("Level tags").fill("storage\nsecure");
+  await page
+    .getByRole("button", { name: "Save metadata", exact: true })
+    .click();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Cargo floor", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Plan tags: station, supplies", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Level tags: storage, secure", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Edit", exact: true }),
+  ).toHaveAttribute("href", "/?plan=depot&level=original&mode=edit");
+  const plan = await (await request.get("/plan?plan=depot")).json();
+  expect(plan.description).toBe("Orbital cargo");
+  expect(plan.levels[0].description).toBe("Sealed stores");
+  await request.patch("/metadata?plan=depot", {
+    data: { name: "Depot", description: "", tags: [] },
+  });
+  await request.patch("/metadata?plan=depot&level=original", {
+    data: { name: "Depot floor", description: "", tags: [] },
+  });
+});
+
+test("library defaults to recently authored plans without inventing historical dates", async ({
+  page,
+  request,
+}) => {
+  await request.patch("/metadata?plan=depot", {
+    data: { description: "Recent authoring" },
+  });
+  await page.goto("/library.html");
+  await expect(
+    page
+      .getByRole("article")
+      .first()
+      .getByRole("button", { name: "Depot", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("article").first()).toContainText(
+    "Created: Unknown",
+  );
+  await request.patch("/metadata?plan=depot", { data: { description: "" } });
 });

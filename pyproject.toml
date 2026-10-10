@@ -32,7 +32,7 @@ python-version = "3.12"
 exclude_dirs = [".venv", "tests", ".agents", "tmp"]
 
 [tool.deptry]
-known_first_party = ["prototype"]
+known_first_party = ["prototype", "plan_library"]
 extend_exclude = ["tests", "tmp", ".agents"]
 
 [tool.pytest.ini_options]
