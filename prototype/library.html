@@ -10,6 +10,19 @@
       color: #27332e;
       font-family: system-ui, sans-serif;
     }
+    body.level-browsing #library-navigation {
+      margin-bottom: 1rem;
+    }
+    body.level-browsing h2 {
+      margin: 0.6rem 0;
+    }
+    body.level-browsing #library-navigation p,
+    body.level-browsing #cards p {
+      margin: 0.3rem 0;
+    }
+    body.level-browsing p:empty {
+      display: none;
+    }
     #cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -54,6 +67,9 @@
       flex-wrap: wrap;
       gap: 1rem;
       align-items: start;
+    }
+    #library-filters[hidden] {
+      display: none;
     }
     #library-filters label {
       margin: 0.5rem 0;
