@@ -141,9 +141,10 @@ test("GM can rename a PC, save its range, reset fog without losing characters, a
   await page.keyboard.press("Shift+G");
   await page.getByLabel("Character name").fill("Captain Ada");
   await page.getByRole("button", { name: "Rename", exact: true }).click();
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
-  await page.getByLabel("Sight range (m)").fill("4");
-  await page.getByLabel("Sight range (m)").dispatchEvent("change");
+  await page.getByLabel("Selected character visual range (m)").fill("4");
+  await page
+    .getByLabel("Selected character visual range (m)")
+    .dispatchEvent("change");
   await expect
     .poll(
       async () =>
@@ -152,6 +153,7 @@ test("GM can rename a PC, save its range, reset fog without losing characters, a
         ).range,
     )
     .toBe(4);
+  await page.getByRole("button", { name: "Exploration", exact: true }).click();
   await page
     .getByRole("button", { name: "Reset fog · close all doors" })
     .click();
@@ -271,7 +273,9 @@ test("choosing a PC in GM controls selects its POV and saved range", async ({
   await expect(page.locator('[data-character="ada"]')).toBeVisible();
   await page.keyboard.press("Shift+G");
   await page.getByLabel("Character", { exact: true }).selectOption("ben");
-  await expect(page.getByLabel("Sight range (m)")).toHaveValue("3");
+  await expect(
+    page.getByLabel("Selected character visual range (m)"),
+  ).toHaveValue("3");
 });
 
 test("requested controls manage a visible character beside its marker and close with Escape", async ({
@@ -319,9 +323,9 @@ test("contextual range and secondary removal save the selected character", async
   const actions = page.getByRole("region", {
     name: "Selected character actions",
   });
-  await actions.getByLabel("Selected character range (m)").fill("4");
+  await actions.getByLabel("Selected character visual range (m)").fill("4");
   await actions
-    .getByLabel("Selected character range (m)")
+    .getByLabel("Selected character visual range (m)")
     .dispatchEvent("change");
   await expect
     .poll(

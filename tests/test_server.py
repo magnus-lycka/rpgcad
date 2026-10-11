@@ -1104,3 +1104,17 @@ def test_guarded_sketch_restore_rejects_intervening_authoritative_change(bridge)
     assert bridge.getresponse().read() == newer
     bridge.request("GET", "/plan")
     assert bridge.getresponse().read() == metadata
+
+
+@pytest.mark.parametrize("invalid", [0, -1, True, None, "far"])
+def test_invalid_default_sight_range_preserves_state_and_dates(dated_play, invalid):
+    state, etag = read_state(dated_play, "/characters")
+    dates, _ = read_state(dated_play, "/library")
+    assert (
+        put_state(dated_play, "/characters", {**state, "defaultRange": invalid}, etag)[
+            0
+        ]
+        == 400
+    )
+    assert read_state(dated_play, "/characters") == (state, etag)
+    assert read_state(dated_play, "/library")[0] == dates

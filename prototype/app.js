@@ -255,8 +255,8 @@ let fogEnabled = !editing,
   explorationEtag = "",
   savingExploration = false,
   editGeneration = 0;
-/** @typedef {{id:string,name:string,kind:'pc'|'npc',level:string,at:number[],range:number}} Character */
-/** @type {{characters:Character[],pov:string|null}} */
+/** @typedef {{id:string,name:string,kind:'pc'|'npc',level:string,at:number[],range:number|null}} Character */
+/** @type {{characters:Character[],pov:string|null,defaultRange?:number}} */
 let characterState = { characters: [], pov: null };
 let characterEtag = "",
   savingCharacters = false,
@@ -311,13 +311,16 @@ element("close-character-actions").addEventListener(
   "click",
   closeCharacterActions,
 );
+function defaultVisualRange() {
+  return characterState.defaultRange ?? 6;
+}
 function syncPov() {
   if (!exploration || !characterState.characters.length) return;
   const pc = characterState.characters.find(
     (c) => c.id === characterState.pov && c.level === currentLevel,
   );
   exploration.observers = pc
-    ? [{ id: pc.id, at: [...pc.at], range: pc.range }]
+    ? [{ id: pc.id, at: [...pc.at], range: pc.range ?? defaultVisualRange() }]
     : [];
 }
 /** @param {string} id @param {number[]|null} [at] */
@@ -356,8 +359,10 @@ function refreshCharacterControls() {
   list.value = c?.id || "";
   if (document.activeElement !== input) input.value = c?.name || "";
   const range = /** @type {HTMLInputElement} */ (element("character-range"));
-  element("character-range-label").hidden = c?.kind !== "pc";
-  if (document.activeElement !== range) range.value = String(c?.range || 6);
+  element("character-range-label").hidden = !c;
+  if (document.activeElement !== range)
+    range.value = c?.range == null ? "" : String(c.range);
+  range.placeholder = `Default: ${defaultVisualRange()} m`;
 }
 element("character-list").addEventListener("change", async (event) => {
   const input = /** @type {HTMLSelectElement} */ (event.target);
@@ -373,14 +378,12 @@ element("character-list").addEventListener("change", async (event) => {
 element("character-range").addEventListener("change", async () => {
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const input = /** @type {HTMLInputElement} */ (element("character-range"));
-  const range = Number(input.value);
+  const range = input.value === "" ? null : Number(input.value);
   if (
     savingCharacters ||
     savingExploration ||
     !c ||
-    c.kind !== "pc" ||
-    !Number.isFinite(range) ||
-    range <= 0
+    (range !== null && (!Number.isFinite(range) || range <= 0))
   )
     return;
   if (c.id === characterState.pov && c.level === currentLevel)
@@ -614,7 +617,7 @@ async function addCharacter(kind) {
     kind,
     level: currentLevel,
     at: [camera.x, camera.y],
-    range: Number(rangeInput.value) || 6,
+    range: null,
   };
   characterState.characters.push(character);
   if (kind === "pc" && !characterState.pov) characterState.pov = character.id;
@@ -663,7 +666,7 @@ function updateVisibility() {
     "data-observations",
     String(exploration.observations.length),
   );
-  rangeInput.value = String(exploration.observers[0]?.range ?? 6);
+  rangeInput.value = String(defaultVisualRange());
   element("fog-status").textContent =
     `${exploration.observations.length} observations`;
 }
@@ -717,15 +720,15 @@ async function setRange(range) {
   if (
     !exploration ||
     savingExploration ||
-    !Number.isFinite(range) ||
-    range <= 0
+    (range !== null && (!Number.isFinite(range) || range <= 0))
   )
     return;
   const pc = characterState.characters.find(
     (c) => c.id === characterState.pov && c.level === currentLevel,
   );
   if (pc) pc.range = range;
-  else if (exploration.observers[0]) exploration.observers[0].range = range;
+  else if (exploration.observers[0])
+    exploration.observers[0].range = range ?? defaultVisualRange();
   else return;
   recordObservation();
   updateVisibility();
@@ -784,7 +787,35 @@ function toggleGmView() {
 element("gm-view").addEventListener("click", toggleGmView);
 element("close-gm").addEventListener("click", closeGm);
 element("reset-fog").addEventListener("click", resetFog);
-rangeInput.addEventListener("change", () => setRange(Number(rangeInput.value)));
+rangeInput.addEventListener("change", async () => {
+  const range = Number(rangeInput.value);
+  if (
+    savingCharacters ||
+    savingExploration ||
+    !Number.isFinite(range) ||
+    range <= 0
+  )
+    return;
+  const previous = characterState.defaultRange;
+  characterState.defaultRange = range;
+  if (!(await saveCharacters())) {
+    characterState.defaultRange = previous;
+    updateVisibility();
+    return;
+  }
+  const pc = characterState.characters.find(
+    (c) => c.id === characterState.pov && c.level === currentLevel,
+  );
+  if (pc?.range == null && (pc || !characterState.characters.length)) {
+    if (!pc && exploration?.observers[0])
+      exploration.observers[0].range = range;
+    recordObservation();
+    updateVisibility();
+    draw();
+    await saveExploration();
+  }
+  refreshCharacterControls();
+});
 
 async function placeObserver(at) {
   if (!exploration || savingExploration) return;
@@ -802,7 +833,11 @@ async function placeObserver(at) {
   )
     return;
   if (!exploration.observers.length)
-    exploration.observers.push({ id: "party", at, range: 6 });
+    exploration.observers.push({
+      id: "party",
+      at,
+      range: defaultVisualRange(),
+    });
   exploration.observers[0].at = at.map((n) => Math.round(n * 1000) / 1000);
   exploration.visibilityPaused = false;
   recordObservation();

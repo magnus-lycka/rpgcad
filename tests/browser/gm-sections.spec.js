@@ -19,12 +19,12 @@ test("Referee requests one GM activity at a time without saving play state", asy
   await expect(
     page.getByRole("button", { name: "Add PC", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("Sight range (m)")).toBeHidden();
+  await expect(page.getByLabel("Default visual range (m)")).toBeHidden();
   await expect(
     page.getByRole("button", { name: "Zoom in", exact: true }),
   ).toBeHidden();
   await page.getByRole("button", { name: "Exploration", exact: true }).click();
-  await expect(page.getByLabel("Sight range (m)")).toBeVisible();
+  await expect(page.getByLabel("Default visual range (m)")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Add PC", exact: true }),
   ).toBeHidden();
@@ -32,7 +32,7 @@ test("Referee requests one GM activity at a time without saving play state", asy
   await expect(
     page.getByRole("button", { name: "Zoom in", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("Sight range (m)")).toBeHidden();
+  await expect(page.getByLabel("Default visual range (m)")).toBeHidden();
   await page.keyboard.press("Shift+G");
   await expect(page.getByRole("region", { name: "GM controls" })).toBeHidden();
   expect(saves).toEqual([]);

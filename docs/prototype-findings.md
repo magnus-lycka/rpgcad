@@ -369,3 +369,7 @@ check caught a print-style conflict, which was fixed. Narrow windows dock the
 character controls below a shorter scrollable GM panel so navigation remains
 reachable. Escape closes the contextual control before the GM panel and returns
 focus to the roster. Removal still uses the existing operation for recovery.
+
+### Default and character visual range
+
+The default is a shared preference, not the selected character’s override. Store inheritance explicitly as an unset range, resolve it when calculating visibility, and preserve legacy numeric overrides. Changing the default affects an inheriting POV immediately; changing either range while reset must keep reveal paused. Use “visual range” in controls to avoid confusing visibility with weapon range. Browser regression coverage checks persistence, override removal and reset safety.
