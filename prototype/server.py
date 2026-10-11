@@ -496,6 +496,14 @@ def main(*, clock=utc_now):
                 body = json.dumps(sketch, indent=2, allow_nan=False) + "\n"
                 target = sketch_path(model)
                 with exploration_lock:
+                    expected = self.headers.get("If-Match")
+                    current = target.read_bytes() if target.exists() else b"null"
+                    current_etag = '"' + hashlib.sha256(current).hexdigest() + '"'
+                    if expected and expected != current_etag:
+                        self.send_error(
+                            412, "Drawing marks changed; recovery not saved"
+                        )
+                        return
                     temporary = target.with_suffix(".tmp")
                     temporary.write_text(body)
                     temporary.replace(target)
@@ -504,6 +512,9 @@ def main(*, clock=utc_now):
                 return
             self.send_response(204)
             self.send_header("X-Sketch-Id", sketch["submittedAt"])
+            self.send_header(
+                "ETag", '"' + hashlib.sha256(body.encode()).hexdigest() + '"'
+            )
             self.end_headers()
 
         def do_PATCH(self):
