@@ -542,3 +542,209 @@ test("Escape closes visible roster Character options before GM controls without 
   await page.keyboard.press("Escape");
   await expect(page.locator("#gm-panel")).toBeHidden();
 });
+
+test("a rejected level transfer stays on the source level and cannot leak into a later save", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  const beforeUrl = page.url();
+  const before = await (await request.get("/characters")).json();
+  const exploration = await (await request.get("/exploration")).json();
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT")
+      await route.fulfill({ status: 500, body: "Unavailable" });
+    else await route.continue();
+  });
+  await page.getByLabel("Destination level").selectOption("below");
+  await page
+    .getByRole("button", { name: "Move to level", exact: true })
+    .click();
+  await expect(page.locator("#fog-status")).toContainText(
+    "Character save failed (500)",
+  );
+  await expect(page).toHaveURL(beforeUrl);
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  expect(await (await request.get("/characters")).json()).toEqual(before);
+  expect(await (await request.get("/exploration")).json()).toEqual(exploration);
+  await page.unroute("**/characters*");
+  await page.getByLabel("Character name").fill("Captain Ada");
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/characters")).json()).characters[0].name,
+    )
+    .toBe("Captain Ada");
+  expect(
+    (await (await request.get("/characters")).json()).characters[0].level,
+  ).toBe("original");
+});
+
+test("a rejected rename restores the saved name and stays rejected when another setting saves", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT")
+      await route.fulfill({ status: 409, body: "Conflict" });
+    else await route.continue();
+  });
+  await page.getByLabel("Character name").fill("Rejected name");
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect(page.locator("#character-action-status")).toContainText(
+    "Character save failed (409)",
+  );
+  await expect(page.locator('[data-character="ada"]')).toContainText("Ada");
+  await expect(page.getByLabel("Character name")).toHaveValue("Ada");
+  await page.unroute("**/characters*");
+  const range = page.getByLabel("Selected character visual range (m)");
+  await range.fill("4");
+  await range.dispatchEvent("change");
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/characters")).json()).characters[0].range,
+    )
+    .toBe(4);
+  expect(
+    (await (await request.get("/characters")).json()).characters[0].name,
+  ).toBe("Ada");
+});
+
+test("a rejected addition creates no ghost character and a later addition saves only the intended character", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  const before = await (await request.get("/characters")).json();
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT")
+      await route.fulfill({ status: 500, body: "Unavailable" });
+    else await route.continue();
+  });
+  await page.getByLabel("Character name").fill("Ghost");
+  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await expect(page.locator("#fog-status")).toContainText(
+    "Character save failed (500)",
+  );
+  await expect(
+    page.locator("[data-character]").filter({ hasText: "Ghost" }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Character", { exact: true })).not.toContainText(
+    "Ghost",
+  );
+  expect(await (await request.get("/characters")).json()).toEqual(before);
+  await page.unroute("**/characters*");
+  await page.getByLabel("Character name").fill("Real");
+  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await expect
+    .poll(async () =>
+      (await (await request.get("/characters")).json()).characters.map(
+        (c) => c.name,
+      ),
+    )
+    .toEqual(["Ada", "Ben", "Guard", "Real"]);
+});
+
+test("a rejected POV move restores the marker and never reveals or later saves its destination", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  const marker = page.locator('[data-character="ada"]');
+  await expect(marker).toBeVisible();
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    "0",
+  );
+  await page.keyboard.press("Shift+G");
+  const before = await (await request.get("/characters")).json();
+  const explored = await (await request.get("/exploration")).json();
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT")
+      await route.fulfill({ status: 500, body: "Unavailable" });
+    else await route.continue();
+  });
+  const from = await point(page, [0, 0]);
+  const to = await point(page, [3, 1]);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.locator("#fog-status")).toContainText(
+    "Character save failed (500)",
+  );
+  await expect(marker).toHaveAttribute("transform", "translate(0 0)");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    "0",
+  );
+  expect(await (await request.get("/characters")).json()).toEqual(before);
+  expect(await (await request.get("/exploration")).json()).toEqual(explored);
+  await page.unroute("**/characters*");
+  await page.getByLabel("Character name").fill("Captain Ada");
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/characters")).json()).characters[0].name,
+    )
+    .toBe("Captain Ada");
+  expect(
+    (await (await request.get("/characters")).json()).characters[0].at,
+  ).toEqual([0, 0]);
+});
+
+// Characterisation of the shared staged commit path after the movement fix.
+test("a network-rejected POV selection keeps the saved viewpoint through a later successful edit", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  const explored = await (await request.get("/exploration")).json();
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT") await route.abort("failed");
+    else await route.continue();
+  });
+  await page.getByLabel("Character", { exact: true }).selectOption("ben");
+  await expect(page.locator("#fog-status")).toContainText("Failed to fetch");
+  await expect(page.locator('[data-character="ada"]')).toHaveAttribute(
+    "data-pov",
+    "true",
+  );
+  await expect(page.locator('[data-character="ben"]')).toHaveAttribute(
+    "data-pov",
+    "false",
+  );
+  expect((await (await request.get("/characters")).json()).pov).toBe("ada");
+  expect(await (await request.get("/exploration")).json()).toEqual(explored);
+  await page.unroute("**/characters*");
+  const range = page.getByLabel("Selected character visual range (m)");
+  await range.fill("4");
+  await range.dispatchEvent("change");
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/characters")).json()).characters.find(
+          (c) => c.id === "ben",
+        ).range,
+    )
+    .toBe(4);
+  expect((await (await request.get("/characters")).json()).pov).toBe("ada");
+  expect(await (await request.get("/exploration")).json()).toEqual(explored);
+});

@@ -395,3 +395,19 @@ regression was observed failing before its implementation.
 The same Escape rule applies to visible roster Character options for hidden or
 other-level characters. A failing-first browser regression checks its focus
 return and that hidden options do not intercept Escape from Exploration.
+
+### Character-save failures across all actions
+
+Retaining an ETag after transient failure makes retries possible, but polling then
+returns 304 for unchanged saved state. Optimistic mutations cannot rely on polling
+to roll them back. Browser regressions observed rejected transfer, rename, addition
+and movement leaving unsaved changes live; a later successful action could persist
+them. Each regression ran red → green. A separate characterisation checks network
+failure during POV selection.
+
+All character mutations now use one proposal/save/commit boundary. Only successful
+persistence updates the live character state, and level navigation and observation
+recording follow that success. Drag previews are separate from saved positions, so
+polling cannot reveal an unsaved movement destination. Failed actions retain an
+error and the saved state; removal recovery and visual-range retry semantics remain
+covered by the existing browser tests.

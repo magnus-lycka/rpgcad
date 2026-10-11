@@ -269,7 +269,7 @@ function refreshCharacterRecovery(message = "") {
 }
 let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
-/** @type {{id:string,x:number,y:number,at:number[]}|null} */
+/** @type {{id:string,x:number,y:number,at:number[],preview?:number[]}|null} */
 let characterDrag = null;
 let dismissedCharacterActions = "";
 let characterSaveError = "";
@@ -331,8 +331,21 @@ async function characterAction(id, at = null) {
   selectedCharacter = id;
   dismissedCharacterActions = "";
   refreshCharacterControls();
-  if (at) c.at = at.map((n) => Math.round(n * 1000) / 1000);
-  else if (c.kind === "pc") characterState.pov = id;
+  const proposed = {
+    ...characterState,
+    pov: !at && c.kind === "pc" ? id : characterState.pov,
+    characters: at
+      ? characterState.characters.map((character) =>
+          character.id === id
+            ? { ...character, at: at.map((n) => Math.round(n * 1000) / 1000) }
+            : character,
+        )
+      : characterState.characters,
+  };
+  if (!(await commitCharacters(proposed))) {
+    draw();
+    return;
+  }
   if (exploration && c.id === characterState.pov) {
     exploration.visibilityPaused = false;
     syncPov();
@@ -340,7 +353,6 @@ async function characterAction(id, at = null) {
     updateVisibility();
   }
   draw();
-  await saveCharacters();
   if (c.id === characterState.pov) await saveExploration();
 }
 function refreshCharacterControls() {
@@ -399,10 +411,14 @@ element("rename-character").addEventListener("click", async () => {
     element("character-name")
   ).value.trim();
   if (!c || !name) return;
-  c.name = name;
+  await commitCharacters({
+    ...characterState,
+    characters: characterState.characters.map((character) =>
+      character.id === c.id ? { ...character, name } : character,
+    ),
+  });
   refreshCharacterControls();
   draw();
-  await saveCharacters();
 });
 element("remove-character").addEventListener("click", async () => {
   if (savingCharacters || savingExploration) return;
@@ -410,14 +426,16 @@ element("remove-character").addEventListener("click", async () => {
     (c) => c.id === selectedCharacter,
   );
   if (!character) return;
-  const previous = structuredClone(characterState);
   const wasPov = characterState.pov === character.id;
-  characterState.characters = characterState.characters.filter(
-    (c) => c.id !== character.id,
-  );
-  if (wasPov) characterState.pov = null;
-  if (!(await saveCharacters())) {
-    characterState = previous;
+  if (
+    !(await commitCharacters({
+      ...characterState,
+      characters: characterState.characters.filter(
+        (c) => c.id !== character.id,
+      ),
+      pov: wasPov ? null : characterState.pov,
+    }))
+  ) {
     refreshCharacterControls();
     draw();
     refreshCharacterRecovery(
@@ -450,16 +468,20 @@ element("undo-remove").addEventListener("click", async () => {
     );
     return;
   }
-  const previous = structuredClone(characterState);
-  characterState.characters.push(structuredClone(recovery.character));
-  if (
+  const restorePov =
     recovery.wasPov &&
     !characterState.pov &&
-    recovery.character.level === currentLevel
-  )
-    characterState.pov = recovery.character.id;
-  if (!(await saveCharacters())) {
-    characterState = previous;
+    recovery.character.level === currentLevel;
+  if (
+    !(await commitCharacters({
+      ...characterState,
+      characters: [
+        ...characterState.characters,
+        structuredClone(recovery.character),
+      ],
+      pov: restorePov ? recovery.character.id : characterState.pov,
+    }))
+  ) {
     refreshCharacterControls();
     draw();
     refreshCharacterRecovery(
@@ -495,13 +517,17 @@ element("transfer-character").addEventListener("click", async () => {
   const level = /** @type {HTMLSelectElement} */ (element("character-level"))
     .value;
   if (!c || !level || c.level === level) return;
-  c.level = level;
+  const proposed = {
+    ...characterState,
+    characters: characterState.characters.map((character) =>
+      character.id === c.id ? { ...character, level } : character,
+    ),
+  };
+  if (!(await commitCharacters(proposed))) return;
   syncPov();
   updateVisibility();
   draw();
-  await saveCharacters();
   if (c.id === characterState.pov) await saveExploration();
-  if (!characterEtag) return;
   location.assign(
     `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: c.id })}`,
   );
@@ -518,7 +544,7 @@ function characterDrawing() {
     )
     .map(
       (c) =>
-        `<g data-character="${Geometry.esc(c.id)}" data-selected="${c.id === selectedCharacter}" data-pov="${c.id === characterState.pov}" role="button" tabindex="0" aria-label="${Geometry.esc(c.name)} ${c.kind.toUpperCase()}${c.id === characterState.pov ? " · POV" : c.id === selectedCharacter ? " · Selected" : ""}" transform="translate(${c.at.join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><path d="M -.48 0 A .48 .48 0 1 0 .48 0 A .48 .48 0 1 0 -.48 0" fill="none" stroke="${c.id === selectedCharacter ? "#176ca4" : "none"}" stroke-width=".04" stroke-dasharray=".08 .06"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
+        `<g data-character="${Geometry.esc(c.id)}" data-selected="${c.id === selectedCharacter}" data-pov="${c.id === characterState.pov}" role="button" tabindex="0" aria-label="${Geometry.esc(c.name)} ${c.kind.toUpperCase()}${c.id === characterState.pov ? " · POV" : c.id === selectedCharacter ? " · Selected" : ""}" transform="translate(${(characterDrag?.id === c.id ? (characterDrag.preview ?? c.at) : c.at).join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><path d="M -.48 0 A .48 .48 0 1 0 .48 0 A .48 .48 0 1 0 -.48 0" fill="none" stroke="${c.id === selectedCharacter ? "#176ca4" : "none"}" stroke-width=".04" stroke-dasharray=".08 .06"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
     )
     .join("");
 }
@@ -574,7 +600,8 @@ function updateBusyControls() {
     control.disabled = savingCharacters || savingExploration;
   }
 }
-async function saveCharacters(state = characterState) {
+/** @param {typeof characterState} proposed */
+async function commitCharacters(proposed) {
   characterSaveError = "";
   savingCharacters = true;
   ++characterGeneration;
@@ -586,13 +613,14 @@ async function saveCharacters(state = characterState) {
         "Content-Type": "application/json",
         "If-Match": characterEtag,
       },
-      body: JSON.stringify(state),
+      body: JSON.stringify(proposed),
     });
     if (!response.ok) {
       if (response.status === 412) characterEtag = "";
       throw Error(`Character save failed (${response.status})`);
     }
     characterEtag = response.headers.get("ETag") || "";
+    characterState = proposed;
     removedCharacter = null;
     refreshCharacterRecovery();
     return true;
@@ -618,14 +646,22 @@ async function addCharacter(kind) {
     at: [camera.x, camera.y],
     range: null,
   };
-  characterState.characters.push(character);
-  if (kind === "pc" && !characterState.pov) characterState.pov = character.id;
+  if (
+    !(await commitCharacters({
+      ...characterState,
+      characters: [...characterState.characters, character],
+      pov:
+        kind === "pc" && !characterState.pov
+          ? character.id
+          : characterState.pov,
+    }))
+  )
+    return;
   selectedCharacter = character.id;
   refreshCharacterControls();
   syncPov();
   updateVisibility();
   draw();
-  await saveCharacters();
 }
 element("add-pc").addEventListener("click", () => addCharacter("pc"));
 element("add-npc").addEventListener("click", () => addCharacter("npc"));
@@ -724,10 +760,7 @@ async function saveCharacterRange(character, range) {
       c.id === character.id ? { ...c, range } : c,
     ),
   };
-  if (await saveCharacters(proposed)) {
-    character.range = range;
-    return true;
-  }
+  if (await commitCharacters(proposed)) return true;
   const input = /** @type {HTMLInputElement} */ (element("character-range"));
   input.value = previousRange == null ? "" : String(previousRange);
   return false;
@@ -813,11 +846,10 @@ rangeInput.addEventListener("change", async () => {
     range <= 0
   )
     return;
-  if (!(await saveCharacters({ ...characterState, defaultRange: range }))) {
+  if (!(await commitCharacters({ ...characterState, defaultRange: range }))) {
     rangeInput.value = String(defaultVisualRange());
     return;
   }
-  characterState.defaultRange = range;
   const pc = characterState.characters.find(
     (c) => c.id === characterState.pov && c.level === currentLevel,
   );
@@ -1021,12 +1053,10 @@ viewport.addEventListener("keydown", async (event) => {
 });
 viewport.addEventListener("pointermove", (event) => {
   if (characterDrag) {
-    const c = characterState.characters.find((c) => c.id === characterDrag?.id);
-    if (c)
-      c.at = [
-        characterDrag.at[0] + (event.clientX - characterDrag.x) * camera.mpp,
-        characterDrag.at[1] + (event.clientY - characterDrag.y) * camera.mpp,
-      ];
+    characterDrag.preview = [
+      characterDrag.at[0] + (event.clientX - characterDrag.x) * camera.mpp,
+      characterDrag.at[1] + (event.clientY - characterDrag.y) * camera.mpp,
+    ];
     draw();
     return;
   }
@@ -1048,8 +1078,10 @@ viewport.addEventListener("pointerup", (event) => {
         event.clientX - characterDrag.x,
         event.clientY - characterDrag.y,
       ) >= 4;
+    const destination = characterDrag.preview ?? characterDrag.at;
     characterDrag = null;
-    if (c) characterAction(c.id, moved ? c.at : null);
+    draw();
+    if (c) characterAction(c.id, moved ? destination : null);
     return;
   }
   if (penStroke) {
@@ -1077,8 +1109,6 @@ viewport.addEventListener("pointerup", (event) => {
 });
 viewport.addEventListener("pointercancel", () => {
   if (characterDrag) {
-    const c = characterState.characters.find((c) => c.id === characterDrag?.id);
-    if (c) c.at = characterDrag.at;
     characterDrag = null;
   }
   drag = null;
