@@ -4,6 +4,12 @@ Layouts for tabletop role-playing, primarily Traveller.
 
 ## Language
 
+**Designer**:
+The user's activity in Edit mode: develop layouts, make drawing marks and describe design intentions to the agent.
+
+**Referee**:
+The user's activity in Play mode: run the map, characters and exploration for the tabletop game. Designer and Referee describe activities of the same user, not accounts or permission roles.
+
 **Plan**:
 The layout of a location, such as a building, starship, or city area, including all its levels.
 
@@ -17,7 +23,7 @@ A role-playing campaign with which plans can be associated.
 The spatial layout being developed, with no fixed outer boundary. Paper size and screen size do not limit its extent.
 
 **Drawing mark**:
-A freehand stroke or group of strokes supplied by the Referee as spatial input to a design instruction. Its intended meaning comes from the accompanying words and context.
+A freehand stroke or group of strokes supplied by the Designer as spatial input to a design instruction. Its intended meaning comes from the accompanying words and context.
 
 **Grid square**:
 A square representing 1.5 m × 1.5 m in the fictional space. At a print scale of 1:75, it measures 2 cm × 2 cm on paper.

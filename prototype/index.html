@@ -41,7 +41,10 @@
       display: none;
     }
     #edit-palette strong {
-      display: none;
+      display: block;
+      font-size: 11px;
+      margin-bottom: 5px;
+      color: #52677d;
     }
     #edit-palette button {
       font: inherit;
@@ -55,6 +58,23 @@
     #edit-palette button[aria-pressed="true"] {
       background: #d4e6ff;
       border: 1px solid #226ac0;
+    }
+    .sketch-options {
+      position: relative;
+    }
+    #sketch-menu {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      padding: 6px;
+      background: white;
+      border: 1px solid #9eafc2;
+      border-radius: 4px;
+      z-index: 1;
+      min-width: max-content;
+    }
+    #sketch-menu[hidden] {
+      display: none;
     }
     #sketch-status {
       display: block;
@@ -217,16 +237,25 @@
   ></svg>
   <div id="print-pages"></div>
   <section id="edit-palette" aria-label="Edit tools" hidden>
-    <strong>EDIT · SKETCH</strong>
-    <div class="tool-row">
+    <strong>Designer</strong>
+    <div class="tool-row" role="group" aria-label="Design tools">
       <button id="pen-tool" aria-pressed="false">Pen</button>
       <button id="pan-tool" aria-pressed="true">Pan</button>
       <button id="undo-stroke">Undo stroke</button>
-      <button id="clear-sketch">Clear</button>
-      <button id="play-mode">Play</button>
-      <a href="/library.html">Library</a>
+      <span class="sketch-options">
+        <button
+          id="sketch-options"
+          aria-expanded="false"
+          aria-controls="sketch-menu"
+        >
+          Sketch options
+        </button>
+        <div id="sketch-menu" role="group" aria-label="Sketch options" hidden>
+          <button id="clear-sketch">Clear marks</button>
+        </div>
+      </span>
     </div>
-    <div class="tool-row" aria-label="View controls">
+    <div class="tool-row" role="group" aria-label="View controls">
       <button data-zoom="out" aria-label="Zoom out" title="Zoom out (−)">
         −
       </button>
@@ -234,10 +263,19 @@
       <button data-fit aria-label="Fit plan" title="Fit plan (F)">Fit</button>
       <button data-calibrate disabled>Calibrate</button>
     </div>
+    <nav class="tool-row" aria-label="Designer navigation">
+      <button id="play-mode" title="Play (Shift-E)">Play</button>
+      <a href="/library.html">Library</a>
+    </nav>
     <output id="sketch-status" aria-live="polite"></output>
   </section>
   <section id="gm-panel" aria-label="GM controls" hidden>
-    <a href="/library.html">Library</a>
+    <nav class="tool-row" aria-label="Referee navigation">
+      <button id="edit-mode" title="Return to Edit (Shift-E)">
+        Return to Edit
+      </button>
+      <a href="/library.html">Library</a>
+    </nav>
     <strong>Characters</strong>
     <label
       >Character

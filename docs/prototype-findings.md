@@ -329,3 +329,14 @@ calibration example with unchanged model data. Calibration waits for initial
 model loading and Fit: measuring before that fit would invalidate the ruler.
 The screen-only dialog is excluded from print output. Live visual inspection
 confirmed a readable ruler and compact toolbar in the narrow drawing window.
+
+
+## Designer toolbar and mode navigation, ticket #23
+
+Edit separates design tools, screen view controls and navigation. Clear marks is
+secondary in Sketch options, whose keyboard opening and Escape/focus return were
+observed failing before implementation. Requested Play controls now offer Return
+to Edit without changing the camera, selected level or saved unfinished marks.
+Map shortcuts are suppressed in select and editable controls as well as text/number
+inputs. Narrow-window reachability, clean printing and nested calibration Escape
+are browser characterisation checks; the drawing/print geometry stays unchanged.

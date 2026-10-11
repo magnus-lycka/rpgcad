@@ -100,7 +100,20 @@ element("undo-stroke").addEventListener("click", () => {
   savePenMarks();
   draw();
 });
+const sketchMenu = element("sketch-menu");
+const sketchOptions = element("sketch-options");
+function closeSketchOptions() {
+  sketchMenu.hidden = true;
+  sketchOptions.setAttribute("aria-expanded", "false");
+}
+sketchOptions.addEventListener("click", () => {
+  sketchMenu.hidden = !sketchMenu.hidden;
+  sketchOptions.setAttribute("aria-expanded", String(!sketchMenu.hidden));
+  if (!sketchMenu.hidden) element("clear-sketch").focus();
+});
 element("clear-sketch").addEventListener("click", () => {
+  closeSketchOptions();
+  sketchOptions.focus();
   strokes = [];
   savePenMarks();
   draw();
@@ -121,7 +134,9 @@ async function pollSketchReply() {
   }
 }
 element("play-mode").addEventListener("click", () => switchMode(false));
+element("edit-mode").addEventListener("click", () => switchMode(true));
 function switchMode(edit) {
+  closeSketchOptions();
   editing = edit;
   fogEnabled = !edit;
   gmView = false;
@@ -829,12 +844,21 @@ function exportSvg() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 window.addEventListener("keydown", (event) => {
+  if (calibrationDialog.open) return;
+  if (event.key === "Escape" && !sketchMenu.hidden) {
+    event.preventDefault();
+    closeSketchOptions();
+    sketchOptions.focus();
+    return;
+  }
   if (
-    calibrationDialog.open ||
     event.ctrlKey ||
     event.metaKey ||
     event.altKey ||
-    (event.target instanceof Element && event.target.matches("input,textarea"))
+    (event.target instanceof Element &&
+      event.target.closest(
+        "input,textarea,select,[contenteditable],dialog[open]",
+      ))
   )
     return;
   if (event.shiftKey && event.key.toLowerCase() === "e") {

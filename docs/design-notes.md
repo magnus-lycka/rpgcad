@@ -2,34 +2,36 @@
 
 These are agreed requirements from the ongoing interview, not an implementation plan.
 
+The user acts as Designer in Edit and Referee in Play. These are activities of the same user, not separate accounts or permission roles.
+
 ## Working loop
 
-- The Referee talks to an existing agent, initially outside RPGCAD.
+- The Designer talks to an existing agent, initially outside RPGCAD.
 - A separate browser view displays the layout and updates automatically.
 - The agent must be able to inspect both the complete current model and its rendered view.
-- For the first version, the agent makes all geometry edits. The Referee uses the browser to inspect, pan, zoom, and print.
-- The Referee supplies the design. The agent translates the Referee's description into the model; it clarifies missing details rather than inventing layout choices. Success means matching the Referee's intended design.
+- For the first version, the agent makes all geometry edits. The Designer uses the browser to inspect, pan, zoom, and print.
+- The Designer supplies the design. The agent translates the Designer's description into the model; it clarifies missing details rather than inventing layout choices. Success means matching the Designer's intended design.
 - Keep the first version small. Sophisticated revision planning is deferred.
 
 ## Drawing input
 
 Agreed direction, not implemented:
 
-- Points, lines and rectangles drawn by the Referee can accompany instructions to the agent, such as placing a door, making a corridor or creating a room.
-- The agent receives marks in model coordinates and can inspect them in the drawing. The Referee need not translate a pointed location into coordinates.
+- Points, lines and rectangles drawn by the Designer can accompany instructions to the agent, such as placing a door, making a corridor or creating a room.
+- The agent receives marks in model coordinates and can inspect them in the drawing. The Designer need not translate a pointed location into coordinates.
 - A mark and accompanying words form one instruction; marking the drawing alone does not settle the intended geometry.
 - Distinguish rough marks communicating location, direction or extent from precise marks supplying exact geometry. Explicitly stated dimensions govern the result of a rough mark.
-- Prefer displaying a reasonable first interpretation promptly, then adjusting it with the Referee. Seeing the result can help the Referee discover or express the intended design; do not default to an abstract question-and-answer session before drawing. Clarification remains appropriate when a consequential choice cannot reasonably be inferred.
-- Written instructions refer by default to the Referee's latest pen actions. Explicit mark identifiers are not required for ordinary sketch-and-instruct use; this supersedes the earlier proposal to label marks for routine reference.
-- Marks wait for an instruction to be submitted. The Referee can adjust or erase them before asking the agent to edit the plan.
-- Pointing can select existing objects without requiring names or coordinates. Highlight the selection so the Referee can verify its referent; also support plain location marks in empty space.
-- Input is freehand pen sketching. Do not straighten, snap or otherwise correct the strokes before knowing the Referee's intent. This supersedes the proposed rough/precise input controls as the ordinary workflow.
+- Prefer displaying a reasonable first interpretation promptly, then adjusting it with the Designer. Seeing the result can help the Designer discover or express the intended design; do not default to an abstract question-and-answer session before drawing. Clarification remains appropriate when a consequential choice cannot reasonably be inferred.
+- Written instructions refer by default to the Designer's latest pen actions. Explicit mark identifiers are not required for ordinary sketch-and-instruct use; this supersedes the earlier proposal to label marks for routine reference.
+- Marks wait for an instruction to be submitted. The Designer can adjust or erase them before asking the agent to edit the plan.
+- Pointing can select existing objects without requiring names or coordinates. Highlight the selection so the Designer can verify its referent; also support plain location marks in empty space.
+- Input is freehand pen sketching. Do not straighten, snap or otherwise correct the strokes before knowing the Designer's intent. This supersedes the proposed rough/precise input controls as the ordinary workflow.
 - Interpret strokes together with their words and relevant context: a wiggly rectangle described as a room may become clean, possibly grid-aligned geometry; a pond, hole in the floor or pile of rubble may retain an irregular shape without grid snapping.
-- The Referee can state a corridor width when context does not make the intended width clear. Do not require a labelled line reference or numeric input before interpreting a sketch.
-- All strokes made since the previous submitted instruction form the sketch accompanying the next instruction. The Referee can erase or undo strokes before submitting.
+- The Designer can state a corridor width when context does not make the intended width clear. Do not require a labelled line reference or numeric input before interpreting a sketch.
+- All strokes made since the previous submitted instruction form the sketch accompanying the next instruction. The Designer can erase or undo strokes before submitting.
 - Interpretation can reshape or populate the marked area, rather than simply tracing it. For example, a pond may get a more rounded outline; rubble may populate the area with suitable shapes. Use the instruction and context to choose an initial result, then refine it from feedback.
 - An established corridor width can be inferred from context. Prefer a best guess and visible correction over preliminary questioning when that is useful to discovering the design.
-- This extends the initial agent-only editing workflow. The Referee draws in the browser and writes the instruction in the existing chat. There is no browser text box or submit action. Strokes become available automatically on pen-up; the chat instruction triggers interpretation.
+- This extends the initial agent-only editing workflow. The Designer draws in the browser and writes the instruction in the existing chat. There is no browser text box or submit action. Strokes become available automatically on pen-up; the chat instruction triggers interpretation.
 
 ## Model and drawing
 
