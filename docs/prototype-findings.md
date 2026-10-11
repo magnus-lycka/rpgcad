@@ -329,3 +329,15 @@ calibration example with unchanged model data. Calibration waits for initial
 model loading and Fit: measuring before that fit would invalidate the ruler.
 The screen-only dialog is excluded from print output. Live visual inspection
 confirmed a readable ruler and compact toolbar in the narrow drawing window.
+
+
+## Direct Designer component browsing
+
+The Designer can open Components directly beside the drawing. The compact browser
+reuses the existing catalogue search and Geometry previews; details expand on demand.
+It neither places instances nor sends instructions. Closing or Escape retains the
+plan, level, camera, tool and pending marks, with HTTP checks confirming unchanged
+model, sketch and all plan dates. Play and print exclude the browser; calibration
+replaces it rather than stacking large controls. Desktop and 390 px disposable
+views were inspected: previews remain legible, details scroll within the panel and
+part of the drawing remains visible even in the narrow view.

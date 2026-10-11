@@ -76,6 +76,38 @@
       font-size: 0.85rem;
       color: #55615b;
     }
+    body[data-embedded] {
+      margin: 0;
+      padding: 8px;
+      background: #f7fafb;
+      font-size: 13px;
+    }
+    body[data-embedded] > nav:first-of-type,
+    body[data-embedded] > h1,
+    body[data-embedded] > p:not(#status) {
+      display: none;
+    }
+    body[data-embedded] article {
+      padding: 10px;
+    }
+    body[data-embedded] h2 {
+      font-size: 15px;
+    }
+    body[data-embedded] article > p {
+      margin: 4px 0;
+      font-size: 12px;
+    }
+    body[data-embedded] svg {
+      height: 130px;
+    }
+    body[data-embedded] #cards {
+      gap: 8px;
+      grid-template-columns: 1fr;
+    }
+    body[data-embedded] input {
+      box-sizing: border-box;
+      width: 100%;
+    }
   </style>
   <nav><a href="/library.html">Plan library</a></nav>
   <h1>Component catalogue</h1>

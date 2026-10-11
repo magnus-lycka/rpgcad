@@ -120,9 +120,46 @@ async function pollSketchReply() {
     draw();
   }
 }
+const componentPanel = element("component-panel");
+const componentsTool = element("components-tool");
+const catalogueFrame = /** @type {HTMLIFrameElement} */ (
+  componentPanel.querySelector("iframe")
+);
+function closeComponents() {
+  componentPanel.hidden = true;
+  componentsTool.setAttribute("aria-expanded", "false");
+  if (editing) componentsTool.focus();
+}
+componentsTool.addEventListener("click", () => {
+  if (!componentPanel.hidden) {
+    closeComponents();
+    return;
+  }
+  if (catalogueFrame.getAttribute("src") === "about:blank")
+    catalogueFrame.src = "/components.html?embedded=1";
+  componentPanel.hidden = false;
+  componentsTool.setAttribute("aria-expanded", "true");
+  element("close-components").focus();
+});
+element("close-components").addEventListener("click", closeComponents);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !componentPanel.hidden) {
+    event.preventDefault();
+    closeComponents();
+  }
+});
+window.addEventListener("message", (event) => {
+  if (
+    event.origin === location.origin &&
+    event.source === catalogueFrame.contentWindow &&
+    event.data === "close-components"
+  )
+    closeComponents();
+});
 element("play-mode").addEventListener("click", () => switchMode(false));
 function switchMode(edit) {
   editing = edit;
+  closeComponents();
   fogEnabled = !edit;
   gmView = false;
   gmPanel.hidden = true;
@@ -782,6 +819,7 @@ document.querySelectorAll("[data-calibrate]").forEach((button) => {
     ruler.innerHTML = `<path d="M 0 16 H ${pixels} ${ticks.join(" ")}" fill="none" stroke="black" stroke-width="1"/>`;
     element("calibration-length").textContent =
       `${squares} grid squares · ${calibrationMetres} m`;
+    closeComponents();
     calibrationDialog.showModal();
   });
 });
