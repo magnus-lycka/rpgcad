@@ -259,7 +259,14 @@ let fogEnabled = !editing,
 /** @type {{characters:Character[],pov:string|null}} */
 let characterState = { characters: [], pov: null };
 let characterEtag = "",
-  savingCharacters = false;
+  savingCharacters = false,
+  characterGeneration = 0;
+/** @type {{character:Character, wasPov:boolean, etag:string}|null} */
+let removedCharacter = null;
+function refreshCharacterRecovery(message = "") {
+  element("undo-remove").hidden = !removedCharacter;
+  element("character-recovery-status").textContent = message;
+}
 let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
 /** @type {{id:string,x:number,y:number,at:number[]}|null} */
@@ -329,18 +336,73 @@ element("rename-character").addEventListener("click", async () => {
 });
 element("remove-character").addEventListener("click", async () => {
   if (savingCharacters || savingExploration) return;
-  characterState.characters = characterState.characters.filter(
-    (c) => c.id !== selectedCharacter,
+  const character = characterState.characters.find(
+    (c) => c.id === selectedCharacter,
   );
-  if (characterState.pov === selectedCharacter) {
-    characterState.pov = null;
-    if (exploration) exploration.observers = [];
+  if (!character) return;
+  const previous = structuredClone(characterState);
+  const wasPov = characterState.pov === character.id;
+  characterState.characters = characterState.characters.filter(
+    (c) => c.id !== character.id,
+  );
+  if (wasPov) characterState.pov = null;
+  if (!(await saveCharacters())) {
+    characterState = previous;
+    refreshCharacterControls();
+    draw();
+    refreshCharacterRecovery(
+      "Removal was not saved. Try again after characters refresh.",
+    );
+    return;
   }
+  removedCharacter = {
+    character: structuredClone(character),
+    wasPov,
+    etag: characterEtag,
+  };
   selectedCharacter = "";
+  if (wasPov && exploration) exploration.observers = [];
   refreshCharacterControls();
   updateVisibility();
   draw();
-  await saveCharacters();
+  refreshCharacterRecovery(
+    `Removed ${character.name}. Undo Remove restores this character.`,
+  );
+  await saveExploration();
+});
+element("undo-remove").addEventListener("click", async () => {
+  if (!removedCharacter || savingCharacters || savingExploration) return;
+  const recovery = removedCharacter;
+  if (characterEtag !== recovery.etag) {
+    removedCharacter = null;
+    refreshCharacterRecovery(
+      "Characters changed. Undo Remove is no longer available.",
+    );
+    return;
+  }
+  const previous = structuredClone(characterState);
+  characterState.characters.push(structuredClone(recovery.character));
+  if (
+    recovery.wasPov &&
+    !characterState.pov &&
+    recovery.character.level === currentLevel
+  )
+    characterState.pov = recovery.character.id;
+  if (!(await saveCharacters())) {
+    characterState = previous;
+    refreshCharacterControls();
+    draw();
+    refreshCharacterRecovery(
+      "Recovery was not saved. Try Undo Remove again; conflicting changes require a refresh.",
+    );
+    return;
+  }
+  selectedCharacter = recovery.character.id;
+  syncPov();
+  refreshCharacterControls();
+  updateVisibility();
+  draw();
+  refreshCharacterRecovery(`Restored ${recovery.character.name}.`);
   await saveExploration();
 });
 async function loadLevels() {
@@ -392,14 +454,24 @@ function characterDrawing() {
 }
 async function pollCharacters() {
   if (!fogEnabled || savingCharacters || characterDrag) return;
+  const generation = characterGeneration;
   const response = await fetch(`/characters${levelQuery}`, {
     headers: characterEtag ? { "If-None-Match": characterEtag } : {},
   });
   if (response.status === 304) return;
   if (!response.ok) throw Error("Characters unavailable");
+  const next = await response.json();
+  if (savingCharacters || generation !== characterGeneration) return;
+  const nextEtag = response.headers.get("ETag") || "";
   const first = !characterEtag;
-  characterState = await response.json();
-  characterEtag = response.headers.get("ETag") || "";
+  if (removedCharacter && nextEtag !== removedCharacter.etag) {
+    removedCharacter = null;
+    refreshCharacterRecovery(
+      "Characters changed. Undo Remove is no longer available.",
+    );
+  }
+  characterState = next;
+  characterEtag = nextEtag;
   refreshCharacterControls();
   syncPov();
   updateVisibility();
@@ -414,6 +486,7 @@ function updateBusyControls() {
     "add-npc",
     "rename-character",
     "remove-character",
+    "undo-remove",
     "reset-fog",
     "transfer-character",
   ]) {
@@ -425,6 +498,7 @@ function updateBusyControls() {
 }
 async function saveCharacters() {
   savingCharacters = true;
+  ++characterGeneration;
   updateBusyControls();
   try {
     const response = await fetch(`/characters${levelQuery}`, {
@@ -435,11 +509,17 @@ async function saveCharacters() {
       },
       body: JSON.stringify(characterState),
     });
-    if (!response.ok) throw Error(`Character save failed (${response.status})`);
+    if (!response.ok) {
+      if (response.status === 412) characterEtag = "";
+      throw Error(`Character save failed (${response.status})`);
+    }
     characterEtag = response.headers.get("ETag") || "";
+    removedCharacter = null;
+    refreshCharacterRecovery();
+    return true;
   } catch (error) {
     element("fog-status").textContent = String(error);
-    characterEtag = "";
+    return false;
   } finally {
     savingCharacters = false;
     updateBusyControls();
