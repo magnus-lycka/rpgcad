@@ -352,3 +352,20 @@ Clear marks now offers one in-memory Undo Clear snapshot only after a successful
 ## Character removal recovery, 2026-10-11
 
 Undo Remove retains the latest successfully removed character for the current drawing page. It restores the same identity, position, range and applicable POV without adding an observation, changing door state or lifting reset's visibility pause. Switching Edit/Play preserves recovery; successful character mutations, incompatible authoritative character changes and leaving the page invalidate it. Recovery uses the existing conditional character save: a stale restore cannot overwrite another client's characters. Transient failed restores retain an explicit retry; failed removals retain the character and do not announce success. Browser/HTTP checks exercise these behaviours, keyboard use in a narrow window, print exclusion and plan isolation against disposable data.
+
+## Contextual character management, ticket #27
+
+Requested Referee controls move the existing character operations beside a visible
+selected marker. Hidden NPCs and characters on another level keep their controls
+in the roster, without an anchor at their hidden location. Selection has a blue
+dashed ring; the POV PC retains its separate gold ring. Keyboard Enter/Space can
+select markers without allowing NPCs to become POV. Range edits apply to the
+selected PC; only the current POV produces observations.
+
+Browser tests observed missing contextual controls, range/removal, keyboard marker
+selection and local save failure feedback before implementation. Pan/zoom tracking,
+resize clamping and screen-only printing were checked through the browser. That
+check caught a print-style conflict, which was fixed. Narrow windows dock the
+character controls below a shorter scrollable GM panel so navigation remains
+reachable. Escape closes the contextual control before the GM panel and returns
+focus to the roster. Removal still uses the existing operation for recovery.
