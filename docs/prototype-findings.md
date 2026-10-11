@@ -340,3 +340,13 @@ to Edit without changing the camera, selected level or saved unfinished marks.
 Map shortcuts are suppressed in select and editable controls as well as text/number
 inputs. Narrow-window reachability, clean printing and nested calibration Escape
 are browser characterisation checks; the drawing/print geometry stays unchanged.
+## Direct Designer component browsing
+
+The Designer can open Components directly beside the drawing. The compact browser
+reuses the existing catalogue search and Geometry previews; details expand on demand.
+It neither places instances nor sends instructions. Closing or Escape retains the
+plan, level, camera, tool and pending marks, with HTTP checks confirming unchanged
+model, sketch and all plan dates. Play and print exclude the browser; calibration
+replaces it rather than stacking large controls. Desktop and 390 px disposable
+views were inspected: previews remain legible, details scroll within the panel and
+part of the drawing remains visible even in the narrow view.

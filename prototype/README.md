@@ -267,3 +267,8 @@ exercises the six initial reusable seed families through catalogue discovery,
 local variations, saved drawing updates, reload, and door/fog play. It includes
 an explicit non-overwriting registration command and Referee feedback steps.
 Its dimensions are proposals and ticket #13 remains a human evaluation gate.
+
+In Edit, **Components** opens searchable catalogue previews beside the drawing.
+Expand **Component details** for dimensions, settings and placement/access guidance.
+Close or Escape returns to the same drawing, tool, view and pending marks.
+Browsing does not place components or send an instruction; describe placement in chat.

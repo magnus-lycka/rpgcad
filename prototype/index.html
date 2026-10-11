@@ -114,6 +114,53 @@
     body[data-tool="pan"] #viewport {
       cursor: grab;
     }
+    #component-panel {
+      position: fixed;
+      top: 116px;
+      right: 14px;
+      bottom: 14px;
+      width: min(360px, calc(100vw - 28px));
+      background: #fff;
+      border: 1px solid #9eafc2;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px #263d5220;
+      font: 13px system-ui;
+      display: flex;
+      flex-direction: column;
+    }
+    #component-panel[hidden] {
+      display: none;
+    }
+    #component-panel header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      gap: 8px;
+    }
+    #component-panel h2 {
+      font-size: 15px;
+      margin: 0;
+    }
+    #component-panel button {
+      font: inherit;
+      background: white;
+      border: 1px solid #b7c2cf;
+      border-radius: 4px;
+      padding: 5px 8px;
+    }
+    #component-panel iframe {
+      width: 100%;
+      min-height: 0;
+      flex: 1;
+      border: 0;
+    }
+    @media (max-width: 600px) {
+      #component-panel {
+        top: 132px;
+        max-height: 58vh;
+      }
+    }
     #gm-panel {
       position: fixed;
       top: 12px;
@@ -244,6 +291,7 @@
       }
       #viewport,
       #gm-panel,
+      #component-panel,
       #edit-palette,
       #calibration-dialog {
         display: none;
@@ -272,6 +320,13 @@
     <div class="tool-row" role="group" aria-label="Design tools">
       <button id="pen-tool" aria-pressed="false">Pen</button>
       <button id="pan-tool" aria-pressed="true">Pan</button>
+      <button
+        id="components-tool"
+        aria-expanded="false"
+        aria-controls="component-panel"
+      >
+        Components
+      </button>
       <button id="undo-stroke">Undo stroke</button>
       <span class="sketch-options">
         <button
@@ -299,6 +354,13 @@
       <a href="/library.html">Library</a>
     </nav>
     <output id="sketch-status" aria-live="polite"></output>
+  </section>
+  <section id="component-panel" aria-label="Component browser" hidden>
+    <header>
+      <h2>Components</h2>
+      <button id="close-components">Close components</button>
+    </header>
+    <iframe title="Component catalogue" src="about:blank"></iframe>
   </section>
   <section id="gm-panel" aria-label="GM controls" hidden>
     <header class="gm-header">

@@ -18,6 +18,14 @@ let offset = 0;
 let revision = 0;
 const query = new URLSearchParams(location.search);
 search.value = query.get("q") || "";
+const embedded = query.get("embedded") === "1";
+if (embedded) {
+  document.body.dataset.embedded = "true";
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape")
+      parent.postMessage("close-components", location.origin);
+  });
+}
 
 /** @param {string} key */
 function readableKey(key) {
@@ -52,7 +60,8 @@ function card({ key, match, definition }) {
   const link = document.createElement("a");
   link.href = `/components.html?${new URLSearchParams({ definition: key })}`;
   link.textContent = definition.name;
-  title.append(link);
+  if (embedded) title.textContent = definition.name;
+  else title.append(link);
   const identity = document.createElement("p");
   identity.textContent = `${key} · ${definition.family}${definition.variant ? ` · ${definition.variant}` : ""}`;
   article.append(title, identity);
@@ -124,7 +133,13 @@ function card({ key, match, definition }) {
   const source = document.createElement("p");
   source.textContent = description(definition.provenance);
   provenance.append(summary, source);
-  article.append(caption, list, provenance);
+  if (embedded) {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Component details";
+    details.append(summary, caption, list, provenance);
+    article.append(details);
+  } else article.append(caption, list, provenance);
   return article;
 }
 async function render() {
@@ -150,6 +165,7 @@ async function render() {
     previous.disabled = offset === 0;
     next.disabled = offset + result.entries.length >= result.total;
     const address = new URLSearchParams();
+    if (embedded) address.set("embedded", "1");
     if (selected) address.set("definition", selected);
     if (search.value) address.set("q", search.value);
     history.replaceState(
