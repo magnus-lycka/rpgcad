@@ -141,6 +141,7 @@ test("GM can rename a PC, save its range, reset fog without losing characters, a
   await page.keyboard.press("Shift+G");
   await page.getByLabel("Character name").fill("Captain Ada");
   await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await page.getByRole("button", { name: "Exploration", exact: true }).click();
   await page.getByLabel("Sight range (m)").fill("4");
   await page.getByLabel("Sight range (m)").dispatchEvent("change");
   await expect
