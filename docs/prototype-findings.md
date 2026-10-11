@@ -391,3 +391,7 @@ must preserve both exploration history and the actionable save error.
 Escape now closes expanded Character options and focuses its summary before a
 second Escape closes contextual actions and returns focus to the roster. Each
 regression was observed failing before its implementation.
+
+The same Escape rule applies to visible roster Character options for hidden or
+other-level characters. A failing-first browser regression checks its focus
+return and that hidden options do not intercept Escape from Exploration.
