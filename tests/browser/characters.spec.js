@@ -515,3 +515,30 @@ test("Escape closes Character options before character actions and returns focus
   await expect(page.locator("#gm-panel")).toBeVisible();
   await expect(page.getByLabel("Character", { exact: true })).toBeFocused();
 });
+
+test("Escape closes visible roster Character options before GM controls without intercepting other sections", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  await page.getByLabel("Character", { exact: true }).selectOption("guard");
+  await expect(page.locator("#character-actions")).toBeHidden();
+  const summary = page.getByText("Character options", { exact: true });
+  const remove = page.getByRole("button", {
+    name: "Remove character",
+    exact: true,
+  });
+  await summary.click();
+  await remove.focus();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#gm-panel")).toBeVisible();
+  await expect(remove).toBeHidden();
+  await expect(summary).toBeFocused();
+  await summary.click();
+  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#gm-panel")).toBeHidden();
+});

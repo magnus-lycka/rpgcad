@@ -1194,7 +1194,7 @@ window.addEventListener("keydown", (event) => {
     const options = /** @type {HTMLDetailsElement} */ (
       element("character-options")
     );
-    if (!element("character-actions").hidden && options.open) {
+    if (options.open && options.checkVisibility()) {
       options.open = false;
       options.querySelector("summary")?.focus();
     } else if (!element("character-actions").hidden) closeCharacterActions();
