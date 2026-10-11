@@ -1073,3 +1073,34 @@ def test_vertical_access_families_retain_direction_and_reject_invalid_defaults(b
     assert put_state(bridge, "/model", model, saved[1] or "")[0] == 400
     assert read_state(bridge, "/model") == saved
     assert read_state(bridge, "/library") == metadata
+
+
+def test_guarded_sketch_restore_rejects_intervening_authoritative_change(bridge):
+    bridge.request("GET", "/plan")
+    metadata = bridge.getresponse().read()
+    bridge.request("PUT", "/sketch", json.dumps({"strokes": []}))
+    response = bridge.getresponse()
+    response.read()
+    bridge.request("GET", "/sketch")
+    response = bridge.getresponse()
+    cleared_etag = response.getheader("ETag")
+    response.read()
+    bridge.request("PUT", "/sketch", json.dumps({"strokes": [[[9, 8]]]}))
+    response = bridge.getresponse()
+    response.read()
+    bridge.request("GET", "/sketch")
+    response = bridge.getresponse()
+    newer = response.read()
+    bridge.request(
+        "PUT",
+        "/sketch",
+        json.dumps({"strokes": [[[1, 2]]]}),
+        headers={"If-Match": cleared_etag},
+    )
+    response = bridge.getresponse()
+    assert response.status == 412
+    response.read()
+    bridge.request("GET", "/sketch")
+    assert bridge.getresponse().read() == newer
+    bridge.request("GET", "/plan")
+    assert bridge.getresponse().read() == metadata

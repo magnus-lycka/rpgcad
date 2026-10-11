@@ -34,17 +34,38 @@ let penStroke = null;
 let savingSketch = 0;
 let savedSketchId = "";
 let sketchSave = Promise.resolve();
-function savePenMarks() {
+let sketchEtag = "";
+let sketchGeneration = 0;
+/** @type {{strokes:number[][][],etag:string}|null} */
+let clearedMarks = null;
+function updateClearRecovery() {
+  element("undo-clear").hidden = !clearedMarks;
+}
+/** @param {string} [expected] */
+function savePenMarks(expected = "") {
   const body = JSON.stringify({ strokes, modelRevision: etag, view: view() });
+  const generation = ++sketchGeneration;
   savingSketch++;
+  let success = false;
   sketchSave = sketchSave.then(async () => {
     try {
       const response = await fetch(`/sketch${levelQuery}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(expected ? { "If-Match": expected } : {}),
+        },
         body,
       });
+      if (response.status === 412) {
+        clearedMarks = null;
+        updateClearRecovery();
+      }
       if (!response.ok) throw Error(`Marks not saved (${response.status})`);
+      success = true;
+      clearedMarks = null;
+      updateClearRecovery();
+      sketchEtag = response.headers.get("ETag") || "";
       savedSketchId = response.headers.get("X-Sketch-Id") || "";
       element("sketch-status").textContent = "";
     } catch (error) {
@@ -53,6 +74,7 @@ function savePenMarks() {
       savingSketch--;
     }
   });
+  return sketchSave.then(() => ({ success, generation }));
 }
 function updateEditTools() {
   element("edit-palette").hidden = !editing;
@@ -111,19 +133,48 @@ sketchOptions.addEventListener("click", () => {
   sketchOptions.setAttribute("aria-expanded", String(!sketchMenu.hidden));
   if (!sketchMenu.hidden) element("clear-sketch").focus();
 });
-element("clear-sketch").addEventListener("click", () => {
+element("clear-sketch").addEventListener("click", async () => {
+  const snapshot = structuredClone(strokes);
   closeSketchOptions();
   sketchOptions.focus();
+
   strokes = [];
-  savePenMarks();
+  draw();
+  const result = await savePenMarks(sketchEtag);
+  if (result.generation !== sketchGeneration) return;
+  if (result.success && snapshot.length) {
+    clearedMarks = { strokes: snapshot, etag: sketchEtag };
+    updateClearRecovery();
+  } else if (!result.success) {
+    strokes = snapshot;
+    draw();
+  }
+});
+element("undo-clear").addEventListener("click", async () => {
+  const snapshot = clearedMarks;
+  if (!snapshot || savingSketch) return;
+  const previous = strokes;
+  strokes = snapshot.strokes;
+  const result = await savePenMarks(snapshot.etag);
+  if (result.generation !== sketchGeneration) return;
+  if (!result.success) {
+    strokes = previous;
+    await restoreMarks();
+  }
+  if (!clearedMarks) element("undo-stroke").focus();
   draw();
 });
 updateEditTools();
 async function pollSketchReply() {
   if (savingSketch || !savedSketchId || penStroke) return;
+  const generation = sketchGeneration;
   const response = await fetch(`/sketch${levelQuery}`, { cache: "no-store" });
-  if (!response.ok) return;
+  if (!response.ok || generation !== sketchGeneration || savingSketch) return;
   const feedback = await response.json();
+  if (clearedMarks && response.headers.get("ETag") !== clearedMarks.etag) {
+    clearedMarks = null;
+    updateClearRecovery();
+  }
   if (
     feedback?.submittedAt === savedSketchId &&
     feedback.status === "applied"
@@ -997,6 +1048,11 @@ async function restoreMarks() {
   const response = await fetch(`/sketch${levelQuery}`, { cache: "no-store" });
   if (!response.ok) return;
   const saved = await response.json();
+  sketchEtag = response.headers.get("ETag") || "";
+  if (clearedMarks && clearedMarks.etag !== sketchEtag) {
+    clearedMarks = null;
+    updateClearRecovery();
+  }
   if (saved && saved.status !== "applied" && Array.isArray(saved.strokes)) {
     strokes = saved.strokes;
     savedSketchId = saved.submittedAt;

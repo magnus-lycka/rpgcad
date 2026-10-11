@@ -143,13 +143,11 @@ The five left-hand cells on the second lower level have bunks, cupboards, desks/
 
 The metadata slice uses stable plan/level IDs independently of their names. Browser forms distinguish plan and level tags, and agent PATCH requests update the same record. HTTP checks verify no-op metadata, rejected saves and saved exploration do not change authoring dates. Persisted semantic JSON fingerprints detect direct model-file edits without treating whitespace changes as new authoring. Initial migration fingerprints retain unknown historical dates. Browser checks verify rename persistence, retained drawing links and recent-edit ordering. An existing reload/keyboard test exposed a readiness race: tests must wait for rendered geometry before sending a shortcut after navigation.
 
-
 ## Meaningful saved play dates, 2026-10-10
 
 Controlled-date HTTP checks distinguish character/POV changes, movement, range, doors, observation history, reset and resuming reveal from no-op and stale writes. Character transfers affect both source and destination levels. Authoring dates and unrelated plans/levels remain unchanged. Unused model snapshots and explicit default-field serialization are housekeeping, not play.
 
 A browser check exposed an automatic exploration save when model polling loaded changed geometry. Polling now updates current visibility without recording or saving an observation; explicit play actions still record the current model revision. Browser checks cover entry, mode toggles, pan/zoom, temporary GM view, model refresh, reload and return to the library. Tests must await enabled mutation controls before a second POV click, because timestamp persistence extends an existing asynchronous save interval.
-
 
 ## Independent plan variations, 2026-10-10
 
@@ -157,18 +155,15 @@ The library's Duplicate plan action copies every authored model into separate fi
 
 Browser checks cover selecting the variation, independent level metadata edits surviving reload, and explicit Edit/Play opening. HTTP checks cover source characters, door overrides, historical observations/revisions and pending marks remaining unchanged, separate authored-file edits in both directions, and persistence in a new server process. Disposable thumbnails and the empty fullscreen play drawing were visually inspected. Library publication follows model-file copying under its shared lock, so metadata mutations reload the authoritative records before adding the copy.
 
-
 ## Library search and date controls, 2026-10-10
 
 A multi-plan disposable browser fixture verifies text matches and level identification, inherited AND tags without cross-level aggregation, combined date ranges and all four sorts. Ranges select plan dates and include the entire UTC day; unknown dates are an explicit opt-in for active ranges and sort last. Visual inspection exposed local date labels crossing a UTC filter boundary; library date labels now explicitly use UTC too. Search thumbnails use a matching level and preserve the existing Geometry renderer. Rapid changes invalidate earlier thumbnail renders so stale cards cannot repopulate filtered results.
-
 
 ## Library review corrections, 2026-10-10
 
 A duplicated plan uses fresh level IDs, so a plan-only drawing URL must resolve its first level from the selected plan rather than assume `original`. A browser regression now creates a PC through that URL and verifies the marker remains visible when reopening the explicit first-level URL. Character saves reject every level ID absent from the owning plan, including `original` when it is not present; rejected saves preserve the roster and all dates. Existing building URLs still select their original levels.
 
 Duplicate publication now stores the copied models' canonical fingerprints together with the new library record. A controlled-clock HTTP regression edits the model path returned by POST before any further GET and verifies that the first read advances both the affected level's and the plan's edit dates. The other level, creation date and play date remain unchanged. The feedback-loop entry point now carries plan and level selectors through authoritative model discovery, sketch retrieval and timestamp-safe acknowledgement.
-
 
 The selected-plan view's hidden filter form was still visible because its flex display rule overrode the browser's hidden-attribute styling. A browser regression now checks hiding on plan entry and restoring the unchanged text, tags, date and sort controls on All plans. Compact selected-plan metadata spacing was visually inspected with isolated copies of all three building levels at 1200 × 720: all three thumbnails and their Edit/Play actions fit above the fold.
 
@@ -309,7 +304,6 @@ Transparent armrests showed the seat edges through them, making the sides look
 heavy. The shared chair geometry now masks those underlying edges in both loose
 chairs and console seats; the armrest direction and thin outline width remain.
 
-
 ## Screen navigation and physical calibration
 
 The Referee requested Pan as the default, a pen-shaped Pen cursor, visible zoom
@@ -330,7 +324,6 @@ model loading and Fit: measuring before that fit would invalidate the ruler.
 The screen-only dialog is excluded from print output. Live visual inspection
 confirmed a readable ruler and compact toolbar in the narrow drawing window.
 
-
 ## Designer toolbar and mode navigation, ticket #23
 
 Edit separates design tools, screen view controls and navigation. Clear marks is
@@ -340,6 +333,7 @@ to Edit without changing the camera, selected level or saved unfinished marks.
 Map shortcuts are suppressed in select and editable controls as well as text/number
 inputs. Narrow-window reachability, clean printing and nested calibration Escape
 are browser characterisation checks; the drawing/print geometry stays unchanged.
+
 ## Direct Designer component browsing
 
 The Designer can open Components directly beside the drawing. The compact browser
@@ -350,3 +344,7 @@ model, sketch and all plan dates. Play and print exclude the browser; calibratio
 replaces it rather than stacking large controls. Desktop and 390 px disposable
 views were inspected: previews remain legible, details scroll within the panel and
 part of the drawing remains visible even in the narrow view.
+
+### Undo Clear recovery
+
+Clear marks now offers one in-memory Undo Clear snapshot only after a successful save. It survives Edit/Play switching; another successful sketch save, page navigation or an incompatible authoritative revision discards it. Failed Clear restores the local draft; a failed Undo remains retryable unless the server reports a stale revision. Recovery saves use optional If-Match checked atomically with the sketch write under the server lock, so an unseen agent acknowledgement or another browser cannot be overwritten. Existing unconditional sketch writers remain supported. Recovery controls are part of the screen-only Designer toolbar, and normal Undo stroke remains separate.
