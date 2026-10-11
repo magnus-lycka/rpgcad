@@ -50,7 +50,16 @@ test("GM controls support focus, Escape from inputs, and safe shortcut typing", 
   await page.getByLabel("Character name").fill("fgrs+-");
   await page.getByLabel("Character name").press("Shift+E");
   await expect(page.locator("body")).toHaveAttribute("data-mode", "play");
+  const actions = page.getByRole("region", {
+    name: "Selected character actions",
+  });
+  const contextual = await actions.isVisible();
   await page.getByLabel("Character name").press("Escape");
+  if (contextual) {
+    await expect(actions).toBeHidden();
+    await expect(page.getByLabel("Character", { exact: true })).toBeFocused();
+    await page.keyboard.press("Escape");
+  }
   await expect(page.getByRole("region", { name: "GM controls" })).toBeHidden();
   await expect(page.locator("#viewport")).toBeFocused();
   await page.keyboard.press("Shift+G");
@@ -62,6 +71,7 @@ test("GM controls support focus, Escape from inputs, and safe shortcut typing", 
   );
   await page.keyboard.press("Shift+G");
   await expect(page.getByRole("region", { name: "GM controls" })).toBeVisible();
+  if (await actions.isVisible()) await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("region", { name: "GM controls" })).toBeHidden();
 });

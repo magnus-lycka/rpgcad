@@ -167,6 +167,7 @@ test("GM can rename a PC, save its range, reset fog without losing characters, a
   );
   await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
   await page.keyboard.press("Shift+G");
+  await page.getByText("Character options", { exact: true }).click();
   await page
     .getByRole("button", { name: "Remove character", exact: true })
     .click();
@@ -271,4 +272,179 @@ test("choosing a PC in GM controls selects its POV and saved range", async ({
   await page.keyboard.press("Shift+G");
   await page.getByLabel("Character", { exact: true }).selectOption("ben");
   await expect(page.getByLabel("Sight range (m)")).toHaveValue("3");
+});
+
+test("requested controls manage a visible character beside its marker and close with Escape", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Selected character actions" }),
+  ).toBeHidden();
+  await page.keyboard.press("Shift+G");
+  const actions = page.getByRole("region", {
+    name: "Selected character actions",
+  });
+  await expect(actions).toBeVisible();
+  await actions.getByLabel("Character name").fill("Captain Ada");
+  await actions.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/characters")).json()).characters[0].name,
+    )
+    .toBe("Captain Ada");
+  const box = await actions.boundingBox();
+  const marker = await page.locator('[data-character="ada"]').boundingBox();
+  if (!box || !marker) throw Error("Expected visible actions and marker");
+  expect(Math.abs(box.x - marker.x)).toBeLessThan(350);
+  await actions.getByLabel("Character name").focus();
+  await page.keyboard.press("Escape");
+  await expect(actions).toBeHidden();
+  await expect(page.locator("#gm-panel")).toBeVisible();
+  await expect(page.getByLabel("Character", { exact: true })).toBeFocused();
+});
+
+test("contextual range and secondary removal save the selected character", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  const actions = page.getByRole("region", {
+    name: "Selected character actions",
+  });
+  await actions.getByLabel("Selected character range (m)").fill("4");
+  await actions
+    .getByLabel("Selected character range (m)")
+    .dispatchEvent("change");
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/characters")).json()).characters[0].range,
+    )
+    .toBe(4);
+  await expect(
+    actions.getByRole("button", { name: "Remove character", exact: true }),
+  ).toBeHidden();
+  await actions.getByText("Character options", { exact: true }).click();
+  await actions
+    .getByRole("button", { name: "Remove character", exact: true })
+    .click();
+  await expect(page.locator('[data-character="ada"]')).toHaveCount(0);
+});
+
+test("keyboard character selection distinguishes NPC selection from PC POV without revealing hidden positions", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  await page.getByLabel("Character", { exact: true }).selectOption("guard");
+  await expect(
+    page.getByRole("region", { name: "Selected character actions" }),
+  ).toBeHidden();
+  await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Show full plan (GM)", exact: true })
+    .click();
+  const guard = page.getByRole("button", {
+    name: "Guard NPC · Selected",
+    exact: true,
+  });
+  await guard.focus();
+  await page.keyboard.press("Enter");
+  await expect(guard).toBeFocused();
+  await expect(page.locator('[data-character="guard"]')).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator('[data-character="ada"]')).toHaveAttribute(
+    "data-pov",
+    "true",
+  );
+  expect((await (await request.get("/characters")).json()).pov).toBe("ada");
+  expect(
+    (await (await request.get("/exploration")).json()).observations,
+  ).toHaveLength(0);
+});
+
+test("contextual actions report rejected saves without changing persisted characters", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT")
+      await route.fulfill({ status: 409, body: "Conflict" });
+    else await route.continue();
+  });
+  const actions = page.getByRole("region", {
+    name: "Selected character actions",
+  });
+  await actions.getByLabel("Character name").fill("Rejected name");
+  await actions.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect(actions.getByRole("status")).toContainText(
+    "Character save failed (409)",
+  );
+  expect(
+    (await (await request.get("/characters")).json()).characters[0].name,
+  ).toBe("Ada");
+});
+
+test("contextual controls follow the marker through view changes, clamp on small screens, and stay off paper", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  const actions = page.getByRole("region", {
+    name: "Selected character actions",
+  });
+  const before = await actions.boundingBox();
+  await page.mouse.move(400, 600);
+  await page.mouse.down();
+  await page.mouse.move(500, 600);
+  await page.mouse.up();
+  const panned = await actions.boundingBox();
+  if (!before || !panned) throw Error("Expected visible actions");
+  expect(panned.x - before.x).toBeCloseTo(100, 0);
+  await page.keyboard.press("+");
+  const marker = await page.locator('[data-character="ada"]').boundingBox();
+  const zoomed = await actions.boundingBox();
+  if (!zoomed || !marker) throw Error("Expected zoomed marker and actions");
+  expect(Math.abs(zoomed.x - marker.x - marker.width)).toBeLessThan(24);
+  await page.setViewportSize({ width: 390, height: 420 });
+  await expect(actions).toBeVisible();
+  await expect
+    .poll(async () => {
+      const bounds = await actions.boundingBox();
+      return bounds ? bounds.x + bounds.width : Infinity;
+    })
+    .toBeLessThanOrEqual(390);
+  const narrow = await actions.boundingBox();
+  if (!narrow) throw Error("Expected narrow actions");
+  expect(narrow.x).toBeGreaterThanOrEqual(0);
+  expect(narrow.x + narrow.width).toBeLessThanOrEqual(390);
+  expect(narrow.y + narrow.height).toBeLessThanOrEqual(420);
+  await actions.getByLabel("Character name").fill("Narrow Ada");
+  await expect(actions.getByLabel("Character name")).toBeFocused();
+  await page.screenshot({
+    path: "/tmp/rpgcad-ux/character-actions-narrow.png",
+  });
+  await page.emulateMedia({ media: "print" });
+  await expect(actions).toBeHidden();
 });

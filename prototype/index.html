@@ -234,6 +234,42 @@
       margin: 8px 0;
       font-size: 13px;
     }
+    #character-actions {
+      position: fixed;
+      width: 240px;
+      max-width: calc(100vw - 24px);
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+      padding: 12px;
+      box-sizing: border-box;
+      background: #fff;
+      border: 1px solid #9eafc2;
+      border-radius: 8px;
+      font: 14px system-ui;
+      box-shadow: 0 3px 14px #20344830;
+    }
+    #character-actions label {
+      display: block;
+      margin: 8px 0;
+    }
+    #character-actions input,
+    #character-actions select {
+      max-width: 100%;
+      box-sizing: border-box;
+      font: inherit;
+    }
+    #character-actions button {
+      font: inherit;
+      margin: 4px 4px 4px 0;
+    }
+    #character-actions header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #character-actions[hidden] {
+      display: none;
+    }
     #calibration-dialog {
       border: 1px solid #9eafc2;
       border-radius: 8px;
@@ -283,6 +319,16 @@
     .page svg {
       display: block;
     }
+    @media (max-width: 600px) {
+      #gm-panel {
+        max-height: 40vh;
+      }
+      #character-actions {
+        max-height: calc(55vh - 24px);
+        top: auto !important;
+        bottom: 12px;
+      }
+    }
     @media print {
       html,
       body {
@@ -292,6 +338,7 @@
       #viewport,
       #gm-panel,
       #component-panel,
+      #character-actions,
       #edit-palette,
       #calibration-dialog {
         display: none;
@@ -398,17 +445,32 @@
           <option value="">Choose character</option>
         </select></label
       >
-      <label
-        >Character name <input id="character-name" type="text" maxlength="80"
-      /></label>
+      <div id="roster-character-details">
+        <div id="character-details">
+          <label
+            >Character name
+            <input id="character-name" type="text" maxlength="80"
+          /></label>
+          <button id="rename-character">Rename</button>
+          <label id="character-range-label"
+            >Selected character range (m)<input
+              id="character-range"
+              type="number"
+              min="0.1"
+              step="0.5"
+          /></label>
+          <details id="character-options">
+            <summary>Character options</summary>
+            <button id="remove-character">Remove character</button>
+          </details>
+          <label
+            >Destination level
+            <select id="character-level" aria-label="Destination level"></select
+          ></label>
+          <button id="transfer-character">Move to level</button>
+        </div>
+      </div>
       <button id="add-pc">Add PC</button><button id="add-npc">Add NPC</button>
-      <button id="rename-character">Rename</button
-      ><button id="remove-character">Remove character</button>
-      <label
-        >Destination level
-        <select id="character-level" aria-label="Destination level"></select
-      ></label>
-      <button id="transfer-character">Move to level</button>
       <p>
         Add at the view centre, then drag into place. Click a PC to use its POV.
       </p>
@@ -438,6 +500,22 @@
       </button>
     </nav>
     <output id="fog-status" aria-live="polite"></output>
+  </section>
+  <section
+    id="character-actions"
+    aria-label="Selected character actions"
+    hidden
+  >
+    <header>
+      <strong id="character-action-title"></strong
+      ><button
+        id="close-character-actions"
+        aria-label="Close character actions"
+      >
+        Close
+      </button>
+    </header>
+    <output id="character-action-status" aria-live="polite"></output>
   </section>
   <dialog id="calibration-dialog" aria-labelledby="calibration-title">
     <form id="calibration-form">

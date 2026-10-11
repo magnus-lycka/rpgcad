@@ -348,3 +348,21 @@ part of the drawing remains visible even in the narrow view.
 ### Undo Clear recovery
 
 Clear marks now offers one in-memory Undo Clear snapshot only after a successful save. It survives Edit/Play switching; another successful sketch save, page navigation or an incompatible authoritative revision discards it. Failed Clear restores the local draft; a failed Undo remains retryable unless the server reports a stale revision. Recovery saves use optional If-Match checked atomically with the sketch write under the server lock, so an unseen agent acknowledgement or another browser cannot be overwritten. Existing unconditional sketch writers remain supported. Recovery controls are part of the screen-only Designer toolbar, and normal Undo stroke remains separate.
+
+
+## Contextual character management, ticket #27
+
+Requested Referee controls move the existing character operations beside a visible
+selected marker. Hidden NPCs and characters on another level keep their controls
+in the roster, without an anchor at their hidden location. Selection has a blue
+dashed ring; the POV PC retains its separate gold ring. Keyboard Enter/Space can
+select markers without allowing NPCs to become POV. Range edits apply to the
+selected PC; only the current POV produces observations.
+
+Browser tests observed missing contextual controls, range/removal, keyboard marker
+selection and local save failure feedback before implementation. Pan/zoom tracking,
+resize clamping and screen-only printing were checked through the browser. That
+check caught a print-style conflict, which was fixed. Narrow windows dock the
+character controls below a shorter scrollable GM panel so navigation remains
+reachable. Escape closes the contextual control before the GM panel and returns
+focus to the roster. Removal still uses the existing operation for recovery.

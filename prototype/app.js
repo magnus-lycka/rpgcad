@@ -264,6 +264,46 @@ let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
 /** @type {{id:string,x:number,y:number,at:number[]}|null} */
 let characterDrag = null;
+let dismissedCharacterActions = "";
+let characterSaveError = "";
+function updateCharacterActions() {
+  const actions = element("character-actions");
+  const details = element("character-details");
+  const c = characterState.characters.find((c) => c.id === selectedCharacter);
+  const marker = [...viewport.querySelectorAll("[data-character]")].find(
+    (marker) => marker.getAttribute("data-character") === c?.id,
+  );
+  const visible =
+    !editing &&
+    !element("gm-panel").hidden &&
+    !!marker &&
+    dismissedCharacterActions !== c?.id;
+  actions.hidden = !visible;
+  const parent = visible ? actions : element("roster-character-details");
+  if (details.parentElement !== parent) parent.append(details);
+  if (!visible || !marker || !c) return;
+  element("character-action-title").textContent =
+    `${c.kind.toUpperCase()} · ${c.id === characterState.pov ? "POV" : "Selected"}`;
+  const rect = marker.getBoundingClientRect();
+  const width = actions.offsetWidth,
+    height = actions.offsetHeight;
+  const x =
+    rect.right + width + 12 < innerWidth
+      ? rect.right + 12
+      : rect.left - width - 12;
+  actions.style.left = `${Math.max(12, Math.min(innerWidth - width - 12, x))}px`;
+  actions.style.top = `${Math.max(12, Math.min(innerHeight - height - 12, rect.top))}px`;
+}
+function closeCharacterActions() {
+  dismissedCharacterActions = selectedCharacter;
+  updateCharacterActions();
+  element("character-list").focus();
+}
+element("character-options").addEventListener("toggle", updateCharacterActions);
+element("close-character-actions").addEventListener(
+  "click",
+  closeCharacterActions,
+);
 function syncPov() {
   if (!exploration || !characterState.characters.length) return;
   const pc = characterState.characters.find(
@@ -279,6 +319,7 @@ async function characterAction(id, at = null) {
   const c = characterState.characters.find((c) => c.id === id);
   if (!c) return;
   selectedCharacter = id;
+  dismissedCharacterActions = "";
   refreshCharacterControls();
   if (at) c.at = at.map((n) => Math.round(n * 1000) / 1000);
   else if (c.kind === "pc") characterState.pov = id;
@@ -307,13 +348,40 @@ function refreshCharacterControls() {
       .join("");
   list.value = c?.id || "";
   if (document.activeElement !== input) input.value = c?.name || "";
+  const range = /** @type {HTMLInputElement} */ (element("character-range"));
+  element("character-range-label").hidden = c?.kind !== "pc";
+  if (document.activeElement !== range) range.value = String(c?.range || 6);
 }
 element("character-list").addEventListener("change", async (event) => {
   const input = /** @type {HTMLSelectElement} */ (event.target);
   selectedCharacter = input.value;
+  dismissedCharacterActions = "";
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   if (c?.kind === "pc" && c.level === currentLevel) await characterAction(c.id);
-  else refreshCharacterControls();
+  else {
+    refreshCharacterControls();
+    draw();
+  }
+});
+element("character-range").addEventListener("change", async () => {
+  const c = characterState.characters.find((c) => c.id === selectedCharacter);
+  const input = /** @type {HTMLInputElement} */ (element("character-range"));
+  const range = Number(input.value);
+  if (
+    savingCharacters ||
+    savingExploration ||
+    !c ||
+    c.kind !== "pc" ||
+    !Number.isFinite(range) ||
+    range <= 0
+  )
+    return;
+  if (c.id === characterState.pov && c.level === currentLevel)
+    await setRange(range);
+  else {
+    c.range = range;
+    await saveCharacters();
+  }
 });
 element("rename-character").addEventListener("click", async () => {
   if (savingCharacters) return;
@@ -386,7 +454,7 @@ function characterDrawing() {
     )
     .map(
       (c) =>
-        `<g data-character="${Geometry.esc(c.id)}" transform="translate(${c.at.join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
+        `<g data-character="${Geometry.esc(c.id)}" data-selected="${c.id === selectedCharacter}" data-pov="${c.id === characterState.pov}" role="button" tabindex="0" aria-label="${Geometry.esc(c.name)} ${c.kind.toUpperCase()}${c.id === characterState.pov ? " · POV" : c.id === selectedCharacter ? " · Selected" : ""}" transform="translate(${c.at.join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><path d="M -.48 0 A .48 .48 0 1 0 .48 0 A .48 .48 0 1 0 -.48 0" fill="none" stroke="${c.id === selectedCharacter ? "#176ca4" : "none"}" stroke-width=".04" stroke-dasharray=".08 .06"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
     )
     .join("");
 }
@@ -408,8 +476,16 @@ async function pollCharacters() {
   else draw();
 }
 function updateBusyControls() {
+  element("character-actions").setAttribute(
+    "aria-busy",
+    String(savingCharacters || savingExploration),
+  );
+  element("character-action-status").textContent = savingCharacters
+    ? "Saving character…"
+    : characterSaveError;
   for (const id of [
     "sight-range",
+    "character-range",
     "add-pc",
     "add-npc",
     "rename-character",
@@ -424,6 +500,7 @@ function updateBusyControls() {
   }
 }
 async function saveCharacters() {
+  characterSaveError = "";
   savingCharacters = true;
   updateBusyControls();
   try {
@@ -438,7 +515,8 @@ async function saveCharacters() {
     if (!response.ok) throw Error(`Character save failed (${response.status})`);
     characterEtag = response.headers.get("ETag") || "";
   } catch (error) {
-    element("fog-status").textContent = String(error);
+    characterSaveError = String(error);
+    element("fog-status").textContent = characterSaveError;
     characterEtag = "";
   } finally {
     savingCharacters = false;
@@ -602,11 +680,14 @@ element("return-edit").addEventListener("click", () => switchMode(true));
 
 function closeGm() {
   gmPanel.hidden = true;
+  updateCharacterActions();
   viewport.focus();
 }
 function toggleGm() {
   if (!gmPanel.hidden) return closeGm();
   gmPanel.hidden = false;
+  dismissedCharacterActions = "";
+  updateCharacterActions();
   const active = gmPanel.querySelector(
     '[data-gm-section][aria-pressed="true"]',
   );
@@ -708,6 +789,7 @@ function draw() {
   if (editing) viewport.innerHTML += sketchDrawing();
   else viewport.innerHTML += characterDrawing();
   viewport.setAttribute("data-gm-view", String(fogEnabled && gmView));
+  updateCharacterActions();
 }
 function fit() {
   let b = Geometry.bounds(model);
@@ -792,6 +874,20 @@ viewport.addEventListener("pointerdown", (event) => {
   }
   drag = { x: event.clientX, y: event.clientY, cx: camera.x, cy: camera.y };
   viewport.setPointerCapture(event.pointerId);
+});
+viewport.addEventListener("keydown", async (event) => {
+  if (!(event.target instanceof Element) || !["Enter", " "].includes(event.key))
+    return;
+  const id = event.target
+    .closest("[data-character]")
+    ?.getAttribute("data-character");
+  if (!id) return;
+  event.preventDefault();
+  await characterAction(id);
+  const marker = [...viewport.querySelectorAll("[data-character]")].find(
+    (marker) => marker.getAttribute("data-character") === id,
+  );
+  if (marker instanceof SVGElement) marker.focus();
 });
 viewport.addEventListener("pointermove", (event) => {
   if (characterDrag) {
@@ -965,7 +1061,8 @@ window.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !gmPanel.hidden) {
     event.preventDefault();
-    closeGm();
+    if (!element("character-actions").hidden) closeCharacterActions();
+    else closeGm();
     return;
   }
   if (
@@ -1017,6 +1114,7 @@ window.addEventListener("keydown", (event) => {
     if (event.key.toLowerCase() === "r") resetFog();
   }
 });
+window.addEventListener("resize", draw);
 window.addEventListener("beforeprint", () => {
   const p = Geometry.papers[settings.get("paper") === "a3" ? "a3" : "a4"];
   const b = settings.get("region") === "view" ? view() : Geometry.bounds(model);
