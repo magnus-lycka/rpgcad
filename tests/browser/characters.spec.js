@@ -452,3 +452,66 @@ test("contextual controls follow the marker through view changes, clamp on small
   await page.emulateMedia({ media: "print" });
   await expect(actions).toBeHidden();
 });
+
+test("rejected non-POV range overrides restore the displayed and later saved range", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  await page.getByLabel("Character", { exact: true }).selectOption("guard");
+  const exploration = await (await request.get("/exploration")).json();
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT")
+      await route.fulfill({ status: 409, body: "Conflict" });
+    else await route.continue();
+  });
+  const range = page.getByLabel("Selected character visual range (m)");
+  await range.fill("");
+  await range.dispatchEvent("change");
+  await expect(page.locator("#character-action-status")).toContainText(
+    "Character save failed (409)",
+  );
+  await expect(range).toHaveValue("6");
+  await page.unroute("**/characters*");
+  await page.getByLabel("Character name").fill("Watchman");
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect
+    .poll(async () =>
+      (await (await request.get("/characters")).json()).characters.find(
+        (c) => c.id === "guard",
+      ),
+    )
+    .toMatchObject({ name: "Watchman", range: 6 });
+  expect(await (await request.get("/exploration")).json()).toEqual(exploration);
+});
+
+test("Escape closes Character options before character actions and returns focus to its summary", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  const actions = page.getByRole("region", {
+    name: "Selected character actions",
+  });
+  const summary = actions.getByText("Character options", { exact: true });
+  const remove = actions.getByRole("button", {
+    name: "Remove character",
+    exact: true,
+  });
+  await summary.click();
+  await remove.focus();
+  await page.keyboard.press("Escape");
+  await expect(actions).toBeVisible();
+  await expect(remove).toBeHidden();
+  await expect(summary).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(actions).toBeHidden();
+  await expect(page.locator("#gm-panel")).toBeVisible();
+  await expect(page.getByLabel("Character", { exact: true })).toBeFocused();
+});
