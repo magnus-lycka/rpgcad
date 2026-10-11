@@ -481,8 +481,33 @@ async function resetFog() {
   await saveExploration();
 }
 const gmPanel = element("gm-panel");
+const gmSectionIds = {
+  characters: "gm-characters",
+  exploration: "gm-exploration",
+  view: "gm-view-controls",
+};
+for (const button of document.querySelectorAll("[data-gm-section]")) {
+  button.addEventListener("click", () => {
+    const selected = button.getAttribute("data-gm-section");
+    for (const [name, id] of Object.entries(gmSectionIds))
+      element(id).hidden = name !== selected;
+    for (const control of document.querySelectorAll("[data-gm-section]"))
+      control.setAttribute("aria-pressed", String(control === button));
+  });
+}
+element("return-edit").addEventListener("click", () => switchMode(true));
+
+function closeGm() {
+  gmPanel.hidden = true;
+  viewport.focus();
+}
 function toggleGm() {
-  gmPanel.hidden = !gmPanel.hidden;
+  if (!gmPanel.hidden) return closeGm();
+  gmPanel.hidden = false;
+  const active = gmPanel.querySelector(
+    '[data-gm-section][aria-pressed="true"]',
+  );
+  if (active instanceof HTMLElement) active.focus();
 }
 function toggleGmView() {
   gmView = !gmView;
@@ -493,9 +518,7 @@ function toggleGmView() {
   draw();
 }
 element("gm-view").addEventListener("click", toggleGmView);
-element("close-gm").addEventListener("click", () => {
-  gmPanel.hidden = true;
-});
+element("close-gm").addEventListener("click", closeGm);
 element("reset-fog").addEventListener("click", resetFog);
 rangeInput.addEventListener("change", () => setRange(Number(rangeInput.value)));
 
@@ -829,12 +852,18 @@ function exportSvg() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !calibrationDialog.open && !gmPanel.hidden) {
+    event.preventDefault();
+    closeGm();
+    return;
+  }
   if (
     calibrationDialog.open ||
     event.ctrlKey ||
     event.metaKey ||
     event.altKey ||
-    (event.target instanceof Element && event.target.matches("input,textarea"))
+    (event.target instanceof Element &&
+      event.target.matches("input,textarea,select,[contenteditable]"))
   )
     return;
   if (event.shiftKey && event.key.toLowerCase() === "e") {
@@ -846,7 +875,6 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
     toggleGm();
   }
-  if (event.key === "Escape") gmPanel.hidden = true;
   if (event.key.toLowerCase() === "f") {
     if (event.shiftKey && fogEnabled) toggleGmView();
     else fit();
