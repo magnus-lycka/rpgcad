@@ -329,7 +329,26 @@ const Geometry = (() => {
     };
   }
   function componentPoints(m, instance, padding = 0) {
-    if (instance.opening) return [];
+    if (instance.opening) {
+      const opening = accessOpening(
+          m,
+          m.openings.find((o) => o.id === instance.opening),
+        ),
+        wall = m.walls.find((w) => w.id === opening.wall),
+        len = Math.hypot(wall.b[0] - wall.a[0], wall.b[1] - wall.a[1]),
+        ux = (wall.b[0] - wall.a[0]) / len,
+        uy = (wall.b[1] - wall.a[1]) / len,
+        half = doorThickness(m, opening, wall) / 2 + padding;
+      return [
+        [opening.offset - padding, half],
+        [opening.offset + opening.width + padding, half],
+        [opening.offset + opening.width + padding, -half],
+        [opening.offset - padding, -half],
+      ].map(([d, n]) => [
+        wall.a[0] + ux * d - uy * n,
+        wall.a[1] + uy * d + ux * n,
+      ]);
+    }
     const { width, length } = furniture(m, instance),
       angle = (instance.rotation * Math.PI) / 180,
       c = Math.cos(angle),

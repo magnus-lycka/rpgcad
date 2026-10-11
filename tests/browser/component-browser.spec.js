@@ -1,5 +1,35 @@
 import { test, expect } from "@playwright/test";
 
+test("wall door preview is centred and large enough to inspect", async ({
+  page,
+}) => {
+  await page.goto("/components.html?embedded=1&definition=door%401");
+  const card = page.getByRole("article", { name: "Wall door", exact: true });
+  const image = card.getByRole("img");
+  const door = card.locator("[data-door]");
+  await expect(door.first()).toBeVisible();
+  const frame = await image.boundingBox();
+  const ink = await door.evaluateAll((leaves) => {
+    const boxes = leaves.map((leaf) => leaf.getBoundingClientRect());
+    const x = Math.min(...boxes.map((b) => b.left));
+    const y = Math.min(...boxes.map((b) => b.top));
+    return {
+      x,
+      y,
+      width: Math.max(...boxes.map((b) => b.right)) - x,
+      height: Math.max(...boxes.map((b) => b.bottom)) - y,
+    };
+  });
+  if (!frame) throw Error("Door preview has no visible frame");
+  expect(ink.width).toBeGreaterThan(100);
+  expect(
+    Math.abs(ink.x + ink.width / 2 - (frame.x + frame.width / 2)),
+  ).toBeLessThan(10);
+  expect(
+    Math.abs(ink.y + ink.height / 2 - (frame.y + frame.height / 2)),
+  ).toBeLessThan(10);
+});
+
 test("Referee finds original usable component previews and placement descriptions from the library", async ({
   page,
 }) => {

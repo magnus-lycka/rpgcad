@@ -411,3 +411,15 @@ recording follow that success. Drag previews are separate from saved positions, 
 polling cannot reveal an unsaved movement destination. Failed actions retain an
 error and the saved state; removal recovery and visual-range retry semantics remain
 covered by the existing browser tests.
+
+### Attached-door catalogue framing
+
+A wall-door preview rendered only eight pixels wide at the corner of its card.
+The wall consisted entirely of an opening, leaving no wall polygons; attached
+doors were also excluded from component bounds. The empty bounds therefore
+selected the full 21 × 15 m fallback view. Bounds now include the attached door's
+metre footprint, wall direction and stroke padding. A failing-first browser
+regression checks that both leaves together are centred and large enough to
+inspect. Catalogue and Designer drawer checks pass, and visual inspection shows
+the complete closed door centred in its preview. Door-state visibility continues
+to use the existing opening path independently of preview bounds.
