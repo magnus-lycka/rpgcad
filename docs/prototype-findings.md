@@ -373,3 +373,17 @@ focus to the roster. Removal still uses the existing operation for recovery.
 ### Default and character visual range
 
 The default is a shared preference, not the selected character’s override. Store inheritance explicitly as an unset range, resolve it when calculating visibility, and preserve legacy numeric overrides. Changing the default affects an inheriting POV immediately; changing either range while reset must keep reveal paused. Use “visual range” in controls to avoid confusing visibility with weapon range. Browser regression coverage checks persistence, override removal and reset safety.
+
+### Final range and Escape review corrections
+
+Browser regressions observed rejected POV and non-POV visual-range edits retaining
+unsaved values before the fixes. Range proposals now stay out of live visibility
+state until the character save succeeds; failed saves restore the displayed value
+and create no observation. An inherited default-range regression also forced an
+exploration refresh during a pending rejected save, exposing the same temporary
+reveal race. The corrected path retains the saved range and actionable error.
+Blank overrides still inherit the default, and reset still pauses reveal.
+
+Escape now closes expanded Character options and focuses its summary before a
+second Escape closes contextual actions and returns focus to the roster. Each
+regression was observed failing before its implementation.

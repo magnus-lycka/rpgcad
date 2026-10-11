@@ -164,3 +164,132 @@ test("clearing a character override restores inheritance, including after reset 
   expect(saved.visibilityPaused).toBe(true);
   expect(saved.observations).toEqual([]);
 });
+
+test("rejected POV range changes preserve visibility and saved exploration", async ({
+  page,
+  request,
+}) => {
+  const previous = await request.get("/characters");
+  await request.put("/characters", {
+    headers: { "If-Match": previous.headers().etag },
+    data: {
+      pov: "ada",
+      characters: [
+        {
+          id: "ada",
+          name: "Ada",
+          kind: "pc",
+          level: "original",
+          at: [0, 0],
+          range: 2,
+        },
+        {
+          id: "guard",
+          name: "Guard",
+          kind: "npc",
+          level: "original",
+          at: [4, 0],
+          range: null,
+        },
+      ],
+    },
+  });
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.locator('[data-character="ada"] circle').click();
+  await expect(page.locator("#reset-fog")).toBeEnabled();
+  const savedCharacters = await (await request.get("/characters")).json();
+  const savedExploration = await (await request.get("/exploration")).json();
+  await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
+  await page.keyboard.press("Shift+G");
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT")
+      await route.fulfill({ status: 409, body: "Conflict" });
+    else await route.continue();
+  });
+  const range = page.getByLabel("Selected character visual range (m)");
+  await range.fill("10");
+  await range.dispatchEvent("change");
+  await expect(page.locator("#character-action-status")).toContainText(
+    "Character save failed (409)",
+  );
+  await expect(range).toHaveValue("2");
+  await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
+  expect(await (await request.get("/characters")).json()).toEqual(
+    savedCharacters,
+  );
+  expect(await (await request.get("/exploration")).json()).toEqual(
+    savedExploration,
+  );
+});
+
+test("pending and rejected default ranges preserve inherited visibility and report failure", async ({
+  page,
+  request,
+}) => {
+  const previous = await request.get("/characters");
+  await request.put("/characters", {
+    headers: { "If-Match": previous.headers().etag },
+    data: {
+      defaultRange: 2,
+      pov: "ada",
+      characters: [
+        {
+          id: "ada",
+          name: "Ada",
+          kind: "pc",
+          level: "original",
+          at: [0, 0],
+          range: null,
+        },
+      ],
+    },
+  });
+  await page.goto("/?mode=play");
+  await expect(page.locator('[data-character="ada"]')).toBeVisible();
+  await page.locator('[data-character="ada"] circle').click();
+  await expect(page.locator("#reset-fog")).toBeEnabled();
+  const characters = await (await request.get("/characters")).json();
+  const exploration = await (await request.get("/exploration")).json();
+  await page.keyboard.press("Shift+G");
+  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  let rejectSave;
+  const pending = new Promise((resolve) => {
+    rejectSave = resolve;
+  });
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT") {
+      await pending;
+      await route.fulfill({ status: 409, body: "Conflict" });
+    } else await route.continue();
+  });
+  const range = page.getByLabel("Default visual range (m)");
+  await range.fill("10");
+  await range.dispatchEvent("change");
+  await expect(range).toBeDisabled();
+  // An authoritative exploration refresh redraws while the range save is pending.
+  await page.route("**/exploration*", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { ETag: '"pending-range-refresh"' },
+      body: JSON.stringify(exploration),
+    }),
+  );
+  await page.waitForResponse(
+    (response) =>
+      response.url().includes("/exploration") && response.status() === 200,
+  );
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observers",
+    /"range":2/,
+  );
+  rejectSave();
+  await expect(range).toBeEnabled();
+  await expect(range).toHaveValue("2");
+  await expect(page.locator("#fog-status")).toContainText(
+    "Character save failed (409)",
+  );
+  expect(await (await request.get("/characters")).json()).toEqual(characters);
+  expect(await (await request.get("/exploration")).json()).toEqual(exploration);
+});

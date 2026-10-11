@@ -389,8 +389,7 @@ element("character-range").addEventListener("change", async () => {
   if (c.id === characterState.pov && c.level === currentLevel)
     await setRange(range);
   else {
-    c.range = range;
-    await saveCharacters();
+    await saveCharacterRange(c, range);
   }
 });
 element("rename-character").addEventListener("click", async () => {
@@ -575,7 +574,7 @@ function updateBusyControls() {
     control.disabled = savingCharacters || savingExploration;
   }
 }
-async function saveCharacters() {
+async function saveCharacters(state = characterState) {
   characterSaveError = "";
   savingCharacters = true;
   ++characterGeneration;
@@ -587,7 +586,7 @@ async function saveCharacters() {
         "Content-Type": "application/json",
         "If-Match": characterEtag,
       },
-      body: JSON.stringify(characterState),
+      body: JSON.stringify(state),
     });
     if (!response.ok) {
       if (response.status === 412) characterEtag = "";
@@ -668,7 +667,7 @@ function updateVisibility() {
   );
   rangeInput.value = String(defaultVisualRange());
   element("fog-status").textContent =
-    `${exploration.observations.length} observations`;
+    characterSaveError || `${exploration.observations.length} observations`;
 }
 function recordObservation() {
   syncPov();
@@ -716,9 +715,27 @@ async function pollExploration() {
   updateVisibility();
   draw();
 }
+/** @param {Character} character @param {number|null} range */
+async function saveCharacterRange(character, range) {
+  const previousRange = character.range;
+  const proposed = {
+    ...characterState,
+    characters: characterState.characters.map((c) =>
+      c.id === character.id ? { ...c, range } : c,
+    ),
+  };
+  if (await saveCharacters(proposed)) {
+    character.range = range;
+    return true;
+  }
+  const input = /** @type {HTMLInputElement} */ (element("character-range"));
+  input.value = previousRange == null ? "" : String(previousRange);
+  return false;
+}
 async function setRange(range) {
   if (
     !exploration ||
+    savingCharacters ||
     savingExploration ||
     (range !== null && (!Number.isFinite(range) || range <= 0))
   )
@@ -726,14 +743,14 @@ async function setRange(range) {
   const pc = characterState.characters.find(
     (c) => c.id === characterState.pov && c.level === currentLevel,
   );
-  if (pc) pc.range = range;
-  else if (exploration.observers[0])
+  if (pc) {
+    if (!(await saveCharacterRange(pc, range))) return;
+  } else if (exploration.observers[0])
     exploration.observers[0].range = range ?? defaultVisualRange();
   else return;
   recordObservation();
   updateVisibility();
   draw();
-  if (pc) await saveCharacters();
   await saveExploration();
 }
 async function resetFog() {
@@ -796,13 +813,11 @@ rangeInput.addEventListener("change", async () => {
     range <= 0
   )
     return;
-  const previous = characterState.defaultRange;
-  characterState.defaultRange = range;
-  if (!(await saveCharacters())) {
-    characterState.defaultRange = previous;
-    updateVisibility();
+  if (!(await saveCharacters({ ...characterState, defaultRange: range }))) {
+    rangeInput.value = String(defaultVisualRange());
     return;
   }
+  characterState.defaultRange = range;
   const pc = characterState.characters.find(
     (c) => c.id === characterState.pov && c.level === currentLevel,
   );
@@ -1176,7 +1191,13 @@ window.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !gmPanel.hidden) {
     event.preventDefault();
-    if (!element("character-actions").hidden) closeCharacterActions();
+    const options = /** @type {HTMLDetailsElement} */ (
+      element("character-options")
+    );
+    if (!element("character-actions").hidden && options.open) {
+      options.open = false;
+      options.querySelector("summary")?.focus();
+    } else if (!element("character-actions").hidden) closeCharacterActions();
     else closeGm();
     return;
   }
