@@ -69,6 +69,7 @@ test("the viewer loads browser modules, shows a grid, and keeps GM controls out 
   await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
   await expect(page.locator("#gm-panel")).toBeHidden();
   await page.keyboard.press("Shift+G");
+  await page.getByRole("button", { name: "Exploration", exact: true }).click();
   await expect(page.getByLabel("Sight range (m)")).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -122,6 +123,7 @@ test("range entry and keyboard movement expose new areas while keeping old areas
   const viewport = page.locator("#viewport");
   await expect(viewport).toHaveAttribute("data-observers", /party/);
   await page.keyboard.press("Shift+G");
+  await page.getByRole("button", { name: "Exploration", exact: true }).click();
   await page.getByLabel("Sight range (m)").fill("1.5");
   await savedAction(page, () =>
     page.getByLabel("Sight range (m)").press("Tab"),
