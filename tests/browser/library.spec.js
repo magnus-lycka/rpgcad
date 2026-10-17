@@ -1,5 +1,36 @@
 import { test, expect } from "@playwright/test";
 
+test("drawing context stays visible in Designer and only in the open GM menu during Play", async ({
+  page,
+}) => {
+  await page.goto("/?level=below&mode=edit");
+  const designer = page.locator("#edit-palette");
+  await expect(
+    designer.getByText("Referee building", { exact: true }),
+  ).toBeVisible();
+  await expect(designer.getByText("below", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(
+    page
+      .getByText("Referee building", { exact: true })
+      .filter({ visible: true }),
+  ).toHaveCount(0);
+  await page.keyboard.press("Shift+G");
+  const referee = page.locator("#gm-panel [data-drawing-context]");
+  await expect(
+    referee.getByText("Referee building", { exact: true }),
+  ).toBeVisible();
+  await expect(referee.getByText("below", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(referee).toBeHidden();
+
+  await page.goto("/?plan=depot&mode=edit");
+  await expect(designer.getByText("Depot", { exact: true })).toBeVisible();
+  await expect(
+    designer.getByText("Depot floor", { exact: true }),
+  ).toBeVisible();
+});
+
 test("Referee browses plan levels and explicitly opens edit or fullscreen play", async ({
   page,
 }) => {

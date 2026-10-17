@@ -19,6 +19,8 @@ def main():
             "plan_library.py",
             "index.html",
             "app.js",
+            "commands.js",
+            "command-ui.js",
             "geometry.js",
             "library.html",
             "library.js",

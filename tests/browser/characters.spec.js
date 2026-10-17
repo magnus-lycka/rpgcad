@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { PNG } from "pngjs";
 test.use({ actionTimeout: 5000 });
 
 test.beforeEach(async ({ request }) => {
@@ -7,6 +8,110 @@ test.beforeEach(async ({ request }) => {
     headers: { "If-Match": previous.headers().etag },
     data: { characters: [], pov: null },
   });
+});
+
+test("focused NPC keeps its normal orange marker without a giant blue focus disk", async ({
+  page,
+  request,
+}) => {
+  const old = await request.get("/characters");
+  await request.put("/characters", {
+    headers: { "If-Match": old.headers().etag },
+    data: {
+      characters: [
+        {
+          id: "npc",
+          name: "Guard",
+          kind: "npc",
+          level: "original",
+          at: [0, 0],
+          range: null,
+        },
+      ],
+      pov: null,
+    },
+  });
+  await page.goto("/?mode=play");
+  await page.keyboard.press("Shift+V");
+  const marker = page.locator('[data-character="npc"]');
+  await marker.focus();
+  await page.keyboard.press("Enter");
+  await expect(marker).toBeFocused();
+  const circle = await marker.locator("circle").boundingBox();
+  if (!circle) throw Error("Expected normal marker");
+  const image = PNG.sync.read(
+    await page.screenshot({ path: "/tmp/rpgcad-focused-npc.png" }),
+  );
+  let distantBlue = 0;
+  const cx = circle.x + circle.width / 2,
+    cy = circle.y + circle.height / 2;
+  for (
+    let y = Math.max(0, Math.floor(cy - 160));
+    y < Math.min(image.height, cy + 160);
+    y++
+  ) {
+    for (
+      let x = Math.max(0, Math.floor(cx - 160));
+      x < Math.min(image.width, cx + 160);
+      x++
+    ) {
+      const i = (y * image.width + x) * 4;
+      // Pixel offsets are bounded by the decoded screenshot dimensions.
+      if (
+        image.data.readUInt8(i) < 50 &&
+        image.data.readUInt8(i + 1) < 160 &&
+        image.data.readUInt8(i + 2) > 150 &&
+        Math.hypot(x - cx, y - cy) > circle.width
+      )
+        distantBlue++;
+    }
+  }
+  expect(distantBlue).toBe(0);
+  await expect(marker.locator("circle")).toHaveAttribute("fill", "#ad5931");
+});
+
+test("selected character controls stay in the Referee menu when the marker moves", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await page.keyboard.press("Shift+G");
+  const gm = page.getByRole("region", { name: "GM controls" });
+  await expect(gm.getByLabel("Character name")).toBeVisible();
+  const marker = page.locator('[data-character="ada"]');
+  const box = await marker.boundingBox();
+  if (!box) throw Error("Expected marker");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 50, box.y + box.height / 2);
+  await page.mouse.up();
+  await expect(gm.getByLabel("Character name")).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Selected character actions" }),
+  ).toHaveCount(0);
+  await page.getByLabel("Character name").press("Escape");
+  await expect(gm).toBeHidden();
+});
+
+test("adding an existing character name reports the conflict without creating a clone", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/?mode=play");
+  await page.keyboard.press("Shift+G");
+  await page.getByLabel("Character name").fill("Ada");
+  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await expect(page.locator("[data-character]")).toHaveCount(1);
+  const before = await (await request.get("/characters")).json();
+  await page.getByLabel("Character name").fill(" ada ");
+  await page.getByRole("button", { name: "Add NPC", exact: true }).click();
+  await expect(page.locator("#character-action-status")).toContainText(
+    "A character named “ada” already exists in this plan.",
+  );
+  expect(await (await request.get("/characters")).json()).toEqual(before);
+  await page.reload();
+  await expect(page.locator("[data-character]")).toHaveCount(1);
 });
 
 test("GM can add named PCs and NPCs and retain them after reloading", async ({
@@ -19,11 +124,11 @@ test("GM can add named PCs and NPCs and retain them after reloading", async ({
   await expect(page.locator("[data-character]")).toHaveCount(1);
   await page.getByLabel("Character name").fill("Guard");
   await page.getByRole("button", { name: "Add NPC", exact: true }).click();
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(page.locator("[data-character]")).toHaveCount(2);
   await page.reload();
   await expect(page.locator("#viewport")).toContainText("Ada");
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(page.locator("[data-character]")).toHaveCount(2);
   await expect(page.locator("#viewport")).toContainText("Ada");
   await expect(page.locator("#viewport")).toContainText("Guard");
@@ -153,7 +258,7 @@ test("GM can rename a PC, save its range, reset fog without losing characters, a
         ).range,
     )
     .toBe(4);
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   await page
     .getByRole("button", { name: "Reset fog · close all doors" })
     .click();
@@ -189,7 +294,7 @@ test("GM transfers an NPC to another level without revealing areas and can place
     .getByRole("button", { name: "Move to level", exact: true })
     .click();
   await expect(page).toHaveURL(/level=below/);
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(page.locator('[data-character="guard"]')).toBeVisible();
   const start = await point(page, [4, 0]),
     end = await point(page, [2, 1]);
@@ -278,41 +383,7 @@ test("choosing a PC in GM controls selects its POV and saved range", async ({
   ).toHaveValue("3");
 });
 
-test("requested controls manage a visible character beside its marker and close with Escape", async ({
-  page,
-  request,
-}) => {
-  await seed(request);
-  await page.goto("/?mode=play");
-  await expect(page.locator('[data-character="ada"]')).toBeVisible();
-  await expect(
-    page.getByRole("region", { name: "Selected character actions" }),
-  ).toBeHidden();
-  await page.keyboard.press("Shift+G");
-  const actions = page.getByRole("region", {
-    name: "Selected character actions",
-  });
-  await expect(actions).toBeVisible();
-  await actions.getByLabel("Character name").fill("Captain Ada");
-  await actions.getByRole("button", { name: "Rename", exact: true }).click();
-  await expect
-    .poll(
-      async () =>
-        (await (await request.get("/characters")).json()).characters[0].name,
-    )
-    .toBe("Captain Ada");
-  const box = await actions.boundingBox();
-  const marker = await page.locator('[data-character="ada"]').boundingBox();
-  if (!box || !marker) throw Error("Expected visible actions and marker");
-  expect(Math.abs(box.x - marker.x)).toBeLessThan(350);
-  await actions.getByLabel("Character name").focus();
-  await page.keyboard.press("Escape");
-  await expect(actions).toBeHidden();
-  await expect(page.locator("#gm-panel")).toBeVisible();
-  await expect(page.getByLabel("Character", { exact: true })).toBeFocused();
-});
-
-test("contextual range and secondary removal save the selected character", async ({
+test("Referee range and secondary removal save the selected character", async ({
   page,
   request,
 }) => {
@@ -321,7 +392,7 @@ test("contextual range and secondary removal save the selected character", async
   await expect(page.locator('[data-character="ada"]')).toBeVisible();
   await page.keyboard.press("Shift+G");
   const actions = page.getByRole("region", {
-    name: "Selected character actions",
+    name: "GM controls",
   });
   await actions.getByLabel("Selected character visual range (m)").fill("4");
   await actions
@@ -352,11 +423,9 @@ test("keyboard character selection distinguishes NPC selection from PC POV witho
   await expect(page.locator('[data-character="ada"]')).toBeVisible();
   await page.keyboard.press("Shift+G");
   await page.getByLabel("Character", { exact: true }).selectOption("guard");
-  await expect(
-    page.getByRole("region", { name: "Selected character actions" }),
-  ).toBeHidden();
+
   await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   await page
     .getByRole("button", { name: "Show full plan (GM)", exact: true })
     .click();
@@ -381,7 +450,7 @@ test("keyboard character selection distinguishes NPC selection from PC POV witho
   ).toHaveLength(0);
 });
 
-test("contextual actions report rejected saves without changing persisted characters", async ({
+test("Referee controls report rejected saves without changing persisted characters", async ({
   page,
   request,
 }) => {
@@ -395,11 +464,11 @@ test("contextual actions report rejected saves without changing persisted charac
     else await route.continue();
   });
   const actions = page.getByRole("region", {
-    name: "Selected character actions",
+    name: "GM controls",
   });
   await actions.getByLabel("Character name").fill("Rejected name");
   await actions.getByRole("button", { name: "Rename", exact: true }).click();
-  await expect(actions.getByRole("status")).toContainText(
+  await expect(actions.locator("#character-action-status")).toContainText(
     "Character save failed (409)",
   );
   expect(
@@ -407,50 +476,31 @@ test("contextual actions report rejected saves without changing persisted charac
   ).toBe("Ada");
 });
 
-test("contextual controls follow the marker through view changes, clamp on small screens, and stay off paper", async ({
+test("Referee controls stay fixed through pan and zoom and are excluded from print", async ({
   page,
   request,
 }) => {
   await seed(request);
   await page.goto("/?mode=play");
-  await expect(page.locator('[data-character="ada"]')).toBeVisible();
   await page.keyboard.press("Shift+G");
-  const actions = page.getByRole("region", {
-    name: "Selected character actions",
-  });
-  const before = await actions.boundingBox();
-  await page.mouse.move(400, 600);
+  const gm = page.getByRole("region", { name: "GM controls" });
+  const before = await gm.boundingBox();
+  await page.mouse.move(200, 700);
   await page.mouse.down();
-  await page.mouse.move(500, 600);
+  await page.mouse.move(300, 700);
   await page.mouse.up();
-  const panned = await actions.boundingBox();
-  if (!before || !panned) throw Error("Expected visible actions");
-  expect(panned.x - before.x).toBeCloseTo(100, 0);
   await page.keyboard.press("+");
-  const marker = await page.locator('[data-character="ada"]').boundingBox();
-  const zoomed = await actions.boundingBox();
-  if (!zoomed || !marker) throw Error("Expected zoomed marker and actions");
-  expect(Math.abs(zoomed.x - marker.x - marker.width)).toBeLessThan(24);
+  const after = await gm.boundingBox();
+  if (!before || !after) throw Error("Expected Referee controls");
+  expect(after.x).toBe(before.x);
+  expect(after.y).toBe(before.y);
   await page.setViewportSize({ width: 390, height: 420 });
-  await expect(actions).toBeVisible();
-  await expect
-    .poll(async () => {
-      const bounds = await actions.boundingBox();
-      return bounds ? bounds.x + bounds.width : Infinity;
-    })
-    .toBeLessThanOrEqual(390);
-  const narrow = await actions.boundingBox();
-  if (!narrow) throw Error("Expected narrow actions");
+  const narrow = await gm.boundingBox();
+  if (!narrow) throw Error("Expected narrow Referee controls");
   expect(narrow.x).toBeGreaterThanOrEqual(0);
   expect(narrow.x + narrow.width).toBeLessThanOrEqual(390);
-  expect(narrow.y + narrow.height).toBeLessThanOrEqual(420);
-  await actions.getByLabel("Character name").fill("Narrow Ada");
-  await expect(actions.getByLabel("Character name")).toBeFocused();
-  await page.screenshot({
-    path: "/tmp/rpgcad-ux/character-actions-narrow.png",
-  });
   await page.emulateMedia({ media: "print" });
-  await expect(actions).toBeHidden();
+  await expect(gm).toBeHidden();
 });
 
 test("rejected non-POV range overrides restore the displayed and later saved range", async ({
@@ -488,7 +538,7 @@ test("rejected non-POV range overrides restore the displayed and later saved ran
   expect(await (await request.get("/exploration")).json()).toEqual(exploration);
 });
 
-test("Escape closes Character options before character actions and returns focus to its summary", async ({
+test("Escape closes Character options before Referee controls and returns focus to its summary", async ({
   page,
   request,
 }) => {
@@ -497,7 +547,7 @@ test("Escape closes Character options before character actions and returns focus
   await expect(page.locator('[data-character="ada"]')).toBeVisible();
   await page.keyboard.press("Shift+G");
   const actions = page.getByRole("region", {
-    name: "Selected character actions",
+    name: "GM controls",
   });
   const summary = actions.getByText("Character options", { exact: true });
   const remove = actions.getByRole("button", {
@@ -512,8 +562,7 @@ test("Escape closes Character options before character actions and returns focus
   await expect(summary).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(actions).toBeHidden();
-  await expect(page.locator("#gm-panel")).toBeVisible();
-  await expect(page.getByLabel("Character", { exact: true })).toBeFocused();
+  await expect(page.locator("#viewport")).toBeFocused();
 });
 
 test("Escape closes visible roster Character options before GM controls without intercepting other sections", async ({
@@ -525,7 +574,7 @@ test("Escape closes visible roster Character options before GM controls without 
   await expect(page.locator('[data-character="ada"]')).toBeVisible();
   await page.keyboard.press("Shift+G");
   await page.getByLabel("Character", { exact: true }).selectOption("guard");
-  await expect(page.locator("#character-actions")).toBeHidden();
+  await expect(page.locator("#character-actions")).toHaveCount(0);
   const summary = page.getByText("Character options", { exact: true });
   const remove = page.getByRole("button", {
     name: "Remove character",
@@ -538,7 +587,7 @@ test("Escape closes visible roster Character options before GM controls without 
   await expect(remove).toBeHidden();
   await expect(summary).toBeFocused();
   await summary.click();
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(page.locator("#gm-panel")).toBeHidden();
 });
@@ -582,6 +631,31 @@ test("a rejected level transfer stays on the source level and cannot leak into a
   expect(
     (await (await request.get("/characters")).json()).characters[0].level,
   ).toBe("original");
+});
+
+test("renaming to another character's name preserves both identities", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  const before = await (await request.get("/characters")).json();
+  await page.goto("/?mode=play");
+  await page.keyboard.press("Shift+G");
+  await page.getByLabel("Character name").fill(" ben ");
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect(page.locator("#character-action-status")).toContainText(
+    "already exists in this plan",
+  );
+  await expect(page.getByLabel("Character name")).toHaveValue("Ada");
+  expect(await (await request.get("/characters")).json()).toEqual(before);
+  await page.getByLabel("Character name").fill("Captain Ada");
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/characters")).json()).characters[0].name,
+    )
+    .toBe("Captain Ada");
 });
 
 test("a rejected rename restores the saved name and stays rejected when another setting saves", async ({

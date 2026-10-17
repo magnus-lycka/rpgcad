@@ -1,3 +1,4 @@
+import { installCommands } from "./command-ui.js";
 import { Geometry, Fog } from "./geometry.js";
 
 /** @param {string} id */
@@ -20,6 +21,12 @@ let model = { wallThickness: 0.15, walls: [], openings: [], labels: [] },
   etag = "",
   loaded = false;
 let camera = { x: 10.5, y: 7.5, mpp: 0.04 };
+// Before measurement, CSS pixels provide only an explicitly uncalibrated estimate.
+let zoomReference = {
+  mpp: (75 * 25.4) / (96 * 1000),
+  scale: 75,
+  calibrated: false,
+};
 /** @type {{x:number,y:number,cx:number,cy:number}|null} */
 let drag = null;
 const settings = new URLSearchParams(location.search);
@@ -27,6 +34,8 @@ let editing =
   settings.get("mode") === "edit" ||
   (settings.get("mode") !== "play" && settings.get("fog") !== "1");
 let sketchTool = "pan";
+let temporaryPan = false;
+let panNextDrag = false;
 /** @type {number[][][]} */
 let strokes = [];
 /** @type {number[][]|null} */
@@ -39,6 +48,7 @@ let sketchGeneration = 0;
 /** @type {{strokes:number[][][],etag:string}|null} */
 let clearedMarks = null;
 function updateClearRecovery() {
+  commandUi.refreshAvailability();
   element("undo-clear").hidden = !clearedMarks;
 }
 /** @param {string} [expected] */
@@ -46,6 +56,7 @@ function savePenMarks(expected = "") {
   const body = JSON.stringify({ strokes, modelRevision: etag, view: view() });
   const generation = ++sketchGeneration;
   savingSketch++;
+  commandUi.refreshAvailability();
   let success = false;
   sketchSave = sketchSave.then(async () => {
     try {
@@ -72,6 +83,7 @@ function savePenMarks(expected = "") {
       element("sketch-status").textContent = String(error);
     } finally {
       savingSketch--;
+      commandUi.refreshAvailability();
     }
   });
   return sketchSave.then(() => ({ success, generation }));
@@ -79,7 +91,11 @@ function savePenMarks(expected = "") {
 function updateEditTools() {
   element("edit-palette").hidden = !editing;
   document.body.dataset.mode = editing ? "edit" : "play";
-  document.body.dataset.tool = editing ? sketchTool : "play";
+  document.body.dataset.tool = temporaryPan
+    ? "pan"
+    : editing
+      ? sketchTool
+      : "play";
   element("pen-tool").setAttribute(
     "aria-pressed",
     String(sketchTool === "pen"),
@@ -109,31 +125,44 @@ function sketchDrawing() {
     })
     .join("");
 }
-element("pen-tool").addEventListener("click", () => {
-  sketchTool = "pen";
+function selectSketchTool(tool) {
+  sketchTool = tool;
   updateEditTools();
-});
-element("pan-tool").addEventListener("click", () => {
-  sketchTool = "pan";
-  updateEditTools();
-});
-element("undo-stroke").addEventListener("click", () => {
+}
+async function undoMarks() {
+  if (clearedMarks) return undoClear();
+  const previous = structuredClone(strokes);
   strokes.pop();
-  savePenMarks();
   draw();
-});
+  const result = await savePenMarks();
+  if (result.generation !== sketchGeneration) return;
+  if (result.success)
+    element("sketch-status").textContent = "Drawing mark undone";
+  else {
+    strokes = previous;
+    draw();
+  }
+}
 const sketchMenu = element("sketch-menu");
 const sketchOptions = element("sketch-options");
+element("zoom-controls").addEventListener("toggle", (event) => {
+  if (
+    event.currentTarget instanceof HTMLDetailsElement &&
+    event.currentTarget.open
+  )
+    closeSketchOptions();
+});
 function closeSketchOptions() {
   sketchMenu.hidden = true;
   sketchOptions.setAttribute("aria-expanded", "false");
 }
-sketchOptions.addEventListener("click", () => {
+function toggleSketchOptions() {
+  element("zoom-controls").removeAttribute("open");
   sketchMenu.hidden = !sketchMenu.hidden;
   sketchOptions.setAttribute("aria-expanded", String(!sketchMenu.hidden));
   if (!sketchMenu.hidden) element("clear-sketch").focus();
-});
-element("clear-sketch").addEventListener("click", async () => {
+}
+async function clearMarks() {
   const snapshot = structuredClone(strokes);
   closeSketchOptions();
   sketchOptions.focus();
@@ -144,13 +173,14 @@ element("clear-sketch").addEventListener("click", async () => {
   if (result.generation !== sketchGeneration) return;
   if (result.success && snapshot.length) {
     clearedMarks = { strokes: snapshot, etag: sketchEtag };
+    element("sketch-status").textContent = "Drawing marks cleared";
     updateClearRecovery();
   } else if (!result.success) {
     strokes = snapshot;
     draw();
   }
-});
-element("undo-clear").addEventListener("click", async () => {
+}
+async function undoClear() {
   const snapshot = clearedMarks;
   if (!snapshot || savingSketch) return;
   const previous = strokes;
@@ -161,9 +191,11 @@ element("undo-clear").addEventListener("click", async () => {
     strokes = previous;
     await restoreMarks();
   }
+  if (result.success)
+    element("sketch-status").textContent = "Cleared drawing marks restored";
   if (!clearedMarks) element("undo-stroke").focus();
   draw();
-});
+}
 updateEditTools();
 async function pollSketchReply() {
   if (savingSketch || !savedSketchId || penStroke) return;
@@ -194,7 +226,8 @@ function closeComponents() {
   componentsTool.setAttribute("aria-expanded", "false");
   if (editing) componentsTool.focus();
 }
-componentsTool.addEventListener("click", () => {
+function toggleComponents() {
+  element("zoom-controls").removeAttribute("open");
   if (!componentPanel.hidden) {
     closeComponents();
     return;
@@ -205,14 +238,8 @@ componentsTool.addEventListener("click", () => {
   componentPanel.hidden = false;
   componentsTool.setAttribute("aria-expanded", "true");
   element("close-components").focus();
-});
-element("close-components").addEventListener("click", closeComponents);
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !componentPanel.hidden) {
-    event.preventDefault();
-    closeComponents();
-  }
-});
+}
+
 window.addEventListener("message", (event) => {
   if (
     event.origin === location.origin &&
@@ -221,9 +248,11 @@ window.addEventListener("message", (event) => {
   )
     closeComponents();
 });
-element("play-mode").addEventListener("click", () => switchMode(false));
+
 function switchMode(edit) {
+  element("zoom-controls").removeAttribute("open");
   closeSketchOptions();
+  cancelTemporaryPan();
   editing = edit;
   closeComponents();
   fogEnabled = !edit;
@@ -261,56 +290,11 @@ let characterState = { characters: [], pov: null };
 let characterEtag = "",
   savingCharacters = false,
   characterGeneration = 0;
-/** @type {{character:Character, wasPov:boolean, etag:string}|null} */
-let removedCharacter = null;
-function refreshCharacterRecovery(message = "") {
-  element("undo-remove").hidden = !removedCharacter;
-  element("character-recovery-status").textContent = message;
-}
 let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
 /** @type {{id:string,x:number,y:number,at:number[],preview?:number[]}|null} */
 let characterDrag = null;
-let dismissedCharacterActions = "";
 let characterSaveError = "";
-function updateCharacterActions() {
-  const actions = element("character-actions");
-  const details = element("character-details");
-  const c = characterState.characters.find((c) => c.id === selectedCharacter);
-  const marker = [...viewport.querySelectorAll("[data-character]")].find(
-    (marker) => marker.getAttribute("data-character") === c?.id,
-  );
-  const visible =
-    !editing &&
-    !element("gm-panel").hidden &&
-    !!marker &&
-    dismissedCharacterActions !== c?.id;
-  actions.hidden = !visible;
-  const parent = visible ? actions : element("roster-character-details");
-  if (details.parentElement !== parent) parent.append(details);
-  if (!visible || !marker || !c) return;
-  element("character-action-title").textContent =
-    `${c.kind.toUpperCase()} · ${c.id === characterState.pov ? "POV" : "Selected"}`;
-  const rect = marker.getBoundingClientRect();
-  const width = actions.offsetWidth,
-    height = actions.offsetHeight;
-  const x =
-    rect.right + width + 12 < innerWidth
-      ? rect.right + 12
-      : rect.left - width - 12;
-  actions.style.left = `${Math.max(12, Math.min(innerWidth - width - 12, x))}px`;
-  actions.style.top = `${Math.max(12, Math.min(innerHeight - height - 12, rect.top))}px`;
-}
-function closeCharacterActions() {
-  dismissedCharacterActions = selectedCharacter;
-  updateCharacterActions();
-  element("character-list").focus();
-}
-element("character-options").addEventListener("toggle", updateCharacterActions);
-element("close-character-actions").addEventListener(
-  "click",
-  closeCharacterActions,
-);
 function defaultVisualRange() {
   return characterState.defaultRange ?? 6;
 }
@@ -329,7 +313,6 @@ async function characterAction(id, at = null) {
   const c = characterState.characters.find((c) => c.id === id);
   if (!c) return;
   selectedCharacter = id;
-  dismissedCharacterActions = "";
   refreshCharacterControls();
   const proposed = {
     ...characterState,
@@ -372,14 +355,19 @@ function refreshCharacterControls() {
   if (document.activeElement !== input) input.value = c?.name || "";
   const range = /** @type {HTMLInputElement} */ (element("character-range"));
   element("character-range-label").hidden = !c;
+  element("character-options").hidden = !c;
+  element("rename-character").hidden = !c;
+  const destinationLabel = element("character-level").closest("label");
+  if (destinationLabel) destinationLabel.hidden = !c;
+  element("transfer-character").hidden = !c;
   if (document.activeElement !== range)
     range.value = c?.range == null ? "" : String(c.range);
   range.placeholder = `Default: ${defaultVisualRange()} m`;
+  updateBusyControls();
 }
 element("character-list").addEventListener("change", async (event) => {
   const input = /** @type {HTMLSelectElement} */ (event.target);
   selectedCharacter = input.value;
-  dismissedCharacterActions = "";
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   if (c?.kind === "pc" && c.level === currentLevel) await characterAction(c.id);
   else {
@@ -404,7 +392,7 @@ element("character-range").addEventListener("change", async () => {
     await saveCharacterRange(c, range);
   }
 });
-element("rename-character").addEventListener("click", async () => {
+async function renameCharacter() {
   if (savingCharacters) return;
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const name = /** @type {HTMLInputElement} */ (
@@ -419,8 +407,8 @@ element("rename-character").addEventListener("click", async () => {
   });
   refreshCharacterControls();
   draw();
-});
-element("remove-character").addEventListener("click", async () => {
+}
+async function removeCharacter() {
   if (savingCharacters || savingExploration) return;
   const character = characterState.characters.find(
     (c) => c.id === selectedCharacter,
@@ -438,70 +426,27 @@ element("remove-character").addEventListener("click", async () => {
   ) {
     refreshCharacterControls();
     draw();
-    refreshCharacterRecovery(
-      "Removal was not saved. Try again after characters refresh.",
-    );
     return;
   }
-  removedCharacter = {
-    character: structuredClone(character),
-    wasPov,
-    etag: characterEtag,
-  };
   selectedCharacter = "";
   if (wasPov && exploration) exploration.observers = [];
   refreshCharacterControls();
   updateVisibility();
   draw();
-  refreshCharacterRecovery(
-    `Removed ${character.name}. Undo Remove restores this character.`,
-  );
   await saveExploration();
-});
-element("undo-remove").addEventListener("click", async () => {
-  if (!removedCharacter || savingCharacters || savingExploration) return;
-  const recovery = removedCharacter;
-  if (characterEtag !== recovery.etag) {
-    removedCharacter = null;
-    refreshCharacterRecovery(
-      "Characters changed. Undo Remove is no longer available.",
-    );
-    return;
-  }
-  const restorePov =
-    recovery.wasPov &&
-    !characterState.pov &&
-    recovery.character.level === currentLevel;
-  if (
-    !(await commitCharacters({
-      ...characterState,
-      characters: [
-        ...characterState.characters,
-        structuredClone(recovery.character),
-      ],
-      pov: restorePov ? recovery.character.id : characterState.pov,
-    }))
-  ) {
-    refreshCharacterControls();
-    draw();
-    refreshCharacterRecovery(
-      "Recovery was not saved. Try Undo Remove again; conflicting changes require a refresh.",
-    );
-    return;
-  }
-  selectedCharacter = recovery.character.id;
-  syncPov();
-  refreshCharacterControls();
-  updateVisibility();
-  draw();
-  refreshCharacterRecovery(`Restored ${recovery.character.name}.`);
-  await saveExploration();
-});
+}
 async function loadLevels() {
   const response = await fetch(`/plan${planQuery}`);
   if (!response.ok) return;
   const plan = await response.json();
   currentLevel = settings.get("level") || plan.levels[0].id;
+  const level = plan.levels.find((entry) => entry.id === currentLevel);
+  for (const context of document.querySelectorAll("[data-drawing-context]")) {
+    const planName = context.querySelector(".context-plan");
+    const levelName = context.querySelector(".context-level");
+    if (planName) planName.textContent = plan.name || plan.id;
+    if (levelName) levelName.textContent = level?.name || currentLevel;
+  }
   const select = /** @type {HTMLSelectElement} */ (element("character-level"));
   select.innerHTML = plan.levels
     .map(
@@ -511,7 +456,8 @@ async function loadLevels() {
     .join("");
   select.value = currentLevel;
 }
-element("transfer-character").addEventListener("click", async () => {
+element("character-level").addEventListener("change", updateBusyControls);
+async function transferCharacter() {
   if (savingCharacters || savingExploration) return;
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const level = /** @type {HTMLSelectElement} */ (element("character-level"))
@@ -531,7 +477,7 @@ element("transfer-character").addEventListener("click", async () => {
   location.assign(
     `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: c.id })}`,
   );
-});
+}
 await loadLevels();
 function characterDrawing() {
   return characterState.characters
@@ -560,12 +506,6 @@ async function pollCharacters() {
   if (savingCharacters || generation !== characterGeneration) return;
   const nextEtag = response.headers.get("ETag") || "";
   const first = !characterEtag;
-  if (removedCharacter && nextEtag !== removedCharacter.etag) {
-    removedCharacter = null;
-    refreshCharacterRecovery(
-      "Characters changed. Undo Remove is no longer available.",
-    );
-  }
   characterState = next;
   characterEtag = nextEtag;
   refreshCharacterControls();
@@ -576,7 +516,8 @@ async function pollCharacters() {
   else draw();
 }
 function updateBusyControls() {
-  element("character-actions").setAttribute(
+  commandUi.refreshAvailability();
+  element("character-details").setAttribute(
     "aria-busy",
     String(savingCharacters || savingExploration),
   );
@@ -590,19 +531,44 @@ function updateBusyControls() {
     "add-npc",
     "rename-character",
     "remove-character",
-    "undo-remove",
     "reset-fog",
     "transfer-character",
   ]) {
     const control = /** @type {HTMLInputElement|HTMLButtonElement} */ (
       element(id)
     );
-    control.disabled = savingCharacters || savingExploration;
+    const selected = characterState.characters.find(
+      (c) => c.id === selectedCharacter,
+    );
+    const needsCharacter = [
+      "character-range",
+      "rename-character",
+      "remove-character",
+      "transfer-character",
+    ].includes(id);
+    const destination = /** @type {HTMLSelectElement} */ (
+      element("character-level")
+    ).value;
+    control.disabled =
+      savingCharacters ||
+      savingExploration ||
+      (needsCharacter && !selected) ||
+      (id === "transfer-character" && selected?.level === destination);
   }
 }
 /** @param {typeof characterState} proposed */
 async function commitCharacters(proposed) {
   characterSaveError = "";
+  const names = new Set();
+  for (const character of proposed.characters) {
+    const name = character.name.trim().toLowerCase();
+    if (names.has(name)) {
+      characterSaveError = `A character named “${character.name.trim()}” already exists in this plan.`;
+      updateBusyControls();
+      return false;
+    }
+    names.add(name);
+  }
   savingCharacters = true;
   ++characterGeneration;
   updateBusyControls();
@@ -621,8 +587,6 @@ async function commitCharacters(proposed) {
     }
     characterEtag = response.headers.get("ETag") || "";
     characterState = proposed;
-    removedCharacter = null;
-    refreshCharacterRecovery();
     return true;
   } catch (error) {
     characterSaveError = String(error);
@@ -663,8 +627,7 @@ async function addCharacter(kind) {
   updateVisibility();
   draw();
 }
-element("add-pc").addEventListener("click", () => addCharacter("pc"));
-element("add-npc").addEventListener("click", () => addCharacter("npc"));
+
 function renderScene(m, b, options = {}) {
   options = { ...options, showAxes: editing };
   if (!fogEnabled) return Geometry.scene(m, b, options);
@@ -800,43 +763,54 @@ const gmSectionIds = {
   exploration: "gm-exploration",
   view: "gm-view-controls",
 };
-for (const button of document.querySelectorAll("[data-gm-section]")) {
-  button.addEventListener("click", () => {
-    const selected = button.getAttribute("data-gm-section");
-    for (const [name, id] of Object.entries(gmSectionIds))
-      element(id).hidden = name !== selected;
-    for (const control of document.querySelectorAll("[data-gm-section]"))
-      control.setAttribute("aria-pressed", String(control === button));
+const gmTabs = [...document.querySelectorAll("[data-gm-section]")];
+/** @param {Element} tab */
+function selectGmTab(tab) {
+  const selected = tab.getAttribute("data-gm-section");
+  for (const [name, id] of Object.entries(gmSectionIds))
+    element(id).hidden = name !== selected;
+  for (const control of gmTabs) {
+    control.setAttribute("aria-selected", String(control === tab));
+    control.setAttribute("tabindex", control === tab ? "0" : "-1");
+  }
+}
+for (const [index, tab] of gmTabs.entries()) {
+  tab.addEventListener("keydown", (event) => {
+    if (!(event instanceof KeyboardEvent)) return;
+    let next;
+    if (event.key === "ArrowRight") next = (index + 1) % gmTabs.length;
+    if (event.key === "ArrowLeft")
+      next = (index + gmTabs.length - 1) % gmTabs.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = gmTabs.length - 1;
+    if (next === undefined) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const target = gmTabs.at(next);
+    if (!target) return;
+    selectGmTab(target);
+    if (target instanceof HTMLElement) target.focus();
   });
 }
-element("return-edit").addEventListener("click", () => switchMode(true));
 
 function closeGm() {
   gmPanel.hidden = true;
-  updateCharacterActions();
   viewport.focus();
 }
 function toggleGm() {
   if (!gmPanel.hidden) return closeGm();
   gmPanel.hidden = false;
-  dismissedCharacterActions = "";
-  updateCharacterActions();
   const active = gmPanel.querySelector(
-    '[data-gm-section][aria-pressed="true"]',
+    '[data-gm-section][aria-selected="true"]',
   );
   if (active instanceof HTMLElement) active.focus();
 }
 function toggleGmView() {
   gmView = !gmView;
-  element("gm-view").textContent = gmView
-    ? "Return to fog"
-    : "Show full plan (GM)";
   element("gm-view").setAttribute("aria-pressed", String(gmView));
   draw();
 }
-element("gm-view").addEventListener("click", toggleGmView);
-element("close-gm").addEventListener("click", closeGm);
-element("reset-fog").addEventListener("click", resetFog);
+
 rangeInput.addEventListener("change", async () => {
   const range = Number(rangeInput.value);
   if (
@@ -892,8 +866,8 @@ async function placeObserver(at) {
   draw();
   await saveExploration();
 }
-async function toggleDoor(at) {
-  if (!exploration || savingExploration) return;
+function nearbyDoor(at) {
+  if (!at) return null;
   /** @type {import("./geometry.js").Opening|null} */
   let closest = null;
   let best = 0.6;
@@ -914,6 +888,13 @@ async function toggleDoor(at) {
       closest = o;
     }
   }
+  return closest;
+}
+/** @type {number[]|null} */
+let doorPointerTarget = null;
+async function toggleDoor(at) {
+  if (!exploration || savingExploration) return;
+  const closest = nearbyDoor(at);
   if (!closest) return;
   exploration.doors[closest.id] =
     exploration.doors[closest.id] === "open" ? "closed" : "open";
@@ -931,6 +912,15 @@ function view() {
   };
 }
 function draw() {
+  commandUi.refreshAvailability();
+  const percent = Number(((zoomReference.mpp / camera.mpp) * 100).toFixed(2));
+  document.querySelectorAll("[data-zoom-readout]").forEach((output) => {
+    output.textContent = `${percent}% at 1:${zoomReference.scale}${zoomReference.calibrated ? "" : " (uncalibrated)"}`;
+  });
+  document.querySelectorAll("[data-zoom-value]").forEach((input) => {
+    if (input instanceof HTMLInputElement && document.activeElement !== input)
+      input.value = String(percent);
+  });
   const b = view();
   viewport.setAttribute("viewBox", `${b.x} ${b.y} ${b.w} ${b.h}`);
   const options = {
@@ -951,7 +941,6 @@ function draw() {
   if (editing) viewport.innerHTML += sketchDrawing();
   else viewport.innerHTML += characterDrawing();
   viewport.setAttribute("data-gm-view", String(fogEnabled && gmView));
-  updateCharacterActions();
 }
 function fit() {
   let b = Geometry.bounds(model);
@@ -991,6 +980,7 @@ async function poll() {
       model = next;
       etag = response.headers.get("ETag") || "";
       loaded = true;
+      commandUi.refreshAvailability();
       if (fogEnabled && exploration) updateVisibility();
       if (first) {
         fit();
@@ -1009,7 +999,8 @@ async function poll() {
   }
 }
 viewport.addEventListener("pointerdown", (event) => {
-  if (!editing && !event.shiftKey && !savingCharacters) {
+  if (temporaryPan) event.preventDefault();
+  if (!temporaryPan && !editing && !event.shiftKey && !savingCharacters) {
     const target =
       event.target instanceof Element
         ? event.target.closest("[data-character]")
@@ -1028,7 +1019,7 @@ viewport.addEventListener("pointerdown", (event) => {
       return;
     }
   }
-  if (editing && sketchTool === "pen" && event.button === 0) {
+  if (!temporaryPan && editing && sketchTool === "pen" && event.button === 0) {
     penStroke = [penPoint(event)];
     viewport.setPointerCapture(event.pointerId);
     draw();
@@ -1093,6 +1084,7 @@ viewport.addEventListener("pointerup", (event) => {
   }
   if (
     drag &&
+    !temporaryPan &&
     fogEnabled &&
     Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4
   ) {
@@ -1102,12 +1094,17 @@ viewport.addEventListener("pointerup", (event) => {
         b.x + (event.clientX - rect.left) * camera.mpp,
         b.y + (event.clientY - rect.top) * camera.mpp,
       ];
-    if (event.shiftKey) toggleDoor(at);
-    else placeObserver(at);
+    if (event.shiftKey) {
+      doorPointerTarget = at;
+      commandUi.execute("toggle-door");
+      doorPointerTarget = null;
+    } else placeObserver(at);
   }
   drag = null;
+  if (panNextDrag) cancelTemporaryPan();
 });
 viewport.addEventListener("pointercancel", () => {
+  cancelTemporaryPan();
   if (characterDrag) {
     characterDrag = null;
   }
@@ -1129,45 +1126,92 @@ function zoom(
   camera.y += (py - viewport.clientHeight / 2) * (old - camera.mpp);
   draw();
 }
-document.querySelectorAll("[data-zoom]").forEach((button) => {
-  button.addEventListener("click", () => {
-    zoom(button.getAttribute("data-zoom") === "in" ? 0.8 : 1.25);
+document.querySelectorAll("[data-zoom-form]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = form.querySelector("[data-zoom-value]");
+    if (!(input instanceof HTMLInputElement) || !input.reportValidity()) return;
+    const percent = input.valueAsNumber;
+    if (!Number.isFinite(percent) || percent <= 0) return;
+    zoom((zoomReference.mpp * 100) / (percent * camera.mpp));
+    input.value = String(
+      Number(((zoomReference.mpp / camera.mpp) * 100).toFixed(2)),
+    );
+    element(editing ? "sketch-status" : "fog-status").textContent =
+      `Zoom set to ${input.value}% at 1:${zoomReference.scale}`;
   });
 });
-document.querySelectorAll("[data-fit]").forEach((button) => {
-  button.addEventListener("click", fit);
-});
-const calibrationDialog = element("calibration-dialog");
+function editZoomPercentage() {
+  if (editing) element("zoom-controls").setAttribute("open", "");
+  else {
+    if (gmPanel.hidden) toggleGm();
+    selectGmTab(element("gm-tab-view"));
+  }
+  const input = document.querySelector(
+    editing
+      ? "#zoom-controls [data-zoom-value]"
+      : "#gm-view-controls [data-zoom-value]",
+  );
+  if (input instanceof HTMLInputElement) {
+    input.focus();
+    input.select();
+  }
+}
+
+const calibrationDialog = /** @type {HTMLDialogElement} */ (
+  element("calibration-dialog")
+);
 if (!(calibrationDialog instanceof HTMLDialogElement))
   throw Error("Expected calibration dialog");
 let calibrationMetres = 7.5;
-document.querySelectorAll("[data-calibrate]").forEach((button) => {
-  button.addEventListener("click", () => {
-    // Keep the ruler at the drawing's actual magnification. Use fewer squares
-    // when five would not fit; never shrink the ruler with CSS.
-    const available = Math.min(900, window.innerWidth - 80);
-    let squares = Math.min(5, Math.floor((available * camera.mpp) / 1.5));
-    if (squares < 1) {
-      squares = 1;
-      while ((squares * 1.5) / camera.mpp > available) squares /= 2;
-    }
-    calibrationMetres = squares * 1.5;
-    const pixels = calibrationMetres / camera.mpp;
-    const ruler = element("calibration-ruler");
-    ruler.setAttribute("width", String(pixels));
-    ruler.setAttribute("viewBox", `0 0 ${pixels} 32`);
-    const ticks = [];
-    for (let i = 0; i <= Math.ceil(squares); i++) {
-      const x = (Math.min(i, squares) / squares) * pixels;
-      ticks.push(`M ${x} 4 V 28`);
-    }
-    ruler.innerHTML = `<path d="M 0 16 H ${pixels} ${ticks.join(" ")}" fill="none" stroke="black" stroke-width="1"/>`;
-    element("calibration-length").textContent =
-      `${squares} grid squares · ${calibrationMetres} m`;
-    closeComponents();
-    calibrationDialog.showModal();
-  });
+/** @type {HTMLElement|null} */
+let calibrationLauncher = null;
+function restoreCalibrationFocus() {
+  if (calibrationLauncher?.checkVisibility()) calibrationLauncher.focus();
+  else viewport.focus();
+}
+calibrationDialog.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  calibrationDialog.close();
+  restoreCalibrationFocus();
 });
+calibrationDialog.addEventListener("close", () => {
+  if (
+    !(document.activeElement instanceof HTMLElement) ||
+    !document.activeElement.checkVisibility() ||
+    calibrationDialog.contains(document.activeElement)
+  )
+    restoreCalibrationFocus();
+});
+function calibrate() {
+  calibrationLauncher =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+  // Keep the ruler at the drawing's actual magnification. Use fewer squares
+  // when five would not fit; never shrink the ruler with CSS.
+  const available = Math.min(900, window.innerWidth - 80);
+  let squares = Math.min(5, Math.floor((available * camera.mpp) / 1.5));
+  if (squares < 1) {
+    squares = 1;
+    while ((squares * 1.5) / camera.mpp > available) squares /= 2;
+  }
+  calibrationMetres = squares * 1.5;
+  const pixels = calibrationMetres / camera.mpp;
+  const ruler = element("calibration-ruler");
+  ruler.setAttribute("width", String(pixels));
+  ruler.setAttribute("viewBox", `0 0 ${pixels} 32`);
+  const ticks = [];
+  for (let i = 0; i <= Math.ceil(squares); i++) {
+    const x = (Math.min(i, squares) / squares) * pixels;
+    ticks.push(`M ${x} 4 V 28`);
+  }
+  ruler.innerHTML = `<path d="M 0 16 H ${pixels} ${ticks.join(" ")}" fill="none" stroke="black" stroke-width="1"/>`;
+  element("calibration-length").textContent =
+    `${squares} grid squares · ${calibrationMetres} m`;
+  closeComponents();
+  calibrationDialog.showModal();
+}
 element("cancel-calibration").addEventListener("click", () =>
   calibrationDialog.close(),
 );
@@ -1181,7 +1225,13 @@ element("calibration-form").addEventListener("submit", (event) => {
   )
     throw Error("Expected calibration inputs");
   const targetMm = (calibrationMetres * 1000) / scale.valueAsNumber;
-  zoom(measured.valueAsNumber / targetMm);
+  const factor = measured.valueAsNumber / targetMm;
+  zoomReference = {
+    mpp: Math.min(100, Math.max(0.0001, camera.mpp * factor)),
+    scale: scale.valueAsNumber,
+    calibrated: true,
+  };
+  zoom(factor);
   calibrationDialog.close();
 });
 viewport.addEventListener(
@@ -1211,75 +1261,433 @@ function exportSvg() {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-window.addEventListener("keydown", (event) => {
-  if (calibrationDialog.open) return;
-  if (event.key === "Escape" && !sketchMenu.hidden) {
-    event.preventDefault();
+function dismissControl() {
+  if (temporaryPan) return cancelTemporaryPan();
+  const zoomControls = element("zoom-controls");
+  if (zoomControls instanceof HTMLDetailsElement && zoomControls.open) {
+    zoomControls.open = false;
+    zoomControls.querySelector("summary")?.focus();
+    return;
+  }
+  if (!componentPanel.hidden) return closeComponents();
+  if (!sketchMenu.hidden) {
     closeSketchOptions();
     sketchOptions.focus();
     return;
   }
-  if (event.key === "Escape" && !gmPanel.hidden) {
-    event.preventDefault();
+  if (!gmPanel.hidden) {
     const options = /** @type {HTMLDetailsElement} */ (
       element("character-options")
     );
     if (options.open && options.checkVisibility()) {
       options.open = false;
       options.querySelector("summary")?.focus();
-    } else if (!element("character-actions").hidden) closeCharacterActions();
-    else closeGm();
-    return;
+    } else closeGm();
   }
-  if (
-    event.ctrlKey ||
-    event.metaKey ||
-    event.altKey ||
-    (event.target instanceof Element &&
-      event.target.closest(
-        "input,textarea,select,[contenteditable],dialog[open]",
-      ))
-  )
-    return;
-  if (event.shiftKey && event.key.toLowerCase() === "e") {
-    event.preventDefault();
-    switchMode(!editing);
-    return;
+}
+function playAvailable() {
+  return !exploration
+    ? "Exploration is loading"
+    : savingCharacters || savingExploration
+      ? "Save in progress"
+      : true;
+}
+function observerAvailable() {
+  return playAvailable() !== true
+    ? playAvailable()
+    : exploration?.observers[0]
+      ? true
+      : "Place an Observer or select a local PC";
+}
+function selectedAvailable() {
+  return playAvailable() !== true
+    ? playAvailable()
+    : characterState.characters.some((c) => c.id === selectedCharacter) ||
+        "Select a character";
+}
+function showGmSection(name) {
+  gmPanel.hidden = false;
+  const tab = gmTabs.find(
+    (tab) => tab.getAttribute("data-gm-section") === name,
+  );
+  if (tab) {
+    selectGmTab(tab);
+    if (tab instanceof HTMLElement) tab.focus();
   }
-  if (fogEnabled && event.key.toLowerCase() === "g") {
-    event.preventDefault();
-    toggleGm();
-  }
-  if (event.key.toLowerCase() === "f") {
-    if (event.shiftKey && fogEnabled) toggleGmView();
-    else fit();
-  }
-  if (event.key === "+" || event.key === "=") zoom(0.8);
-  if (event.key === "-") zoom(1.25);
-  if (event.key.toLowerCase() === "s") exportSvg();
-  if (fogEnabled && event.key.toLowerCase() === "v") toggleGmView();
-  if (fogEnabled && exploration && !savingExploration) {
-    const observer = exploration.observers[0];
-    const movement = {
-      ArrowLeft: [-1.5, 0],
-      ArrowRight: [1.5, 0],
-      ArrowUp: [0, -1.5],
-      ArrowDown: [0, 1.5],
-    }[event.key];
-    if (movement && observer) {
-      event.preventDefault();
-      placeObserver([
-        observer.at[0] + movement[0],
-        observer.at[1] + movement[1],
-      ]);
-    }
-    if ((event.key === "[" || event.key === "]") && observer)
-      setRange(
-        Math.max(0.1, observer.range + (event.key === "]" ? 1.5 : -1.5)),
-      );
-    if (event.key.toLowerCase() === "r") resetFog();
-  }
+}
+function cancelTemporaryPan() {
+  if (!temporaryPan) return;
+  temporaryPan = false;
+  panNextDrag = false;
+  drag = null;
+  updateEditTools();
+}
+window.addEventListener("keyup", (event) => {
+  if (event.key === " ") cancelTemporaryPan();
 });
+window.addEventListener("blur", cancelTemporaryPan);
+document.addEventListener("focusin", (event) => {
+  if (event.target !== viewport) cancelTemporaryPan();
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) cancelTemporaryPan();
+});
+
+const commandUi = installCommands(
+  [
+    {
+      id: "zoom-percentage",
+      label: "Set zoom percentage",
+      keys: ["Z"],
+      scope: "both",
+      enabled: () => loaded || "Plan is loading",
+      run: editZoomPercentage,
+    },
+    {
+      id: "toggle-door",
+      label: "Toggle nearby door",
+      keys: ["Shift+O"],
+      scope: "play",
+      repeat: false,
+      announce: false,
+      enabled: () =>
+        playAvailable() !== true
+          ? playAvailable()
+          : nearbyDoor(doorPointerTarget || exploration?.observers[0]?.at)
+            ? true
+            : "Move an Observer beside a door opening",
+      run: () => toggleDoor(doorPointerTarget || exploration?.observers[0]?.at),
+    },
+    ...[
+      ["characters", "Characters", "T"],
+      ["exploration", "Exploration", "X"],
+      ["view", "View", "W"],
+    ].map(([id, label, key]) => ({
+      id: `section-${id}`,
+      label: `${label} tab`,
+      keys: [key],
+      scope: /** @type {const} */ ("play"),
+      run: () => showGmSection(id),
+    })),
+    ...["pc", "npc"].map((kind) => ({
+      id: `add-${kind}`,
+      label: `Add ${kind.toUpperCase()}`,
+      keys: [kind === "pc" ? "A" : "N"],
+      scope: /** @type {const} */ ("play"),
+      announce: false,
+      repeat: false,
+      enabled: () =>
+        playAvailable() !== true
+          ? playAvailable()
+          : !!characterEtag || "Characters are loading",
+      run: () => addCharacter(kind),
+    })),
+    {
+      id: "rename-character",
+      label: "Rename character",
+      keys: ["Shift+N"],
+      scope: "play",
+      announce: false,
+      repeat: false,
+      enabled: () =>
+        selectedAvailable() !== true
+          ? selectedAvailable()
+          : !!(
+              /** @type {HTMLInputElement} */ (
+                element("character-name")
+              ).value.trim()
+            ) || "Enter a character name",
+      run: renameCharacter,
+    },
+    {
+      id: "transfer-character",
+      label: "Move to level",
+      keys: ["Shift+M"],
+      scope: "play",
+      announce: false,
+      repeat: false,
+      enabled: () =>
+        selectedAvailable() !== true
+          ? selectedAvailable()
+          : characterState.characters.find((c) => c.id === selectedCharacter)
+              ?.level !==
+              /** @type {HTMLSelectElement} */ (element("character-level"))
+                .value || "Choose a different level",
+      run: transferCharacter,
+    },
+    {
+      id: "remove-character",
+      label: "Remove character",
+      keys: ["Shift+D"],
+      scope: "play",
+      announce: false,
+      repeat: false,
+      enabled: selectedAvailable,
+      run: removeCharacter,
+    },
+    {
+      id: "character-options",
+      label: "Character options",
+      keys: ["D"],
+      scope: "play",
+      enabled: selectedAvailable,
+      run: () => {
+        showGmSection("characters");
+        const options = /** @type {HTMLDetailsElement} */ (
+          element("character-options")
+        );
+        options.open = !options.open;
+      },
+    },
+    ...Object.entries({
+      left: [-1.5, 0],
+      right: [1.5, 0],
+      up: [0, -1.5],
+      down: [0, 1.5],
+    }).map(([direction, delta]) => ({
+      id: `observer-${direction}`,
+      label: `Move Observer ${direction}`,
+      keys: [`Arrow${direction[0].toUpperCase()}${direction.slice(1)}`],
+      scope: /** @type {const} */ ("play"),
+      analogy: "direction",
+      announce: false,
+      enabled: observerAvailable,
+      run: () => {
+        const at = exploration?.observers[0]?.at;
+        if (!at) return;
+        return placeObserver([at[0] + delta[0], at[1] + delta[1]]);
+      },
+    })),
+    ...[
+      [-1.5, "Decrease", "["],
+      [1.5, "Increase", "]"],
+    ].map(([delta, label, key]) => ({
+      id: `range-${label}`,
+      label: `${label} Observer range`,
+      keys: [String(key)],
+      scope: /** @type {const} */ ("play"),
+      analogy: "size",
+      announce: false,
+      enabled: observerAvailable,
+      run: () =>
+        setRange(
+          Math.max(
+            0.1,
+            (exploration?.observers[0]?.range ?? 6) + Number(delta),
+          ),
+        ),
+    })),
+    {
+      id: "reset-fog",
+      label: "Reset fog / close all doors",
+      keys: ["Shift+R"],
+      scope: "play",
+      repeat: false,
+      announce: false,
+      enabled: playAvailable,
+      run: resetFog,
+    },
+    {
+      id: "gm-panel",
+      label: "Referee panel",
+      keys: ["G", "Shift+G"],
+      scope: "play",
+      run: toggleGm,
+    },
+    {
+      id: "gm-view",
+      label: "GM full-plan view",
+      keys: ["Shift+V"],
+      scope: "play",
+      repeat: false,
+      run: toggleGmView,
+    },
+    {
+      id: "undo-marks",
+      label: "Undo drawing marks",
+      keys: ["Mod+Z"],
+      scope: "edit",
+      announce: false,
+      enabled: () =>
+        savingSketch
+          ? "Drawing marks are saving"
+          : clearedMarks || strokes.length
+            ? true
+            : "No drawing marks to undo",
+      run: undoMarks,
+    },
+    {
+      id: "clear-marks",
+      label: "Clear marks",
+      keys: ["Shift+Backspace"],
+      scope: "edit",
+      repeat: false,
+      announce: false,
+      enabled: () =>
+        savingSketch
+          ? "Drawing marks are saving"
+          : strokes.length
+            ? true
+            : "No drawing marks to clear",
+      run: clearMarks,
+    },
+    {
+      id: "sketch-options",
+      label: "Sketch options",
+      keys: ["O"],
+      scope: "edit",
+      repeat: false,
+      run: toggleSketchOptions,
+    },
+    {
+      id: "pen",
+      label: "Pen",
+      keys: ["P"],
+      scope: "edit",
+      run: () => selectSketchTool("pen"),
+    },
+    ...["edit", "play"].flatMap((scope) =>
+      Object.entries({
+        left: [-1.5, 0],
+        right: [1.5, 0],
+        up: [0, -1.5],
+        down: [0, 1.5],
+      }).map(([direction, delta]) => ({
+        id: `pan-${scope}-${direction}`,
+        label: `Pan ${direction}`,
+        scope: /** @type {'edit'|'play'} */ (scope),
+        keys: [
+          `Shift+Arrow${direction[0].toUpperCase()}${direction.slice(1)}`,
+          ...(scope === "edit"
+            ? [`Arrow${direction[0].toUpperCase()}${direction.slice(1)}`]
+            : []),
+        ],
+        analogy: "direction",
+        run: () => {
+          camera.x += delta[0];
+          camera.y += delta[1];
+          draw();
+        },
+      })),
+    ),
+    {
+      id: "temporary-pan",
+      label: "Pan view (hold Space; palette pans next drag)",
+      keys: ["Space"],
+      scope: "both",
+      repeat: false,
+      run: (event) => {
+        temporaryPan = true;
+        panNextDrag = !event;
+        viewport.focus();
+        updateEditTools();
+      },
+    },
+    {
+      id: "pan",
+      label: "Pan",
+      keys: ["H"],
+      scope: "edit",
+      run: () => selectSketchTool("pan"),
+    },
+    {
+      id: "components",
+      label: "Components",
+      keys: ["C"],
+      scope: "edit",
+      repeat: false,
+      run: toggleComponents,
+    },
+    {
+      id: "zoom-in",
+      label: "Zoom in",
+      keys: ["+", "="],
+      scope: "both",
+      run: () => zoom(0.8),
+    },
+    {
+      id: "zoom-out",
+      label: "Zoom out",
+      keys: ["-"],
+      scope: "both",
+      run: () => zoom(1.25),
+    },
+    { id: "fit", label: "Fit", keys: ["F"], scope: "both", run: fit },
+    {
+      id: "export",
+      label: "Export SVG",
+      keys: ["Mod+E"],
+      scope: "both",
+      enabled: () => loaded || "Plan is loading",
+      run: exportSvg,
+    },
+    {
+      id: "calibrate",
+      label: "Calibrate",
+      keys: ["K"],
+      scope: "both",
+      enabled: () => loaded || "Plan is loading",
+      run: calibrate,
+    },
+    {
+      id: "library",
+      label: "Library",
+      keys: ["Shift+L"],
+      scope: "both",
+      repeat: false,
+      run: () => {
+        location.href = "/library.html";
+      },
+    },
+    {
+      id: "mode",
+      label: "Switch Edit / Play",
+      keys: ["Shift+E"],
+      scope: "both",
+      repeat: false,
+      run: () => switchMode(!editing),
+    },
+    {
+      id: "dismiss",
+      label: "Close topmost control",
+      keys: ["Escape"],
+      scope: "both",
+      repeat: false,
+      run: dismissControl,
+    },
+  ],
+  () => (editing ? "edit" : "play"),
+  (message) => {
+    element(editing ? "sketch-status" : "fog-status").textContent = message;
+  },
+);
+for (const id of [
+  "add-pc",
+  "add-npc",
+  "rename-character",
+  "remove-character",
+  "transfer-character",
+])
+  commandUi.bind(`#${id}`, id);
+commandUi.bind("#character-options summary", "character-options");
+for (const name of ["characters", "exploration", "view"])
+  commandUi.bind(`[data-gm-section="${name}"]`, `section-${name}`);
+commandUi.bind("#close-gm", "dismiss");
+commandUi.bind("#gm-view", "gm-view");
+commandUi.bind("#reset-fog", "reset-fog");
+commandUi.bind("#undo-stroke, #undo-clear", "undo-marks");
+commandUi.bind("#clear-sketch", "clear-marks");
+commandUi.bind("#sketch-options", "sketch-options");
+commandUi.bind("#pen-tool", "pen");
+commandUi.bind("#pan-tool", "pan");
+commandUi.bind("#components-tool", "components");
+commandUi.bind("#close-components", "dismiss");
+commandUi.bind('[data-zoom="in"]', "zoom-in");
+commandUi.bind('[data-zoom="out"]', "zoom-out");
+commandUi.bind("[data-fit]", "fit");
+commandUi.bind("[data-calibrate]", "calibrate");
+commandUi.bind('a[href="/library.html"]', "library");
+commandUi.bind("#play-mode, #return-edit", "mode");
 window.addEventListener("resize", draw);
 window.addEventListener("beforeprint", () => {
   const p = Geometry.papers[settings.get("paper") === "a3" ? "a3" : "a4"];

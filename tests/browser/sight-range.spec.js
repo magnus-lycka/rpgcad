@@ -25,7 +25,7 @@ test("default sight range applies to new characters, independently of each saved
   });
   await page.goto("/?mode=play");
   await page.keyboard.press("Shift+G");
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   const defaultRange = page.getByLabel("Default visual range (m)", {
     exact: true,
   });
@@ -46,7 +46,7 @@ test("default sight range applies to new characters, independently of each saved
   expect(
     (await (await request.get("/exploration")).json()).observations,
   ).toEqual(observations);
-  await page.getByRole("button", { name: "Characters", exact: true }).click();
+  await page.getByRole("tab", { name: "Characters", exact: true }).click();
   const specificRange = page.getByLabel("Selected character visual range (m)", {
     exact: true,
   });
@@ -61,9 +61,9 @@ test("default sight range applies to new characters, independently of each saved
     .toBe(8);
   await page.reload();
   await page.keyboard.press("Shift+G");
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   await expect(defaultRange).toHaveValue("12");
-  await page.getByRole("button", { name: "Characters", exact: true }).click();
+  await page.getByRole("tab", { name: "Characters", exact: true }).click();
   await page.getByLabel("Character name").fill("Ben");
   await page.getByRole("button", { name: "Add PC", exact: true }).click();
   await expect
@@ -133,7 +133,7 @@ test("clearing a character override restores inheritance, including after reset 
     "data-observers",
     /"range":9/,
   );
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   const inherited = page.getByLabel("Default visual range (m)");
   await inherited.fill("12");
   await inherited.dispatchEvent("change");
@@ -252,7 +252,7 @@ test("pending and rejected default ranges preserve inherited visibility and repo
   const characters = await (await request.get("/characters")).json();
   const exploration = await (await request.get("/exploration")).json();
   await page.keyboard.press("Shift+G");
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   let rejectSave;
   const pending = new Promise((resolve) => {
     rejectSave = resolve;

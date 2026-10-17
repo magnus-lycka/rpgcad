@@ -40,12 +40,12 @@ test("play browsing, polling and temporary GM view leave play dates unchanged", 
   await page.mouse.move(900, 450);
   await page.mouse.up();
   await page.keyboard.up("Shift");
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-gm-view",
     "true",
   );
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await page.keyboard.press("Shift+E");
   await expect(page.locator("body")).toHaveAttribute("data-mode", "edit");
   await page.keyboard.press("Shift+E");
@@ -61,7 +61,7 @@ test("play browsing, polling and temporary GM view leave play dates unchanged", 
       headers: { ETag: '"refreshed-model"' },
     });
   });
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(page.locator("#viewport")).toContainText("REFRESHED DEPOT");
   expect(saves).toEqual([]);
   await page.unrouteAll();

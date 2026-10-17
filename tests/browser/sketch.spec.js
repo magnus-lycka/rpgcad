@@ -17,11 +17,15 @@ test("drawing alone makes raw strokes available to the chat agent without editin
   await page.goto("/?level=below&mode=edit");
   await expect(page.locator("#viewport")).toContainText("LOWER LEVEL");
   await page.getByRole("button", { name: "Pen", exact: true }).click();
-  await page.mouse.move(420, 240);
+  const palette = await page.locator("#edit-palette").boundingBox();
+  if (!palette) throw Error("Expected visible Designer palette");
+  const x = palette.x + palette.width + 40;
+  const y = palette.y + palette.height + 40;
+  await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(469, 253);
-  await page.mouse.move(462, 309);
-  await page.mouse.move(417, 298);
+  await page.mouse.move(x + 49, y + 13);
+  await page.mouse.move(x + 42, y + 69);
+  await page.mouse.move(x - 3, y + 58);
   await page.mouse.up();
   const stroke = page.locator("[data-sketch-stroke]");
   await expect(stroke).toHaveCount(1);
@@ -65,7 +69,7 @@ test("play mode hides the edit palette, strokes and reference axes while preserv
   await expect(page.locator("body")).toHaveAttribute("data-mode", "play");
   await expect(page.locator("#edit-palette")).toBeHidden();
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(0);
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(0);
   await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
   await page.keyboard.press("Shift+E");

@@ -69,7 +69,7 @@ test("the viewer loads browser modules, shows a grid, and keeps GM controls out 
   await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
   await expect(page.locator("#gm-panel")).toBeHidden();
   await page.keyboard.press("Shift+G");
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   await expect(page.getByLabel("Default visual range (m)")).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -100,6 +100,28 @@ test("closed doors hide secrets, opening reveals them, and reset closes doors an
   expect(await colour(viewport, [4.1, 0.7])).toEqual([203, 210, 206]);
 });
 
+test("fog reset requires Shift-R and bare R preserves exploration", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/?fog=1");
+  const viewport = page.locator("#viewport");
+  await expect(viewport).toHaveAttribute("data-observers", /party/);
+  const at = await position(viewport, [0, 0]);
+  await savedAction(page, () => viewport.click({ position: at }));
+  await expect(viewport).toHaveAttribute("data-observations", "1");
+  const before = await (await request.get("/exploration")).json();
+
+  await page.keyboard.press("r");
+  await expect(viewport).toHaveAttribute("data-observations", "1");
+  expect(await (await request.get("/exploration")).json()).toEqual(before);
+
+  await savedAction(page, () => page.keyboard.press("Shift+R"));
+  await expect(viewport).toHaveAttribute("data-observations", "0");
+  await page.reload();
+  await expect(viewport).toHaveAttribute("data-observations", "0");
+});
+
 test("GM unfog shows the plan temporarily without revealing secrets to players", async ({
   page,
 }) => {
@@ -107,10 +129,10 @@ test("GM unfog shows the plan temporarily without revealing secrets to players",
   const viewport = page.locator("#viewport");
   await expect(viewport).toHaveAttribute("data-observations", "0");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([203, 210, 206]);
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(viewport).toHaveAttribute("data-gm-view", "true");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([255, 255, 255]);
-  await page.keyboard.press("Shift+F");
+  await page.keyboard.press("Shift+V");
   await expect(viewport).toHaveAttribute("data-gm-view", "false");
   await expect(viewport).toHaveAttribute("data-observations", "0");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([203, 210, 206]);
@@ -123,7 +145,7 @@ test("range entry and keyboard movement expose new areas while keeping old areas
   const viewport = page.locator("#viewport");
   await expect(viewport).toHaveAttribute("data-observers", /party/);
   await page.keyboard.press("Shift+G");
-  await page.getByRole("button", { name: "Exploration", exact: true }).click();
+  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   await page.getByLabel("Default visual range (m)").fill("1.5");
   await savedAction(page, () =>
     page.getByLabel("Default visual range (m)").press("Tab"),

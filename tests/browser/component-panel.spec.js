@@ -47,6 +47,7 @@ test("Escape closes component browsing from either frame without changing the de
   await page.goto(`/${query}&mode=edit`);
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
   await page.getByRole("button", { name: "Pen", exact: true }).click();
+  await page.getByLabel("Zoom controls", { exact: true }).click();
   await page.getByRole("button", { name: "Zoom in", exact: true }).click();
   const view = await page.locator("#viewport").getAttribute("viewBox");
   const before = await (await request.get(`/plan?plan=depot`)).json();
@@ -105,6 +106,9 @@ test("opening screen calibration replaces the temporary catalogue", async ({
   page,
 }) => {
   await page.goto("/?plan=depot&level=original&mode=edit");
+  await page
+    .getByRole("button", { name: "Sketch options", exact: true })
+    .click();
   await expect(
     page.getByRole("button", { name: "Calibrate", exact: true }),
   ).toBeEnabled();

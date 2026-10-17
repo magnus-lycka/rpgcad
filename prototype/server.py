@@ -148,6 +148,8 @@ def main(*, clock=utc_now):
                 "/components.html",
                 "/components.js",
                 "/app.js",
+                "/commands.js",
+                "/command-ui.js",
                 "/geometry.js",
             ):
                 self.send_error(404)
@@ -187,6 +189,8 @@ def main(*, clock=utc_now):
             source = {
                 "/": ROOT / "index.html",
                 "/app.js": ROOT / "app.js",
+                "/commands.js": ROOT / "commands.js",
+                "/command-ui.js": ROOT / "command-ui.js",
                 "/geometry.js": ROOT / "geometry.js",
                 "/model": model,
                 "/exploration": exploration_path(model),
@@ -406,6 +410,7 @@ def main(*, clock=utc_now):
                 ):
                     raise ValueError("Invalid default sight range")
                 ids = set()
+                names = set()
                 for character in characters:
                     cid = character.get("id")
                     at = character.get("at")
@@ -428,6 +433,10 @@ def main(*, clock=utc_now):
                     ):
                         raise ValueError("Invalid character")
                     ids.add(cid)
+                    name = character["name"].strip().lower()
+                    if name in names:
+                        raise ValueError("Character names must be unique within a plan")
+                    names.add(name)
                 if state.get("pov") is not None and not any(
                     c["id"] == state["pov"] and c["kind"] == "pc" for c in characters
                 ):

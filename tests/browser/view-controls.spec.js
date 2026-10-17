@@ -13,6 +13,9 @@ test("calibration waits for the plan's initial view before offering a ruler", as
   });
   try {
     await page.goto("/?mode=edit");
+    await page
+      .getByRole("button", { name: "Sketch options", exact: true })
+      .click();
     await expect(
       page.getByRole("button", { name: "Calibrate", exact: true }),
     ).toBeDisabled();
@@ -49,6 +52,9 @@ test("calibrating five squares measured at 80 mm to 1:75 magnifies by 125 percen
       Number((svg.getAttribute("viewBox") || "").split(" ")[2]),
     );
   const initial = await width();
+  await page
+    .getByRole("button", { name: "Sketch options", exact: true })
+    .click();
   await expect(
     page.getByRole("button", { name: "Calibrate", exact: true }),
   ).toBeVisible();
@@ -68,6 +74,14 @@ test("calibrating five squares measured at 80 mm to 1:75 magnifies by 125 percen
   await page.getByRole("button", { name: "Apply scale", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
   expect(await width()).toBeCloseTo(initial * 0.8);
+  await expect(page.getByLabel("Zoom percentage", { exact: true })).toHaveText(
+    "100% at 1:75",
+  );
+  await page.locator("#viewport").focus();
+  await page.keyboard.press("+");
+  await expect(page.getByLabel("Zoom percentage", { exact: true })).toHaveText(
+    "125% at 1:75",
+  );
   expect(await (await request.get("/model")).json()).toEqual(original);
 });
 
@@ -82,6 +96,7 @@ test("zoom buttons magnify the drawing and Fit restores its extent", async ({
       Number((svg.getAttribute("viewBox") || "").split(" ")[2]),
     );
   const initial = await width();
+  await page.getByLabel("Zoom controls", { exact: true }).click();
   await page.getByRole("button", { name: "Zoom in", exact: true }).click();
   expect(await width()).toBeCloseTo(initial * 0.8);
   await page.getByRole("button", { name: "Zoom out", exact: true }).click();
@@ -89,4 +104,45 @@ test("zoom buttons magnify the drawing and Fit restores its extent", async ({
   await page.getByRole("button", { name: "Zoom in", exact: true }).click();
   await page.getByRole("button", { name: "Fit plan", exact: true }).click();
   expect(await width()).toBeCloseTo(initial);
+});
+
+test("entering a zoom percentage uses the calibrated scale in Edit and Play", async ({
+  page,
+}) => {
+  await page.goto("/?mode=edit");
+  const viewport = page.locator("#viewport");
+  await expect(viewport).toContainText("SECRET");
+  await viewport.focus();
+  await page.keyboard.press("k");
+  await page.getByLabel("Measured length (mm)").fill("80");
+  await page.getByLabel("Scale 1:", { exact: true }).fill("75");
+  await page.getByRole("button", { name: "Apply scale", exact: true }).click();
+  const width = () =>
+    viewport.evaluate((svg) =>
+      Number((svg.getAttribute("viewBox") || "").split(" ")[2]),
+    );
+  const calibrated = await width();
+  await viewport.focus();
+  await page.keyboard.press("z");
+  const input = page.getByRole("spinbutton", { name: "Zoom (%)", exact: true });
+  await expect(input).toBeFocused();
+  await input.fill("10");
+  await input.press("ArrowLeft");
+  await expect(input).toBeFocused();
+  await input.press("Enter");
+  expect(await width()).toBeCloseTo(calibrated * 10);
+  await expect(page.locator("#zoom-percent")).toHaveText("10% at 1:75");
+  await input.fill("100");
+  await input.press("Enter");
+  expect(await width()).toBeCloseTo(calibrated);
+  await viewport.focus();
+  await page.keyboard.press("Shift+E");
+  await page.keyboard.press("z");
+  await expect(input).toBeFocused();
+  await input.fill("25");
+  await input.press("Enter");
+  expect(await width()).toBeCloseTo(calibrated * 4);
+  await expect(
+    page.locator("#gm-view-controls [data-zoom-readout]"),
+  ).toHaveText("25% at 1:75");
 });

@@ -1118,3 +1118,33 @@ def test_invalid_default_sight_range_preserves_state_and_dates(dated_play, inval
     )
     assert read_state(dated_play, "/characters") == (state, etag)
     assert read_state(dated_play, "/library")[0] == dates
+
+
+@pytest.mark.parametrize("duplicate", ["Ada", " ada ", "ADA"])
+def test_duplicate_character_names_preserve_roster_and_dates(dated_play, duplicate):
+    state, etag = read_state(dated_play, "/characters")
+    state["characters"] = [
+        {
+            "id": "ada",
+            "name": "Ada",
+            "kind": "pc",
+            "level": "original",
+            "at": [0, 0],
+            "range": None,
+        },
+        {
+            "id": "guard",
+            "name": "Guard",
+            "kind": "npc",
+            "level": "below",
+            "at": [1, 2],
+            "range": None,
+        },
+    ]
+    assert put_state(dated_play, "/characters", state, etag)[0] == 204
+    saved, etag = read_state(dated_play, "/characters")
+    dates, _ = read_state(dated_play, "/library")
+    state["characters"][1]["name"] = duplicate
+    assert put_state(dated_play, "/characters", state, etag)[0] == 400
+    assert read_state(dated_play, "/characters") == (saved, etag)
+    assert read_state(dated_play, "/library")[0] == dates
