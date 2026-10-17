@@ -116,7 +116,7 @@ Agreed library interaction, implemented in the current prototype on 2026-10-10:
 - Edit mode and play mode are distinct. Authored layout/metadata edits determine creation/last-edit metadata; moving characters, doors and fog are play activity.
 - Track last played for levels and plans, with sorting and date filtering. Update it when a meaningful change to play state is successfully saved. Opening play mode alone, navigation, pan/zoom, temporary GM viewing, unchanged saves and background polling do not count. Re-selecting the same POV counts only when state changes, such as resuming reveal after reset.
 - Levels have their own tags; their effective tags combine those with the parent plan's tags. Keep tag scopes distinguishable.
-- Each level offers explicit Edit and Play actions. Return to the library through the edit palette or on-demand GM panel, retaining fullscreen play when that panel is closed.
+- Each level offers explicit Edit and Play actions. Return to the library through the toolbar's Library icon.
 - Duplicate plan creates an independent copy of the layout and metadata with new identities and creation dates, without characters or exploration history. Subsequent edits do not propagate between copies.
 
 Proposed details still to validate:
@@ -162,24 +162,24 @@ Referee feedback on the first unfog prototype:
 - Previously explored areas must remain clearly readable when no longer visible; the first prototype's treatment is too similar to unseen areas.
 - Geometry behind a sight blocker must not leak into the reveal. The supplied screenshot shows unwanted cargo-lift detail beyond its upper-right blocking corner; retain this as a concrete failing case while investigating the cause.
 - Agreed next-version scope: one movable party point of view, one sight range, and shared exploration history.
-- Keep the player-facing drawing free of controls. An on-demand GM panel provides range entry in metres and a full-fog reset; clicking the drawing places the point of view. Agent instructions remain available.
+- Keep the player-facing drawing free of controls. The toolbar provides default range entry in metres and a full-fog reset; clicking the drawing places the point of view. Agent instructions remain available.
 - Currently visible areas are white. Previously explored areas retain fully readable geometry under a very light tint. Unseen areas remain opaque fog with the grid visible.
 - Each placement reveals from its destination only; do not infer or reveal an intervening movement path.
 - Sight is circular and 360° within the specified range, blocked by opaque walls and closed doors. Furniture and other drawing details do not block sight unless explicitly designated. Lighting and eye height are deferred.
 - Explored areas retain last-seen content. Unseen changes, such as a door closing after the party leaves, must not update the players' remembered view until observed again.
 - Exploration survives closing and reopening the browser, with separate history for each level. Reset clears only the displayed level and pauses revealing until the next POV placement or movement. Multiple parties and separate play sessions are deferred.
-- G shows or hides the GM panel, which provides numeric range entry and reset. R is the reset shortcut. Shift-click toggles a door open or closed.
+- The toolbar's range field and Reset fog icon provide numeric range entry and reset. Shift-R is the reset shortcut. Shift-click toggles a door open or closed.
 - Open doors retain a thin dashed, unfilled panel outline in the doorway, identifying the door without implying that it is closed or blocks sight. This symbol obeys current visibility and last-seen memory like the rest of the plan.
 - Door leaves in the current building are 0.06 m thick, inset within their thicker walls. Closed-door sight blockers use that same thickness so fog exposes the recess rather than treating the doorway as a flush wall face.
 - The stair platform has only top and left border strokes; its bottom and right boundaries are supplied by the walls/door, avoiding a false line across the opened doorway.
-- The GM can temporarily view the full plan with the POV marker to orient and place the party. Shift-F or the GM panel's full-plan button toggles this view (V remains an alias; plain F fits the plan) without revealing any additional exploration. POV placement and door toggling still work in GM view; observations retain normal range/occlusion. Reset returns to fog view. Fog print/export remains fogged even while the GM is viewing the full plan.
+- The GM can temporarily view the full plan with the POV marker to orient and place the party. Shift-V or the toolbar's Toggle fog button toggles this view (plain F fits the plan) without revealing any additional exploration. POV placement and door toggling still work in GM view; observations retain normal range/occlusion. Reset returns to fog view. Fog print/export remains fogged even while the GM is viewing the full plan.
 - Reset erases explored knowledge and closes all doors on the displayed level. It preserves POV position and range, and reveals nothing until the next POV placement or movement. Closing doors takes precedence over the earlier proposal to preserve their states: accidental disclosure is difficult to undo.
 - Persist compact observation records: visited POV positions, sight ranges, and the door/opening states needed to reconstruct what was visible at each observation. Do not persist fog polygons as authoritative exploration history.
 - Visibility polygons are derived data. Recompute them from observations; a bounded disposable cache (for example LRU) may be added if measured latency warrants it.
 - Polling, reloads, and redraws must not create duplicate observations. Observation order matters for the agreed last-seen appearance when revisiting an area after a door changes state.
 - Reconstruction must account for historical model changes as well as door states to preserve last-seen content. Proposed implementation: observations reference shared model revisions rather than copying the whole model per observation; revision storage remains to be designed.
 
-The unfog prototype separates authored geometry, current visibility, and accumulated exploration. `?fog=1` selects the fog view. Version-2 exploration stores observation inputs and shared model revisions; visibility polygons are derived in a bounded in-memory cache. Ordered observation layers retain last-seen content. Shift-G opens the optional GM panel. Reset closes doors and clears observations and revisions, keeping POV/range and pausing reveal. Polling/reload do not append observations; stale saves are rejected.
+The unfog prototype separates authored geometry, current visibility, and accumulated exploration. `?fog=1` selects the fog view. Version-2 exploration stores observation inputs and shared model revisions; visibility polygons are derived in a bounded in-memory cache. Ordered observation layers retain last-seen content. The toolbar provides range entry and reset. Reset closes doors and clears observations and revisions, keeping POV/range and pausing reveal. Polling/reload do not append observations; stale saves are rejected.
 
 The prototype now serves the original and lower level through a shared server, selected by URL, with separate exploration histories. A level-switching control and general plan catalogue remain unimplemented.
 
@@ -200,7 +200,7 @@ Requested direction; interaction and visibility decisions are under discussion:
 Agreed behavior:
 
 - One selected PC supplies the active POV and sight range. Switching the selected PC retains shared exploration history; visibility is not the union of all PCs' views.
-- Named PC/NPC markers are placed through an on-demand GM panel and moved by dragging in the drawing. Initial movement is immediate, without combat rules or movement limits.
+- Named PC/NPC markers are added with the toolbar's Add PC/Add NPC and moved by dragging in the drawing. Initial movement is immediate, without combat rules or movement limits.
 - Moving the POV PC reveals from its destination only, not an inferred path.
 - NPC markers appear in the player-facing view only when currently visible. Previously seen NPCs leave no remembered markers. The GM full-plan view shows everyone.
 - Each PC has a saved sight range. New PCs inherit the current range; the GM can change it per PC. Selecting a PC uses its saved range.
@@ -209,12 +209,12 @@ Agreed behavior:
 - Characters belong to play state, with names, positions, levels and ranges persisted between visits. Show markers on their current level. Initially, the GM explicitly transfers a character to another level and places it there; automatic stair/lift travel is deferred.
 - The GM can place and drag characters freely, without wall, collision or legal-movement enforcement. Moving other characters does not reveal areas; moving the selected POV PC reveals its destination only.
 - Initial markers are small named circles, with distinguishable PC/NPC appearance and a selection ring for the POV PC. Clicking a PC makes it the POV; dragging moves a character.
-- The on-demand GM panel provides add, rename, remove, range and level controls. Portraits and combat statistics are deferred.
+- Add is on the toolbar; a popup at each marker (⌘-click, or ⌘/Ctrl+Enter on a focused marker) provides name, range, level and remove. Portraits and combat statistics are deferred.
 - These decisions extend the earlier one-party-POV scope. The Referee confirmed the combined scope. This is implemented in the throwaway prototype; Referee evaluation is pending.
 
 ## UX critique decisions — 2026-10-11
 
-- Play is shown to players. Its closed-menu drawing-only presentation is intentional; do not add a discovery hint or permanent controls. The Referee can remember Shift-G.
+- Play is shown to players. It originally had a closed-menu, drawing-only presentation; on 2026-10-17 the Referee chose to show the same thin toolbar in Play, with sections for the current mode.
 - Edit identifies the current plan and level in the Designer palette. In Play, that context appears only inside the open GM menu. Both use saved names and wrap long names.
 - Component browsing and symbols remain work in progress. The empty Characters form suggestion is tentative, not an agreed implementation task.
 - The fog-reset keyboard shortcut requires Shift-R; plain R must preserve exploration. Do not add reset confirmation or Undo Reset: revealing areas again is acceptable. The explicit reset action in the GM menu remains available.
@@ -244,21 +244,15 @@ may reuse names. Existing duplicate records are not silently deleted or renamed.
 - Rename, range, character options and destination controls appear only with a selected character. Moving to its existing level is disabled; choosing another level enables the action. Range fields identify their automatic-save behavior.
 - Explicit hidden states take precedence over form-display styling. Native links, buttons, tabs and disclosures remain semantically distinct for accessibility.
 
-### Referee controls remain in one place
+### Character controls live in a popup at the marker
 
-The Referee rejected floating character forms. All character fields and actions
-remain in the Characters section of the Referee menu. Selection, movement, pan
-and zoom must never reparent or relocate that form. This supersedes the contextual
-character-control proposal in spec #22 and ticket #27. Native SVG focus paint must
-not enlarge or obscure markers; retain a thin selection contour and the PC/NPC
-colors.
+Superseded on 2026-10-17. The Referee had rejected floating character forms and kept every character field in the Characters section of the Referee menu. They then removed the Referee panel and chose a popup at the marker instead: ⌘-click a PC/NPC marker, or press ⌘/Ctrl+Enter on a focused marker, to edit its name and visual range, move it to a level or remove it. Fields are plain fields, with no Rename button and no nested Character options. Native SVG focus paint must not enlarge or obscure markers; retain a thin selection contour and the PC/NPC colors.
 
 ### Character removal has no undo
 
 The Referee withdrew Undo Remove on 2026-10-11. Remove character is a direct,
 persisted action with no recovery snapshot, restore command or undo notification.
-Failed saves still preserve the character and report the error in the Referee
-menu. This supersedes the removal-recovery requirement in spec #22 and ticket #28.
+Failed saves still preserve the character and report the error visibly. This supersedes the removal-recovery requirement in spec #22 and ticket #28.
 
 ### Outstanding integration and cleanup, 2026-10-11
 

@@ -36,7 +36,7 @@ Play hides the palette, reference axes and pen strokes; Shift-E returns to editi
 - Add `region=view` to the URL to print complete tiles intersecting the current view instead of the whole model.
 - Add `region=plan` to start print tiles at the grid corner just above/left of the model bounds. The current building then fits on one A4 landscape sheet at 1:75; the reference origin and model stay unchanged.
 
-The drawing view has no permanent controls, diagnostics, tooltips, or walkthroughs. The fog view has an optional GM panel. Agent inspection uses the model file, rendered browser view, and console when needed.
+The drawing view has no permanent controls, diagnostics, tooltips, or walkthroughs. The toolbar is the only permanent control; the fog view adds its play section. Agent inspection uses the model file, rendered browser view, and console when needed.
 
 ## Shared model
 
@@ -55,12 +55,12 @@ This is experimental interchange data for the agent, not a user-facing language 
 
 ## Unfog experiment
 
-Open http://127.0.0.1:8765/?fog=1. The normal URL still shows the full authored plan. Both views normally contain only drawing and grid; Shift-G opens the optional GM controls in fog mode.
+Open http://127.0.0.1:8765/?fog=1. The normal URL still shows the full authored plan. Both views contain the drawing, grid and the thin toolbar.
 
 - The blue dot marks an observer. Click an unobstructed point to place the first observer there; drag still pans. This is placement, not simulated movement along a collision-checked path.
 - Arrow keys move that observer 1.5 m at a time. `[` and `]` decrease/increase sight range by 1.5 m (minimum 1.5 m).
 - Shift-click near a door's centre to toggle its open/closed state. You can also ask the agent to change a named door in the exploration file.
-- Shift-G (or G) shows/hides GM controls, including direct numeric range entry and a reset button. Escape closes the panel.
+- The toolbar's range field and Reset fog icon provide numeric range entry and reset.
 - Shift-R (or R) covers the entire plan with fog and closes all doors, keeping POV position and range. Click to place the observer or use an arrow key to start revealing again. Reset persists across reloads and exits GM view.
 - Shift-V toggles fog off/on for a temporary full-plan GM view with the blue POV marker (bare V and the former Shift-F alias are intentionally removed); the panel also has a full-plan button. Plain F still fits the plan to the window. This does not reveal exploration. Placement and door toggling still work, recording only normally visible areas. Returning to fog restores the player view; print/export from the fog URL stays fogged even during GM view.
 - Bright areas are currently visible, muted areas have been explored, and the grey grid is still unknown. Walls and closed doors block sight. Furniture/equipment outlines, hatches, and step irons do not block merely because they are drawn.
@@ -112,17 +112,17 @@ The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the
 
 ## Character markers in play (prototype)
 
-Enter play with the Play button or Shift-E. Choose Add PC or Add NPC in the toolbar; the marker starts at the current view centre with a default name (PC 1, NPC 2…) that you can change in the Shift-G panel. Drag it to its position. Shift-V temporarily shows all characters and the full plan without revealing additional fog.
+Enter play with the Play button or Shift-E. Choose Add PC or Add NPC in the toolbar; the marker starts at the current view centre with a default name (PC 1, NPC 2…) that you can change in the marker's popup. Drag it to its position. Shift-V temporarily shows all characters and the full plan without revealing additional fog.
 
 Click a PC marker, or choose a PC on the current level in the Character selector, to use its POV and saved sight range. A gold ring identifies the POV PC. Dragging it reveals from its destination only. Other PC movement and NPC movement do not reveal areas. All PCs on the displayed level remain visible; NPCs appear only within current visibility, with no remembered markers. The character selector also lists hidden characters so the GM can manage them.
 
-All character controls stay in the Characters section of the Referee menu. Selecting or moving a marker never opens a separate form or relocates its controls. Rename and change the selected character's visual range there; Remove character is under Character options. Hidden or other-level characters remain manageable in the roster, without exposing their marker location. Escape closes expanded Character options first, then the Referee menu. Enter/Space selects a focused marker. A dashed blue ring marks selection independently of the gold POV ring. Choose a destination level and Move to level to transfer the selected character; the browser opens that level, preserving its coordinates so it can be dragged into place using GM full-plan view. Automatic stair/lift travel and combat integration are deferred. Shift-R clears exploration and closes doors while preserving character positions, ranges and selection; reveal pauses until POV selection or movement.
+⌘-click a marker (or press ⌘/Ctrl+Enter on a focused marker) to open its popup at the marker: Name and Visual range (m) save when you press Enter or leave the field, Move to level opens the chosen level with the coordinates preserved so the character can be dragged into place in full-plan view, and Remove character deletes it directly. Escape, a second ⌘-click or a click elsewhere closes the popup. A rejected save is announced in a red alert and the field returns to the saved value. Plain click or Enter/Space selects a marker; a dashed blue ring marks selection independently of the gold POV ring. Automatic stair/lift travel and combat integration are deferred. Shift-R clears exploration and closes doors while preserving character positions, ranges and selection; reveal pauses until POV selection or movement.
 
 `characters.PROTOTYPE.json` is scratch play state shared by the existing building’s levels; other plans have their own rosters. It is separate from authored geometry and level-specific exploration. HTTP optimistic concurrency rejects stale saves. No sample characters are inserted into the Referee's plan.
 
 ## Plan library
 
-Open `/library.html` to browse plan thumbnails, then choose a level's Edit or Play action. The edit palette and on-demand GM panel link back to the library. Pending raw drawing marks are restored when reopening their level. Play still has no permanent toolbar.
+Open `/library.html` to browse plan thumbnails, then choose a level's Edit or Play action. The toolbar's Library icon links back to the library. Pending raw drawing marks are restored when reopening their level.
 
 The optional `library.PROTOTYPE.json` record contains `plans`, each with stable `id`, `name`, and `levels` (`id`, `name`, `model` path relative to the server directory). An optional plan `characters` path locates its shared roster; otherwise `<plan id>.characters.json` is used. Without this record the existing plan manifest supplies the library, preserving original geometry and play-state paths. `GET /library` and `GET /plan?plan=<id>` expose these records. Drawing/state routes take `plan` and `level` selection; character rosters are scoped to a plan and validate level references within it. Legacy URLs without plan selection continue to open the existing building.
 
@@ -290,10 +290,8 @@ this Git policy does not relocate or reset a running session's data.
 ### Referee command discovery
 
 In Play, `/` or Ctrl/Command-K opens the command palette; `?` lists every
-binding. G/Shift-G opens Referee controls, T selects Characters,
-A/N adds a PC/NPC, D toggles Character options, Shift-N renames the selected
-character from the name field, Shift-D removes it, and Shift-M transfers it to
-the selected different level. Leave a text/choice field before using map keys;
+binding. A/N adds a PC/NPC; ⌘-click a marker (or ⌘/Ctrl+Enter on a focused one)
+to edit it. Leave a text/choice field before using map keys;
 ordinary field editing and native tab navigation retain precedence.
 
 Shift-O toggles a door opening within 0.6 m of the Observer. Move the Observer

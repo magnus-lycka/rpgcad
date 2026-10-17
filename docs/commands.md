@@ -31,7 +31,7 @@
 - Toggle nearby door — Play — — — ⇧O
 - Add PC — Play — — — A
 - Add NPC — Play — — — N
-- Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu) — Play — — — ⌘-click character
+- Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu) — Play — — — ⌘-click marker, ⌘/Ctrl+Enter on a focused marker
 - Move Observer left — Play — — — ←
 - Move Observer right — Play — — — →
 - Move Observer up — Play — — — ↑
