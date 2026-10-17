@@ -162,7 +162,7 @@ Referee feedback on the first unfog prototype:
 - Previously explored areas must remain clearly readable when no longer visible; the first prototype's treatment is too similar to unseen areas.
 - Geometry behind a sight blocker must not leak into the reveal. The supplied screenshot shows unwanted cargo-lift detail beyond its upper-right blocking corner; retain this as a concrete failing case while investigating the cause.
 - Agreed next-version scope: one movable party point of view, one sight range, and shared exploration history.
-- Keep the player-facing drawing free of controls. The toolbar provides a full-fog reset; clicking the drawing places the point of view. Agent instructions remain available.
+- Keep the player-facing drawing free of controls. The toolbar provides a full-fog reset; clicking the drawing no longer moves the point of view (drag a PC or use the arrow keys). Agent instructions remain available.
 - Currently visible areas are white. Previously explored areas retain fully readable geometry under a very light tint. Unseen areas remain opaque fog with the grid visible.
 - Each placement reveals from its destination only; do not infer or reveal an intervening movement path.
 - Sight is circular and 360° within the specified range, blocked by opaque walls and closed doors. Furniture and other drawing details do not block sight unless explicitly designated. Lighting and eye height are deferred.
@@ -209,7 +209,7 @@ Agreed behavior:
 - Characters belong to play state, with names, positions, levels and ranges persisted between visits. Show markers on their current level. Initially, the GM explicitly transfers a character to another level and places it there; automatic stair/lift travel is deferred.
 - The GM can place and drag characters freely, without wall, collision or legal-movement enforcement. Moving other characters does not reveal areas; moving the selected POV PC reveals its destination only.
 - Initial markers are small named circles, with distinguishable PC/NPC appearance and a selection ring for the POV PC. Clicking a PC makes it the POV; dragging moves a character.
-- Add is on the toolbar; a popup at each marker (⌘-click, or ⌘/Ctrl+Enter on a focused marker) provides name, range, level and remove. Portraits and combat statistics are deferred.
+- Add is on the toolbar; a popup at each marker (double-click, or Enter on a focused marker) provides name, range, level and remove. Portraits and combat statistics are deferred.
 - These decisions extend the earlier one-party-POV scope. The Referee confirmed the combined scope. This is implemented in the throwaway prototype; Referee evaluation is pending.
 
 ## UX critique decisions — 2026-10-11
@@ -246,7 +246,7 @@ may reuse names. Existing duplicate records are not silently deleted or renamed.
 
 ### Character controls live in a popup at the marker
 
-Superseded on 2026-10-17. The Referee had rejected floating character forms and kept every character field in the Characters section of the Referee menu. They then removed the Referee panel and chose a popup at the marker instead: ⌘-click a PC/NPC marker, or press ⌘/Ctrl+Enter on a focused marker, to edit its name and visual range, move it to a level or remove it. Fields are plain fields, with no Rename button and no nested Character options. Native SVG focus paint must not enlarge or obscure markers; retain a thin selection contour and the PC/NPC colors.
+Superseded on 2026-10-17. The Referee had rejected floating character forms and kept every character field in the Characters section of the Referee menu. They then removed the Referee panel and chose a popup at the marker instead: double-click a PC/NPC marker, or press Enter on a focused marker, to edit its name and visual range, move it to a level or remove it. Fields are plain fields, with no Rename button and no nested Character options. Native SVG focus paint must not enlarge or obscure markers; retain a thin selection contour and the PC/NPC colors.
 
 ### Character removal has no undo
 

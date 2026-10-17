@@ -31,7 +31,10 @@
 - Toggle nearby door — Play — — — ⇧O
 - Add PC — Play — user--follow — A
 - Add NPC — Play — user--simulation — N
-- Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu) — Play — — — ⌘-click marker, ⌘/Ctrl+Enter on a focused marker
+- Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu; with several selected, a group popup with range and level only) — Play — — — double-click marker, Enter on a focused marker
+- Select character — Play — — — click marker, Space on a focused marker
+- Extend selection — Play — — — ⌘/Ctrl-click marker, ⌘/Ctrl+Space on a focused marker
+- Clear selection — Play — — — Esc, click on empty plan
 - Move Observer left — Play — — — ←
 - Move Observer right — Play — — — →
 - Move Observer up — Play — — — ↑
