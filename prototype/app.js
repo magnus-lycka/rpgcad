@@ -554,6 +554,48 @@ async function removeCharacter() {
 }
 /** @type {Map<string,string>} */
 let levelNames = new Map();
+/** Levels top first. @type {{id:string,name:string}[]} */
+let planLevels = [];
+/** @param {string} level */
+function levelUrl(level) {
+  return `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: editing ? "edit" : "play" })}`;
+}
+function renderLevelList() {
+  element("levels-list").replaceChildren(
+    ...planLevels.map((entry) => {
+      const item = document.createElement("li"),
+        button = document.createElement("button"),
+        name = document.createElement("span"),
+        count = document.createElement("span"),
+        here = characterState.characters.filter(
+          (c) => c.level === entry.id,
+        ).length;
+      button.type = "button";
+      button.dataset.level = entry.id;
+      if (entry.id === currentLevel)
+        button.setAttribute("aria-current", "true");
+      name.textContent = entry.name;
+      count.className = "count";
+      count.textContent = here
+        ? `${here} ${here === 1 ? "character" : "characters"}`
+        : "";
+      button.append(name, count);
+      item.append(button);
+      return item;
+    }),
+  );
+}
+/** @param {number} step -1 for the level below, 1 for the level above @returns {true|string} */
+function levelStep(step) {
+  const at = planLevels.findIndex((entry) => entry.id === currentLevel);
+  if (at < 0) return "Levels are loading";
+  const next = planLevels[at - step];
+  return next
+    ? true
+    : step > 0
+      ? "Already on the top level"
+      : "Already on the bottom level";
+}
 /** Characters to centre on once the roster and plan are loaded. */
 let focusCharacter = settings.get("focus") || "";
 function renderCharacterList() {
@@ -622,6 +664,9 @@ async function loadLevels() {
       )
       .join("");
   select.value = currentLevel;
+  planLevels = [...plan.levels]
+    .sort((a, b) => (b.order ?? 0) - (a.order ?? 0))
+    .map((entry) => ({ id: entry.id, name: entry.name || entry.id }));
   levelNames = new Map(
     plan.levels.map((entry) => [entry.id, entry.name || entry.id]),
   );
@@ -1874,6 +1919,44 @@ const commandUi = installCommands(
       },
     },
     {
+      id: "levels",
+      label: "Levels",
+      keys: ["L"],
+      scope: "both",
+      announce: false,
+      run: () => {
+        const dialog = /** @type {HTMLDialogElement} */ (
+          element("levels-dialog")
+        );
+        if (dialog.open) dialog.close();
+        else {
+          renderLevelList();
+          dialog.showModal();
+        }
+      },
+    },
+    ...[
+      ["up", "PageUp", 1],
+      ["down", "PageDown", -1],
+    ].map(([direction, key, step]) => ({
+      id: `level-${direction}`,
+      label: `Level ${direction}`,
+      keys: [String(key)],
+      scope: /** @type {const} */ ("both"),
+      announce: false,
+      repeat: false,
+      enabled: () => levelStep(Number(step)),
+      run: () =>
+        location.assign(
+          levelUrl(
+            planLevels[
+              planLevels.findIndex((entry) => entry.id === currentLevel) -
+                Number(step)
+            ].id,
+          ),
+        ),
+    })),
+    {
       id: "characters",
       label: "Characters",
       keys: ["M"],
@@ -1977,6 +2060,15 @@ commandUi.bind("#help-tool", "help");
 commandUi.bind("#zoom-100", "zoom-100");
 commandUi.bind("#info-tool", "info");
 commandUi.bind("#characters-tool", "characters");
+commandUi.bind("#levels-tool", "levels");
+element("levels-list").addEventListener("click", (event) => {
+  const target =
+    event.target instanceof Element
+      ? event.target.closest("[data-level]")
+      : null;
+  if (target instanceof HTMLElement && target.dataset.level)
+    location.assign(levelUrl(target.dataset.level));
+});
 element("characters-list").addEventListener("click", (event) => {
   const target =
     event.target instanceof Element

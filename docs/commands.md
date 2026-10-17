@@ -31,6 +31,8 @@
 - Toggle nearby door — Play — — — ⇧O
 - Add PC — Play — face--add — A
 - Add NPC — Play — user--follow — N
+- Levels (list of the plan's levels, top first, current marked; choosing one switches to it) — Edit+Play — arrows--vertical — L
+- Level up / Level down (step one level; refused with a message at the top or bottom) — Edit+Play — — — PageUp / PageDown
 - Characters (list of all characters in the plan with name and level; choosing one goes to its level with it selected and centred) — Play — user--multiple — M
 - Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu; with several selected, a group popup with range and level only) — Play — — — double-click marker, Enter on a focused marker
 - Select character — Play — — — click marker, Space on a focused marker

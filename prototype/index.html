@@ -185,6 +185,7 @@
       border: 1px solid #45464c;
       border-radius: 5px;
     }
+    #levels-list,
     #characters-list {
       list-style: none;
       margin: 0;
@@ -195,6 +196,7 @@
       max-height: 60vh;
       overflow-y: auto;
     }
+    #levels-list button,
     #characters-list button {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -203,10 +205,17 @@
       text-align: left;
       background: none;
     }
+    #levels-list button:hover,
+    #levels-list button:focus-visible,
     #characters-list button:hover,
     #characters-list button:focus-visible {
       background: #35363b;
     }
+    #levels-list [aria-current="true"] {
+      color: #f3f4f6;
+      box-shadow: inset 2px 0 #176ca4;
+    }
+    #levels-list .count,
     #characters-list .level {
       color: #9a9ba1;
     }
@@ -520,6 +529,16 @@
         />
       </svg>
     </button>
+    <button id="levels-tool" data-command-icon>
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <polygon
+          points="27.6,20.6 24,24.2 24,4 22,4 22,24.2 18.4,20.6 17,22 23,28 29,22"
+        />
+        <polygon
+          points="9,4 3,10 4.4,11.4 8,7.8 8,28 10,28 10,7.8 13.6,11.4 15,10"
+        />
+      </svg>
+    </button>
     <a href="/library.html" data-command-icon
       ><svg viewBox="0 0 32 32" fill="currentColor">
         <path
@@ -733,6 +752,15 @@
     <h2>Characters</h2>
     <p id="characters-empty" hidden>No characters in this plan.</p>
     <ul id="characters-list"></ul>
+  </dialog>
+  <dialog
+    id="levels-dialog"
+    class="panel"
+    aria-label="Levels"
+    data-toggles="levels"
+  >
+    <h2>Levels</h2>
+    <ul id="levels-list"></ul>
   </dialog>
   <dialog id="info-dialog" class="panel" aria-label="Info" data-toggles="info">
     <h2>Info</h2>
