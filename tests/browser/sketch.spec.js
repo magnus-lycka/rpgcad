@@ -69,7 +69,7 @@ test("play mode hides the edit palette, strokes and reference axes while preserv
   await expect(page.locator("body")).toHaveAttribute("data-mode", "play");
   await expect(page.locator("#edit-palette")).toBeHidden();
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(0);
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(0);
   await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
   await page.keyboard.press("Shift+E");

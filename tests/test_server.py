@@ -1106,17 +1106,27 @@ def test_guarded_sketch_restore_rejects_intervening_authoritative_change(bridge)
     assert bridge.getresponse().read() == metadata
 
 
-@pytest.mark.parametrize("invalid", [0, -1, True, None, "far"])
-def test_invalid_default_sight_range_preserves_state_and_dates(dated_play, invalid):
-    state, etag = read_state(dated_play, "/characters")
+@pytest.mark.parametrize("invalid", [None, 0, -1, True, "far"])
+def test_pc_without_a_positive_visual_range_preserves_state_and_dates(
+    dated_play, invalid
+):
+    before, etag = read_state(dated_play, "/characters")
     dates, _ = read_state(dated_play, "/library")
-    assert (
-        put_state(dated_play, "/characters", {**state, "defaultRange": invalid}, etag)[
-            0
-        ]
-        == 400
-    )
-    assert read_state(dated_play, "/characters") == (state, etag)
+    proposed = {
+        "pov": None,
+        "characters": [
+            {
+                "id": "ada",
+                "name": "Ada",
+                "kind": "pc",
+                "level": "original",
+                "at": [0, 0],
+                "range": invalid,
+            }
+        ],
+    }
+    assert put_state(dated_play, "/characters", proposed, etag)[0] == 400
+    assert read_state(dated_play, "/characters") == (before, etag)
     assert read_state(dated_play, "/library")[0] == dates
 
 
@@ -1130,7 +1140,7 @@ def test_duplicate_character_names_preserve_roster_and_dates(dated_play, duplica
             "kind": "pc",
             "level": "original",
             "at": [0, 0],
-            "range": None,
+            "range": 6,
         },
         {
             "id": "guard",

@@ -93,15 +93,6 @@
       background: #3b6ef0;
       color: #ffffff;
     }
-    #toolbar #sight-range {
-      width: 4.5em;
-      color: #d7d8db;
-      background: transparent;
-      border: 1px solid #45464c;
-      border-radius: 4px;
-      font: 11.5px system-ui;
-      text-align: right;
-    }
     #toolbar .readout,
     #toolbar .zoom-entry {
       display: flex;
@@ -139,29 +130,69 @@
       z-index: 15;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      width: 220px;
+      gap: 10px;
+      width: 230px;
       padding: 12px;
       box-sizing: border-box;
       font: 13px system-ui;
-      color: #222222;
-      background: #ffffff;
-      border: 1px solid #adadad;
-      border-top: 2px solid #222222;
-      box-shadow: 0 2px 10px #00000022;
+      color: #d7d8db;
+      background: #26272b;
+      border-radius: 9px;
+      box-shadow:
+        0 10px 24px -8px rgba(0, 0, 0, 0.45),
+        0 1px 0 rgba(255, 255, 255, 0.04) inset;
     }
+    #character-popup [hidden],
     #character-popup[hidden] {
       display: none;
     }
     #character-popup label {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
+      color: #9a9ba1;
+      font-size: 11.5px;
     }
     #character-popup input,
     #character-popup select {
-      font: inherit;
-      padding: 4px 6px;
+      font: 13px system-ui;
+      padding: 5px 8px;
+      color: #f3f4f6;
+      background: #1b1c1f;
+      border: 1px solid #45464c;
+      border-radius: 5px;
+    }
+    #character-popup input:focus-visible,
+    #character-popup select:focus-visible,
+    #character-popup button:focus-visible {
+      outline: 2px solid #3b6ef0;
+      outline-offset: 1px;
+    }
+    #character-popup button {
+      font: 13px system-ui;
+      padding: 6px 10px;
+      color: #d7d8db;
+      background: #35363b;
+      border: 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #character-popup button:hover {
+      background: #45464c;
+    }
+    #character-popup #add-character {
+      color: #ffffff;
+      background: #3b6ef0;
+    }
+    #character-popup #remove-character {
+      color: #ff8a80;
+      background: transparent;
+    }
+    #character-popup #remove-character:hover {
+      background: rgba(255, 138, 128, 0.12);
+    }
+    #character-popup output:empty {
+      display: none;
     }
     #problem {
       position: fixed;
@@ -611,7 +642,7 @@
     </button>
     <span class="menu-group" data-mode="play">
       <span class="sep"></span>
-      <button id="gm-view" data-command-icon aria-pressed="false">
+      <button id="gm-view" data-command-icon aria-pressed="true">
         <svg viewBox="0 0 32 32" fill="currentColor">
           <path
             d="M24.8008,11.1382a8.9938,8.9938,0,0,0-17.6006,0A6.533,6.533,0,0,0,2,17.5H2V19a1,1,0,0,0,1,1H15a1,1,0,0,0,0-2H4v-.4966H4a4.5176,4.5176,0,0,1,4.144-4.4819l.8155-.064.0991-.812a6.9936,6.9936,0,0,1,13.8838,0l.0986.812.8154.064A4.4962,4.4962,0,0,1,23.5,22H7a1,1,0,0,0,0,2H23.5a6.4963,6.4963,0,0,0,1.3008-12.8618Z"
@@ -624,90 +655,6 @@
           <path
             d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
           />
-        </svg>
-      </button>
-      <button id="range-down" data-command-icon>
-        <svg viewBox="0 0 32 32" fill="currentColor">
-          <rect x="15" y="2" width="2" height="5" />
-          <rect
-            x="21.6675"
-            y="6.8536"
-            width="4.958"
-            height="1.9998"
-            transform="translate(1.5191 19.3744) rotate(-45)"
-          />
-          <rect x="25" y="15" width="5" height="2" />
-          <rect
-            x="23.1466"
-            y="21.6675"
-            width="1.9998"
-            height="4.958"
-            transform="translate(-10.0018 24.1465) rotate(-45)"
-          />
-          <rect x="15" y="25" width="2" height="5" />
-          <rect
-            x="5.3745"
-            y="23.1466"
-            width="4.958"
-            height="1.9998"
-            transform="translate(-14.7739 12.6256) rotate(-45)"
-          />
-          <rect x="2" y="15" width="5" height="2" />
-          <rect
-            x="6.8536"
-            y="5.3745"
-            width="1.9998"
-            height="4.958"
-            transform="translate(-3.253 7.8535) rotate(-45)"
-          />
-          <path
-            d="M16,12a4,4,0,1,1-4,4,4.0045,4.0045,0,0,1,4-4m0-2a6,6,0,1,0,6,6,6,6,0,0,0-6-6Z"
-          />
-        </svg>
-      </button>
-      <input
-        id="sight-range"
-        type="number"
-        min="0.1"
-        step="0.5"
-        value="6"
-        aria-label="Default visual range (m)"
-      />
-      <button id="range-up" data-command-icon>
-        <svg viewBox="0 0 32 32" fill="currentColor">
-          <rect x="15" y="2" width="2" height="5" />
-          <rect
-            x="21.6675"
-            y="6.8536"
-            width="4.958"
-            height="1.9998"
-            transform="translate(1.5191 19.3744) rotate(-45)"
-          />
-          <rect x="25" y="15" width="5" height="2" />
-          <rect
-            x="23.1466"
-            y="21.6675"
-            width="1.9998"
-            height="4.958"
-            transform="translate(-10.0018 24.1465) rotate(-45)"
-          />
-          <rect x="15" y="25" width="2" height="5" />
-          <rect
-            x="5.3745"
-            y="23.1466"
-            width="4.958"
-            height="1.9998"
-            transform="translate(-14.7739 12.6256) rotate(-45)"
-          />
-          <rect x="2" y="15" width="5" height="2" />
-          <rect
-            x="6.8536"
-            y="5.3745"
-            width="1.9998"
-            height="4.958"
-            transform="translate(-3.253 7.8535) rotate(-45)"
-          />
-          <path d="M16,10a6,6,0,1,0,6,6,6,6,0,0,0-6-6Z" />
         </svg>
       </button>
       <button id="add-pc" data-command-icon>
@@ -801,7 +748,7 @@
       >Name
       <input id="character-name" type="text" maxlength="80" aria-label="Name"
     /></label>
-    <label
+    <label id="character-range-label"
       >Visual range (m)
       <input
         id="character-range"
@@ -810,11 +757,12 @@
         step="0.5"
         aria-label="Visual range (m)"
     /></label>
-    <label
+    <label id="character-level-label"
       >Move to level
       <select id="character-level" aria-label="Move to level"></select
     ></label>
     <button id="remove-character">Remove character</button>
+    <button id="add-character" hidden>Add character</button>
     <output id="character-action-status" aria-live="polite"></output>
   </div>
   <output id="fog-status" class="sr-only" aria-live="polite"></output>

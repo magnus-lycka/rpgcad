@@ -121,7 +121,7 @@ test("a duplicate or empty name is rejected visibly and the saved name is kept",
 }) => {
   await seed(request, [ada, ben]);
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await openPopup(page, "ada");
   const name = page.getByRole("dialog", { name: "Ada PC" }).getByLabel("Name");
   await name.fill(" ben ");
@@ -139,10 +139,7 @@ test("a duplicate or empty name is rejected visibly and the saved name is kept",
   await expect(name).toHaveValue("Ada");
 });
 
-test("the visual range field saves and an empty field restores inheritance", async ({
-  page,
-  request,
-}) => {
+test("the visual range field saves a new range", async ({ page, request }) => {
   await seed(request);
   await page.goto("/?mode=play");
   await openPopup(page, "ada");
@@ -152,9 +149,6 @@ test("the visual range field saves and an empty field restores inheritance", asy
   await range.fill("4");
   await range.press("Enter");
   await expect.poll(async () => (await saved(request))[0].range).toBe(4);
-  await range.fill("");
-  await range.press("Enter");
-  await expect.poll(async () => (await saved(request))[0].range).toBe(null);
 });
 
 test("Move to level sends the character to the chosen level", async ({
@@ -178,7 +172,7 @@ test("Remove character deletes it and closes the popup", async ({
 }) => {
   await seed(request, [ada, ben]);
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await openPopup(page, "ben");
   await page
     .getByRole("dialog", { name: "Ben PC" })
@@ -269,4 +263,158 @@ test("the popup fits a narrow window and stays out of print", async ({
   expect(box.y + box.height).toBeLessThanOrEqual(520);
   await page.emulateMedia({ media: "print" });
   await expect(popup).toBeHidden();
+});
+
+const toolbar = (page) =>
+  page.getByRole("toolbar", { name: "Toolbar", exact: true });
+
+test("Add PC opens a popup at once; nothing is saved until it has a name and a range", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/?mode=play");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observers",
+    /./,
+  );
+  await toolbar(page)
+    .getByRole("button", { name: "Add PC", exact: true })
+    .click();
+  const popup = page.getByRole("dialog", { name: "New PC" });
+  await expect(popup).toBeVisible();
+  await expect(popup.getByLabel("Name")).toBeFocused();
+  await expect(popup.getByLabel("Name")).toHaveValue("");
+  await expect(popup.getByLabel("Visual range (m)")).toHaveValue("");
+  await expect(popup.getByLabel("Move to level")).toBeHidden();
+  await expect(
+    popup.getByRole("button", { name: "Remove character" }),
+  ).toBeHidden();
+  await popup.getByRole("button", { name: "Add character" }).click();
+  await expect(page.getByRole("alert")).toContainText("needs a name");
+  await popup.getByLabel("Name").fill("Ada");
+  await popup.getByRole("button", { name: "Add character" }).click();
+  await expect(page.getByRole("alert")).toContainText("needs a visual range");
+  expect(await saved(request)).toEqual([]);
+  await popup.getByLabel("Visual range (m)").fill("9");
+  await popup.getByRole("button", { name: "Add character" }).click();
+  await expect(popup).toBeHidden();
+  await expect
+    .poll(async () =>
+      (await saved(request)).map(({ name, kind, range }) => ({
+        name,
+        kind,
+        range,
+      })),
+    )
+    .toEqual([{ name: "Ada", kind: "pc", range: 9 }]);
+  await expect(page.locator("[data-character]")).toHaveCount(1);
+});
+
+test("Escape cancels a new character without saving anything", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/?mode=play");
+  await toolbar(page)
+    .getByRole("button", { name: "Add PC", exact: true })
+    .click();
+  const popup = page.getByRole("dialog", { name: "New PC" });
+  await popup.getByLabel("Name").fill("Ghost");
+  await page.keyboard.press("Escape");
+  await expect(popup).toBeHidden();
+  expect(await saved(request)).toEqual([]);
+  await expect(page.locator("[data-character]")).toHaveCount(0);
+});
+
+test("a new NPC needs only a name and has no visual range", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/?mode=play");
+  await toolbar(page)
+    .getByRole("button", { name: "Add NPC", exact: true })
+    .click();
+  const popup = page.getByRole("dialog", { name: "New NPC" });
+  await expect(popup.getByLabel("Visual range (m)")).toBeHidden();
+  await popup.getByLabel("Name").fill("Guard");
+  await popup.getByLabel("Name").press("Enter");
+  await expect(popup).toBeHidden();
+  await expect
+    .poll(async () =>
+      (await saved(request)).map(({ name, kind, range }) => ({
+        name,
+        kind,
+        range,
+      })),
+    )
+    .toEqual([{ name: "Guard", kind: "npc", range: null }]);
+});
+
+test("a duplicate name is rejected on creation and the popup stays open", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await page.goto("/?mode=play");
+  await toolbar(page)
+    .getByRole("button", { name: "Add PC", exact: true })
+    .click();
+  const popup = page.getByRole("dialog", { name: "New PC" });
+  await popup.getByLabel("Name").fill(" ada ");
+  await popup.getByLabel("Visual range (m)").fill("5");
+  await popup.getByRole("button", { name: "Add character" }).click();
+  await expect(page.getByRole("alert")).toContainText("already exists");
+  await expect(popup).toBeVisible();
+  expect((await saved(request)).map((c) => c.name)).toEqual(["Ada"]);
+});
+
+test("an existing NPC's popup has no range, and a PC's range cannot be cleared", async ({
+  page,
+  request,
+}) => {
+  /** @type {any} */
+  const guard = { ...ben, kind: "npc", range: null };
+  await seed(request, [ada, guard]);
+  await page.goto("/?mode=play");
+  await page.getByRole("button", { name: "Toggle fog", exact: true }).click();
+  const npc = await openCharacterPopup(page, "ben");
+  await expect(npc.getByLabel("Visual range (m)")).toBeHidden();
+  await page.keyboard.press("Escape");
+  const pc = await openCharacterPopup(page, "ada");
+  await pc.getByLabel("Visual range (m)").fill("");
+  await pc.getByLabel("Visual range (m)").press("Enter");
+  await expect(page.getByRole("alert")).toContainText("needs a visual range");
+  await expect(pc.getByLabel("Visual range (m)")).toHaveValue("6");
+  expect((await saved(request))[0].range).toBe(6);
+});
+
+test("there is no default visual range anywhere on the toolbar", async ({
+  page,
+}) => {
+  await page.goto("/?mode=play");
+  await expect(
+    toolbar(page).getByRole("spinbutton", { name: /range/i }),
+  ).toHaveCount(0);
+  for (const name of ["Decrease default range", "Increase default range"])
+    await expect(toolbar(page).getByRole("button", { name })).toHaveCount(0);
+});
+
+/** @param {import('@playwright/test').Page} page
+ * @param {string} id */
+async function openCharacterPopup(page, id) {
+  await page.locator(`[data-character="${id}"]`).click({ modifiers: ["Meta"] });
+  return page.locator("#character-popup");
+}
+
+test("the popup never slides under the toolbar", async ({ page, request }) => {
+  await seed(request);
+  await page.setViewportSize({ width: 900, height: 420 });
+  await page.goto("/?mode=play");
+  await openPopup(page, "ada");
+  const popup = await page
+    .getByRole("dialog", { name: "Ada PC" })
+    .boundingBox();
+  const bar = await page.locator("#toolbar").boundingBox();
+  if (!popup || !bar) throw Error("Expected both boxes");
+  expect(popup.y).toBeGreaterThanOrEqual(bar.y + bar.height);
 });

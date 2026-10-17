@@ -11,34 +11,22 @@ export async function openCharacter(page, id) {
   return popup;
 }
 
-/** Add a character from the toolbar and name it in its popup.
+/** Add a character from the toolbar through its creation popup.
  * @param {import('@playwright/test').Page} page
  * @param {"pc"|"npc"} kind
  * @param {string} name
+ * @param {number} [range] visual range, required for a PC
  */
-export async function addCharacter(page, kind, name) {
-  const toolbar = page.getByRole("toolbar", { name: "Toolbar", exact: true });
-  const fog = toolbar.getByRole("button", { name: "Toggle fog", exact: true });
-  const revealed = (await fog.getAttribute("aria-pressed")) === "true";
-  if (!revealed) await fog.click();
-  const markers = page.locator("[data-character]");
-  const count = await markers.count();
-  await toolbar
+export async function addCharacter(page, kind, name, range = 6) {
+  await page
+    .getByRole("toolbar", { name: "Toolbar", exact: true })
     .getByRole("button", { name: kind === "pc" ? "Add PC" : "Add NPC" })
     .click();
-  await expect(markers).toHaveCount(count + 1);
-  const marker = page.locator('[data-character][data-selected="true"]');
-  await expect(marker).toHaveCount(1);
-  const id = await marker.getAttribute("data-character");
-  await page.locator(`[data-character="${id}"]`).focus();
-  await page.keyboard.press("Control+Enter");
   const popup = page.locator("#character-popup");
   await expect(popup).toBeVisible();
   await popup.getByLabel("Name").fill(name);
-  await popup.getByLabel("Name").press("Enter");
-  await expect(page.locator(`[data-character="${id}"]`)).toContainText(
-    name.trim(),
-  );
-  await page.keyboard.press("Escape");
-  if (!revealed) await fog.click();
+  if (kind === "pc")
+    await popup.getByLabel("Visual range (m)").fill(String(range));
+  await popup.getByRole("button", { name: "Add character" }).click();
+  await expect(popup).toBeHidden();
 }

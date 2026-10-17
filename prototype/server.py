@@ -404,11 +404,6 @@ def main(*, clock=utc_now):
                 characters = state.get("characters")
                 if not isinstance(characters, list):
                     raise ValueError("Expected characters")
-                if "defaultRange" in state and (
-                    not finite_number(state["defaultRange"])
-                    or state["defaultRange"] <= 0
-                ):
-                    raise ValueError("Invalid default sight range")
                 ids = set()
                 names = set()
                 for character in characters:
@@ -423,6 +418,10 @@ def main(*, clock=utc_now):
                         or character.get("kind") not in ("pc", "npc")
                         or character.get("level") not in models
                         or not model_point(at)
+                        or (
+                            character.get("kind") == "pc"
+                            and character.get("range") is None
+                        )
                         or (
                             character.get("range") is not None
                             and (

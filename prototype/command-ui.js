@@ -143,7 +143,7 @@ export function installCommands(definitions, mode, announce, signal) {
     help.append(title);
     const policy = document.createElement("p");
     policy.textContent =
-      "Bare keys perform reversible actions; switching context and destructive actions require a modifier. Mod means Ctrl or Command. Fields retain native editing. S export is removed; use Mod+E. GM view uses Shift+V only: V and Shift+F are removed. Hold Space to pan in either mode; release restores your interaction. The palette arms the next pan drag only; Escape cancels it. Shift-arrows pan in both modes; plain arrows pan in Edit and move the Observer in Play. Clear marks uses Shift+Backspace (Mac Delete ⌫), not forward Delete. ⌘-click a character marker, or press ⌘/Ctrl+Enter on a focused marker, to edit that character.";
+      "Bare keys perform reversible actions; switching context and destructive actions require a modifier. Mod means Ctrl or Command. Fields retain native editing. S export is removed; use Mod+E. Toggle fog uses Shift+F only; plain F fits the plan. Hold Space to pan in either mode; release restores your interaction. The palette arms the next pan drag only; Escape cancels it. Shift-arrows pan in both modes; plain arrows pan in Edit and move the Observer in Play. Clear marks uses Shift+Backspace (Mac Delete ⌫), not forward Delete. ⌘-click a character marker, or press ⌘/Ctrl+Enter on a focused marker, to edit that character.";
     help.append(policy);
     for (const scope of ["both", "edit", "play"]) {
       const heading = document.createElement("h3");

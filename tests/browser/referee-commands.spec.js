@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("full-plan reveal requires Shift-V and is discoverable without stealing tab navigation", async ({
+test("Toggle fog requires Shift-F and is discoverable without stealing tab navigation", async ({
   page,
 }) => {
   await page.goto("/?mode=play");
@@ -9,40 +9,27 @@ test("full-plan reveal requires Shift-V and is discoverable without stealing tab
     /./,
   );
   const viewport = page.locator("#viewport");
+  const fog = page.locator("#gm-view");
   const before = await viewport.getAttribute("viewBox");
   await page.keyboard.press("v");
-  await expect(page.locator("#gm-view")).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
-  await page.keyboard.press("Shift+F");
-  await expect(viewport).toHaveAttribute("viewBox", before || "");
-  await expect(page.locator("#gm-view")).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
   await page.keyboard.press("Shift+V");
-  await expect(page.locator("#gm-view")).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(fog).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("f");
+  await expect(fog).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Shift+F");
+  await expect(fog).toHaveAttribute("aria-pressed", "false");
   await page.keyboard.down("Shift");
-  await page.keyboard.down("V");
-  await page.keyboard.down("V");
-  await page.keyboard.up("V");
+  await page.keyboard.down("F");
+  await page.keyboard.down("F");
+  await page.keyboard.up("F");
   await page.keyboard.up("Shift");
-  await expect(page.locator("#gm-view")).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
+  await expect(fog).toHaveAttribute("aria-pressed", "true");
+  await expect(viewport).toHaveAttribute("viewBox", before || "");
   await page.keyboard.press("/");
   await page.getByRole("combobox").fill("Toggle fog");
-  await expect(page.getByRole("option")).toContainText("Shift+V");
+  await expect(page.getByRole("option")).toContainText("Shift+F");
   await page.keyboard.press("Enter");
-  await expect(page.locator("#gm-view")).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(fog).toHaveAttribute("aria-pressed", "false");
 });
 
 test("Observer movement, range and reset share palette bindings and persist", async ({
@@ -109,7 +96,7 @@ test("Observer movement, range and reset share palette bindings and persist", as
   await expect(page.getByRole("option")).toHaveCount(0);
 });
 
-test("Add PC is offered by the palette and the A key and saves a character", async ({
+test("Add PC is offered by the palette and the A key and opens the creation popup", async ({
   page,
   request,
 }) => {
@@ -134,12 +121,10 @@ test("Add PC is offered by the palette and the A key and saves a character", asy
   ).toHaveAttribute("aria-disabled", "false");
   await page.keyboard.press("Escape");
   await page.keyboard.press("a");
-  await expect
-    .poll(
-      async () =>
-        (await (await request.get("/characters")).json()).characters.length,
-    )
-    .toBe(1);
+  await expect(page.getByRole("dialog", { name: "New PC" })).toBeVisible();
+  expect((await (await request.get("/characters")).json()).characters).toEqual(
+    [],
+  );
 });
 
 test("door command targets a nearby Observer and explains when no opening is in reach", async ({

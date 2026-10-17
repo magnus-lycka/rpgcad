@@ -36,7 +36,7 @@ test("component door shift-click state persists and reset closes the existing op
       y: (-b.y * svg.clientHeight) / b.height,
     };
   });
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(
     viewport.locator('[data-door="access"]').first(),
   ).toHaveAttribute("data-door-state", "closed");
@@ -51,7 +51,7 @@ test("component door shift-click state persists and reset closes the existing op
     )
     .toBe("open");
   await page.reload();
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(
     viewport.locator('[data-door="access"]').first(),
   ).toHaveAttribute("data-door-state", "open");

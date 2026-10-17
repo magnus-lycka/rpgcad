@@ -8,12 +8,6 @@ function element(id) {
   return result;
 }
 const viewport = element("viewport");
-const rangeInput = (() => {
-  const input = element("sight-range");
-  if (!(input instanceof HTMLInputElement))
-    throw Error("Expected sight range input");
-  return input;
-})();
 /** @typedef {import('./geometry.js').Model} Model */
 /** @typedef {import('./geometry.js').Exploration} Exploration */
 /** @type {Model} */
@@ -278,9 +272,12 @@ let fogEnabled = !editing,
   savingExploration = false,
   editGeneration = 0;
 /** @typedef {{id:string,name:string,kind:'pc'|'npc',level:string,at:number[],range:number|null}} Character */
-/** @type {{characters:Character[],pov:string|null,defaultRange?:number}} */
+/** @type {{characters:Character[],pov:string|null}} */
 let characterState = { characters: [], pov: null };
+/** @type {""|"pc"|"npc"} */
+let newKind = "";
 let popupCharacter = "",
+  rosterError = "",
   commandProblem = "",
   problemTimer = 0,
   explorationSaveError = "",
@@ -292,17 +289,17 @@ let selectedCharacter = settings.get("character") || "";
 /** @type {{id:string,x:number,y:number,at:number[],preview?:number[]}|null} */
 let characterDrag = null;
 let characterSaveError = "";
-function defaultVisualRange() {
-  return characterState.defaultRange ?? 6;
-}
+const OBSERVER_RANGE = 6;
+const characterPopup = element("character-popup");
 function syncPov() {
   if (!exploration || !characterState.characters.length) return;
   const pc = characterState.characters.find(
     (c) => c.id === characterState.pov && c.level === currentLevel,
   );
-  exploration.observers = pc
-    ? [{ id: pc.id, at: [...pc.at], range: pc.range ?? defaultVisualRange() }]
-    : [];
+  exploration.observers =
+    pc && pc.range !== null
+      ? [{ id: pc.id, at: [...pc.at], range: pc.range }]
+      : [];
 }
 /** @param {string} id @param {number[]|null} [at] */
 async function characterAction(id, at = null) {
@@ -341,47 +338,77 @@ function refreshCharacterControls() {
   const level = /** @type {HTMLSelectElement} */ (element("character-level"));
   selectedCharacter ||= characterState.pov || "";
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
+  const bad = characterState.characters.find(
+    (x) => x.kind === "pc" && !(x.range !== null && x.range > 0),
+  );
+  rosterError = bad
+    ? `PC “${bad.name}” has no visual range; open its popup and set one.`
+    : "";
   if (
     popupCharacter &&
     !characterState.characters.some((x) => x.id === popupCharacter)
   )
     closeCharacterPopup(false);
-  element("character-popup").setAttribute(
-    "aria-label",
-    c ? `${c.name} ${c.kind.toUpperCase()}` : "Character",
-  );
-  if (document.activeElement !== input) input.value = c?.name || "";
-  if (document.activeElement !== range)
-    range.value = c?.range == null ? "" : String(c.range);
-  range.placeholder = `Default: ${defaultVisualRange()} m`;
-  if (c && document.activeElement !== level) level.value = c.level;
+  if (!newKind) {
+    const popupOf = characterState.characters.find(
+      (x) => x.id === popupCharacter,
+    );
+    element("character-popup").setAttribute(
+      "aria-label",
+      popupOf ? `${popupOf.name} ${popupOf.kind.toUpperCase()}` : "Character",
+    );
+    renderPopupFields(popupOf?.kind ?? "pc", false);
+    if (document.activeElement !== input) input.value = c?.name || "";
+    if (document.activeElement !== range)
+      range.value = c?.range == null ? "" : String(c.range);
+    if (c && document.activeElement !== level) level.value = c.level;
+  }
   updateBusyControls();
+}
+/** @param {'pc'|'npc'} kind @param {boolean} creating */
+function renderPopupFields(kind, creating) {
+  element("character-range-label").hidden = kind === "npc";
+  element("character-level-label").hidden = creating;
+  element("remove-character").hidden = creating;
+  element("add-character").hidden = !creating;
 }
 element("character-name").addEventListener("change", renameCharacter);
 element("character-level").addEventListener("change", transferCharacter);
 element("remove-character").addEventListener("click", removeCharacter);
+element("add-character").addEventListener("click", submitNewCharacter);
+characterPopup.addEventListener("keydown", (event) => {
+  if (
+    newKind &&
+    event.key === "Enter" &&
+    event.target instanceof HTMLInputElement
+  ) {
+    event.preventDefault();
+    submitNewCharacter();
+  }
+});
 element("character-range").addEventListener("change", async () => {
+  if (newKind) return;
+  await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const input = /** @type {HTMLInputElement} */ (element("character-range"));
-  const range = input.value === "" ? null : Number(input.value);
-  if (
-    savingCharacters ||
-    savingExploration ||
-    !c ||
-    (range !== null && (!Number.isFinite(range) || range <= 0))
-  )
+  if (!c || c.kind !== "pc") return;
+  const range = input.value.trim() === "" ? NaN : Number(input.value);
+  if (!Number.isFinite(range) || range <= 0) {
+    characterSaveError = "A PC needs a visual range.";
+    input.value = c.range === null ? "" : String(c.range);
+    updateBusyControls();
     return;
+  }
   if (c.id === characterState.pov && c.level === currentLevel)
     await setRange(range);
-  else {
-    await saveCharacterRange(c, range);
-  }
+  else await saveCharacterRange(c, range);
 });
 async function settled() {
   while (savingCharacters || savingExploration)
     await new Promise((resolve) => setTimeout(resolve, 25));
 }
 async function renameCharacter() {
+  if (newKind) return;
   await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const input = /** @type {HTMLInputElement} */ (element("character-name"));
@@ -449,6 +476,7 @@ async function loadLevels() {
 }
 element("character-level").addEventListener("change", updateBusyControls);
 async function transferCharacter() {
+  if (newKind) return;
   await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const level = /** @type {HTMLSelectElement} */ (element("character-level"))
@@ -516,11 +544,8 @@ function updateBusyControls() {
     ? "Saving character…"
     : characterSaveError;
   element("problem").textContent =
-    characterSaveError || explorationSaveError || commandProblem;
+    rosterError || characterSaveError || explorationSaveError || commandProblem;
   for (const id of [
-    "sight-range",
-    "range-down",
-    "range-up",
     "character-range",
     "add-pc",
     "add-npc",
@@ -539,7 +564,7 @@ function updateBusyControls() {
       !exploration ||
       savingCharacters ||
       savingExploration ||
-      (needsCharacter && !selected);
+      (needsCharacter && !selected && !newKind);
   }
 }
 /** @param {typeof characterState} proposed */
@@ -583,39 +608,6 @@ async function commitCharacters(proposed) {
     updateBusyControls();
   }
 }
-async function addCharacter(kind) {
-  if (savingCharacters || !characterEtag) return;
-  const taken = new Set(
-    characterState.characters.map((c) => c.name.trim().toLowerCase()),
-  );
-  let number = characterState.characters.length + 1;
-  while (taken.has(`${kind} ${number}`)) number++;
-  const character = {
-    id: crypto.randomUUID(),
-    name: `${kind.toUpperCase()} ${number}`,
-    kind,
-    level: currentLevel,
-    at: [camera.x, camera.y],
-    range: null,
-  };
-  if (
-    !(await commitCharacters({
-      ...characterState,
-      characters: [...characterState.characters, character],
-      pov:
-        kind === "pc" && !characterState.pov
-          ? character.id
-          : characterState.pov,
-    }))
-  )
-    return;
-  selectedCharacter = character.id;
-  refreshCharacterControls();
-  syncPov();
-  updateVisibility();
-  draw();
-}
-
 function renderScene(m, b, options = {}) {
   options = { ...options, showAxes: editing };
   if (!fogEnabled) return Geometry.scene(m, b, options);
@@ -652,8 +644,6 @@ function updateVisibility() {
     "data-observations",
     String(exploration.observations.length),
   );
-  if (document.activeElement !== rangeInput)
-    rangeInput.value = String(defaultVisualRange());
   element("fog-status").textContent =
     characterSaveError || `${exploration.observations.length} observations`;
 }
@@ -724,7 +714,8 @@ async function setRange(range) {
     !exploration ||
     savingCharacters ||
     savingExploration ||
-    (range !== null && (!Number.isFinite(range) || range <= 0))
+    !Number.isFinite(range) ||
+    range <= 0
   )
     return;
   const pc = characterState.characters.find(
@@ -732,8 +723,7 @@ async function setRange(range) {
   );
   if (pc) {
     if (!(await saveCharacterRange(pc, range))) return;
-  } else if (exploration.observers[0])
-    exploration.observers[0].range = range ?? defaultVisualRange();
+  } else if (exploration.observers[0]) exploration.observers[0].range = range;
   else return;
   recordObservation();
   updateVisibility();
@@ -748,7 +738,6 @@ async function resetFog() {
   draw();
   await saveExploration();
 }
-const characterPopup = element("character-popup");
 /** @param {string} id */
 function markerFor(id) {
   return [...viewport.querySelectorAll("[data-character]")].find(
@@ -768,59 +757,120 @@ function openCharacterPopup(id) {
   name.select();
 }
 function closeCharacterPopup(restoreFocus = true) {
-  if (!popupCharacter) return;
-  const marker = markerFor(popupCharacter);
+  if (!popupCharacter && !newKind) return;
+  const marker = popupCharacter ? markerFor(popupCharacter) : null;
   popupCharacter = "";
+  newKind = "";
+  characterSaveError = "";
   characterPopup.hidden = true;
+  updateBusyControls();
   if (restoreFocus && marker instanceof SVGElement) marker.focus();
+  else if (restoreFocus) viewport.focus();
+}
+/** @param {'pc'|'npc'} kind */
+function startNewCharacter(kind) {
+  closeCharacterPopup(false);
+  newKind = kind;
+  characterSaveError = "";
+  characterPopup.setAttribute("aria-label", `New ${kind.toUpperCase()}`);
+  renderPopupFields(kind, true);
+  /** @type {HTMLInputElement} */ (element("character-name")).value = "";
+  /** @type {HTMLInputElement} */ (element("character-range")).value = "";
+  characterPopup.hidden = false;
+  positionCharacterPopup();
+  /** @type {HTMLInputElement} */ (element("character-name")).focus();
+  updateBusyControls();
+}
+/** @param {string} message @param {string} field */
+function rejectNewCharacter(message, field) {
+  characterSaveError = message;
+  updateBusyControls();
+  element(field).focus();
+}
+async function submitNewCharacter() {
+  await settled();
+  if (!newKind) return;
+  const kind = /** @type {"pc"|"npc"} */ (newKind);
+  const name = /** @type {HTMLInputElement} */ (
+    element("character-name")
+  ).value.trim();
+  const rangeText = /** @type {HTMLInputElement} */ (
+    element("character-range")
+  ).value.trim();
+  if (!name)
+    return rejectNewCharacter("A character needs a name.", "character-name");
+  const typed = Number(rangeText);
+  if (
+    kind === "pc" &&
+    (rangeText === "" || !Number.isFinite(typed) || !(typed > 0))
+  )
+    return rejectNewCharacter("A PC needs a visual range.", "character-range");
+  const range = kind === "pc" ? typed : null;
+  const character = {
+    id: crypto.randomUUID(),
+    name,
+    kind,
+    level: currentLevel,
+    at: [camera.x, camera.y],
+    range,
+  };
+  if (
+    !(await commitCharacters({
+      ...characterState,
+      characters: [...characterState.characters, character],
+      pov:
+        kind === "pc" && !characterState.pov
+          ? character.id
+          : characterState.pov,
+    }))
+  )
+    return;
+  newKind = "";
+  characterPopup.hidden = true;
+  selectedCharacter = character.id;
+  refreshCharacterControls();
+  syncPov();
+  updateVisibility();
+  draw();
+  viewport.focus();
 }
 function positionCharacterPopup() {
-  if (!popupCharacter) return;
-  const marker = markerFor(popupCharacter);
-  if (!marker) return closeCharacterPopup(false);
-  const box = marker.getBoundingClientRect();
+  if (!popupCharacter && !newKind) return;
   const width = characterPopup.offsetWidth;
   const height = characterPopup.offsetHeight;
+  let box;
+  if (newKind) {
+    const view = viewport.getBoundingClientRect();
+    box = new DOMRect(
+      view.left + view.width / 2,
+      view.top + view.height / 2,
+      0,
+      0,
+    );
+  } else {
+    const marker = markerFor(popupCharacter);
+    if (!marker) return closeCharacterPopup(false);
+    box = marker.getBoundingClientRect();
+  }
   const left = Math.min(
     Math.max(8, box.left + box.width / 2 - width / 2),
     window.innerWidth - width - 8,
   );
+  const minTop = element("toolbar").getBoundingClientRect().bottom + 8;
   const below = box.bottom + 8;
-  const top =
-    below + height > window.innerHeight - 8
-      ? Math.max(8, box.top - height - 8)
-      : below;
+  const preferred =
+    below + height > window.innerHeight - 8 ? box.top - height - 8 : below;
+  const top = Math.max(
+    minTop,
+    Math.min(preferred, window.innerHeight - height - 8),
+  );
   characterPopup.style.left = `${left}px`;
   characterPopup.style.top = `${top}px`;
 }
 function toggleGmView() {
   gmView = !gmView;
-  element("gm-view").setAttribute("aria-pressed", String(gmView));
   draw();
 }
-
-rangeInput.addEventListener("change", async () => {
-  while (savingCharacters || savingExploration)
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  const range = Number(rangeInput.value);
-  if (!Number.isFinite(range) || range <= 0) return;
-  if (!(await commitCharacters({ ...characterState, defaultRange: range }))) {
-    rangeInput.value = String(defaultVisualRange());
-    return;
-  }
-  const pc = characterState.characters.find(
-    (c) => c.id === characterState.pov && c.level === currentLevel,
-  );
-  if (pc?.range == null && (pc || !characterState.characters.length)) {
-    if (!pc && exploration?.observers[0])
-      exploration.observers[0].range = range;
-    recordObservation();
-    updateVisibility();
-    draw();
-    await saveExploration();
-  }
-  refreshCharacterControls();
-});
 
 async function placeObserver(at) {
   if (!exploration || savingExploration) return;
@@ -841,7 +891,7 @@ async function placeObserver(at) {
     exploration.observers.push({
       id: "party",
       at,
-      range: defaultVisualRange(),
+      range: OBSERVER_RANGE,
     });
   exploration.observers[0].at = at.map((n) => Math.round(n * 1000) / 1000);
   exploration.visibilityPaused = false;
@@ -927,6 +977,10 @@ function draw() {
   if (editing) viewport.innerHTML += sketchDrawing();
   else viewport.innerHTML += characterDrawing();
   viewport.setAttribute("data-gm-view", String(fogEnabled && gmView));
+  element("gm-view").setAttribute(
+    "aria-pressed",
+    String(!(fogEnabled && gmView)),
+  );
   positionCharacterPopup();
 }
 function fit() {
@@ -1261,7 +1315,7 @@ function exportSvg() {
 }
 function dismissControl() {
   if (temporaryPan) return cancelTemporaryPan();
-  if (popupCharacter) return closeCharacterPopup();
+  if (popupCharacter || newKind) return closeCharacterPopup();
   if (!componentPanel.hidden) return closeComponents();
 }
 function playAvailable() {
@@ -1321,7 +1375,7 @@ const commandUi = installCommands(
             : "Move an Observer beside a door opening",
       run: () => toggleDoor(doorPointerTarget || exploration?.observers[0]?.at),
     },
-    ...["pc", "npc"].map((kind) => ({
+    .../** @type {const} */ (["pc", "npc"]).map((kind) => ({
       id: `add-${kind}`,
       label: `Add ${kind.toUpperCase()}`,
       keys: [kind === "pc" ? "A" : "N"],
@@ -1332,7 +1386,7 @@ const commandUi = installCommands(
         playAvailable() !== true
           ? playAvailable()
           : !!characterEtag || "Characters are loading",
-      run: () => addCharacter(kind),
+      run: () => startNewCharacter(kind),
     })),
     ...Object.entries({
       left: [-1.5, 0],
@@ -1372,23 +1426,6 @@ const commandUi = installCommands(
           ),
         ),
     })),
-    ...[
-      ["down", "Decrease", -1.5, "<"],
-      ["up", "Increase", 1.5, ">"],
-    ].map(([direction, label, delta, key]) => ({
-      id: `range-${direction}`,
-      label: `${label} default range`,
-      keys: [String(key)],
-      scope: /** @type {const} */ ("play"),
-      announce: false,
-      enabled: playAvailable,
-      run: () => {
-        rangeInput.value = String(
-          Math.max(0.1, Number(rangeInput.value) + Number(delta)),
-        );
-        rangeInput.dispatchEvent(new Event("change"));
-      },
-    })),
     {
       id: "reset-fog",
       label: "Reset fog / close all doors",
@@ -1402,7 +1439,7 @@ const commandUi = installCommands(
     {
       id: "gm-view",
       label: "Toggle fog",
-      keys: ["Shift+V"],
+      keys: ["Shift+F"],
       scope: "play",
       repeat: false,
       run: toggleGmView,
@@ -1603,8 +1640,6 @@ const commandUi = installCommands(
 );
 for (const id of ["add-pc", "add-npc"]) commandUi.bind(`#${id}`, id);
 commandUi.bind("#gm-view", "gm-view");
-commandUi.bind("#range-down", "range-down");
-commandUi.bind("#range-up", "range-up");
 commandUi.bind("#reset-fog", "reset-fog");
 commandUi.bind("#undo-stroke, #undo-clear", "undo-marks");
 commandUi.bind("#clear-sketch", "clear-marks");

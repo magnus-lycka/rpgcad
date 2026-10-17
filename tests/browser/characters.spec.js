@@ -33,7 +33,7 @@ test("focused NPC keeps its normal orange marker without a giant blue focus disk
     },
   });
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   const marker = page.locator('[data-character="npc"]');
   await marker.focus();
   await page.keyboard.press("Enter");
@@ -77,25 +77,6 @@ test("focused NPC keeps its normal orange marker without a giant blue focus disk
   await expect(marker.locator("circle")).toHaveAttribute("fill", "#ad5931");
 });
 
-test("added characters get unique default names even when one already holds the next name", async ({
-  page,
-  request,
-}) => {
-  await page.goto("/?mode=play");
-  await addCharacter(page, "pc", "PC 2");
-  await page
-    .getByRole("toolbar", { name: "Toolbar", exact: true })
-    .getByRole("button", { name: "Add PC", exact: true })
-    .click();
-  await expect
-    .poll(async () =>
-      (await (await request.get("/characters")).json()).characters.map(
-        (c) => c.name,
-      ),
-    )
-    .toEqual(["PC 2", "PC 3"]);
-});
-
 test("GM can add named PCs and NPCs and retain them after reloading", async ({
   page,
 }) => {
@@ -103,11 +84,11 @@ test("GM can add named PCs and NPCs and retain them after reloading", async ({
   await addCharacter(page, "pc", "Ada");
   await expect(page.locator("[data-character]")).toHaveCount(1);
   await addCharacter(page, "npc", "Guard");
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(page.locator("[data-character]")).toHaveCount(2);
   await page.reload();
   await expect(page.locator("#viewport")).toContainText("Ada");
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(page.locator("[data-character]")).toHaveCount(2);
   await expect(page.locator("#viewport")).toContainText("Ada");
   await expect(page.locator("#viewport")).toContainText("Guard");
@@ -267,7 +248,7 @@ test("an NPC moved to another level can be placed there without revealing areas"
   const popup = await openCharacter(page, "guard");
   await popup.getByLabel("Move to level").selectOption("below");
   await expect(page).toHaveURL(/level=below/);
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(page.locator('[data-character="guard"]')).toBeVisible();
   const start = await point(page, [4, 0]),
     end = await point(page, [2, 1]);
@@ -408,38 +389,43 @@ test("the popup reports rejected saves without changing persisted characters", a
   ).toBe("Ada");
 });
 
-test("rejected non-POV range overrides restore the displayed and later saved range", async ({
+test("a PC's range cannot be cleared, and a rejected range save restores the displayed range", async ({
   page,
   request,
 }) => {
   await seed(request);
   await page.goto("/?mode=play");
   await expect(page.locator('[data-character="ada"]')).toBeVisible();
-  await page.getByRole("button", { name: "Toggle fog", exact: true }).click();
-  const popup = await openCharacter(page, "guard");
+  const popup = await openCharacter(page, "ben");
   const exploration = await (await request.get("/exploration")).json();
+  const range = popup.getByLabel("Visual range (m)");
+  await range.fill("");
+  await range.press("Enter");
+  await expect(page.getByRole("alert")).toContainText(
+    "A PC needs a visual range.",
+  );
+  await expect(range).toHaveValue("3");
   await page.route("**/characters*", async (route) => {
     if (route.request().method() === "PUT")
       await route.fulfill({ status: 409, body: "Conflict" });
     else await route.continue();
   });
-  const range = popup.getByLabel("Visual range (m)");
-  await range.fill("");
+  await range.fill("9");
   await range.press("Enter");
   await expect(popup.locator("#character-action-status")).toContainText(
     "Character save failed (409)",
   );
-  await expect(range).toHaveValue("6");
+  await expect(range).toHaveValue("3");
   await page.unroute("**/characters*");
-  await popup.getByLabel("Name").fill("Watchman");
+  await popup.getByLabel("Name").fill("Benedict");
   await popup.getByLabel("Name").press("Enter");
   await expect
     .poll(async () =>
       (await (await request.get("/characters")).json()).characters.find(
-        (c) => c.id === "guard",
+        (c) => c.id === "ben",
       ),
     )
-    .toMatchObject({ name: "Watchman", range: 6 });
+    .toMatchObject({ name: "Benedict", range: 3 });
   expect(await (await request.get("/exploration")).json()).toEqual(exploration);
 });
 
@@ -559,15 +545,21 @@ test("a rejected addition creates no ghost character and a later addition saves 
     .getByRole("toolbar", { name: "Toolbar", exact: true })
     .getByRole("button", { name: "Add PC", exact: true })
     .click();
-  await expect(page.locator("#fog-status")).toContainText(
+  const popup = page.getByRole("dialog", { name: "New PC" });
+  await popup.getByLabel("Name").fill("Ghost");
+  await popup.getByLabel("Visual range (m)").fill("5");
+  await popup.getByRole("button", { name: "Add character" }).click();
+  await expect(page.getByRole("alert")).toContainText(
     "Character save failed (500)",
   );
+  await expect(popup).toBeVisible();
   await expect(
-    page.locator("[data-character]").filter({ hasText: "PC 4" }),
+    page.locator("[data-character]").filter({ hasText: "Ghost" }),
   ).toHaveCount(0);
   expect(await (await request.get("/characters")).json()).toEqual(before);
   await page.unroute("**/characters*");
-  await addCharacter(page, "pc", "Real");
+  await popup.getByLabel("Name").fill("Real");
+  await popup.getByRole("button", { name: "Add character" }).click();
   await expect
     .poll(async () =>
       (await (await request.get("/characters")).json()).characters.map(

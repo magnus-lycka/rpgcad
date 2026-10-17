@@ -56,9 +56,7 @@ async function savedAction(page, action) {
 }
 
 // These are characterisation tests of browser behaviour, not new features.
-test("the viewer loads browser modules, shows a grid, and keeps GM controls out of the drawing", async ({
-  page,
-}) => {
+test("the viewer loads browser modules and shows a grid", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/?fog=1");
@@ -67,9 +65,6 @@ test("the viewer loads browser modules, shows a grid, and keeps GM controls out 
     /party/,
   );
   await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
-  await expect(page.locator("#gm-panel")).toBeHidden();
-  await page.keyboard.press("Shift+G");
-  await expect(page.getByLabel("Default visual range (m)")).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -128,27 +123,23 @@ test("GM unfog shows the plan temporarily without revealing secrets to players",
   const viewport = page.locator("#viewport");
   await expect(viewport).toHaveAttribute("data-observations", "0");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([203, 210, 206]);
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(viewport).toHaveAttribute("data-gm-view", "true");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([255, 255, 255]);
-  await page.keyboard.press("Shift+V");
+  await page.keyboard.press("Shift+F");
   await expect(viewport).toHaveAttribute("data-gm-view", "false");
   await expect(viewport).toHaveAttribute("data-observations", "0");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([203, 210, 206]);
 });
 
-test("range entry and keyboard movement expose new areas while keeping old areas lightly marked", async ({
+test("range steps and keyboard movement expose new areas while keeping old areas lightly marked", async ({
   page,
 }) => {
   await page.goto("/?fog=1");
   const viewport = page.locator("#viewport");
   await expect(viewport).toHaveAttribute("data-observers", /party/);
-  await page.keyboard.press("Shift+G");
-  await page.getByLabel("Default visual range (m)").fill("1.5");
-  await savedAction(page, () =>
-    page.getByLabel("Default visual range (m)").press("Tab"),
-  );
-  await page.keyboard.press("Escape");
+  for (let step = 0; step < 3; step++)
+    await savedAction(page, () => page.keyboard.press("["));
   const at = await position(viewport, [0, 0]);
   await savedAction(page, () => viewport.click({ position: at }));
   expect(await colour(viewport, [-0.7, 0.7])).toEqual([255, 255, 255]);

@@ -132,8 +132,6 @@ test("scale reads Uncalibrated until the screen is calibrated", async ({
 const playTools = [
   "Toggle fog",
   "Reset fog / close all doors",
-  "Decrease default range",
-  "Increase default range",
   "Add PC",
   "Add NPC",
 ];
@@ -147,12 +145,6 @@ test("fog, range and character tools show in Play and not in Edit", async ({
     await expect(
       toolbar.getByRole("button", { name, exact: true }),
     ).toBeVisible();
-  await expect(
-    toolbar.getByRole("spinbutton", {
-      name: "Default visual range (m)",
-      exact: true,
-    }),
-  ).toBeVisible();
   await page.keyboard.press("Shift+E");
   await expect(
     toolbar.getByRole("button", { name: "Play", exact: true }),
@@ -163,73 +155,26 @@ test("fog, range and character tools show in Play and not in Edit", async ({
     ).toBeHidden();
 });
 
-test("Toggle fog switches the Referee's full-plan view", async ({ page }) => {
+test("Toggle fog is pressed while fog hides the plan, by button and by Shift+F", async ({
+  page,
+}) => {
   await page.goto("/?mode=play");
   const fog = page
     .getByRole("toolbar", { name: "Toolbar", exact: true })
     .getByRole("button", { name: "Toggle fog", exact: true });
-  await expect(fog).toHaveAttribute("aria-pressed", "false");
-  await expect(page.locator("#viewport")).toHaveAttribute(
-    "data-gm-view",
-    "false",
-  );
-  await fog.click();
+  const viewport = page.locator("#viewport");
   await expect(fog).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("#viewport")).toHaveAttribute(
-    "data-gm-view",
-    "true",
-  );
-});
-
-test("range buttons step the saved default range by 1.5 m", async ({
-  page,
-  request,
-}) => {
-  await page.goto("/?mode=play");
-  const toolbar = page.getByRole("toolbar", { name: "Toolbar", exact: true });
-  const range = toolbar.getByRole("spinbutton", {
-    name: "Default visual range (m)",
-    exact: true,
-  });
-  await expect(range).toHaveValue("6");
-  await toolbar
-    .getByRole("button", { name: "Increase default range", exact: true })
-    .click();
-  await expect(range).toHaveValue("7.5");
-  await expect
-    .poll(
-      async () =>
-        (await (await request.get("/characters")).json()).defaultRange,
-    )
-    .toBe(7.5);
-  await toolbar
-    .getByRole("button", { name: "Decrease default range", exact: true })
-    .click();
-  await expect(range).toHaveValue("6");
-  await expect
-    .poll(
-      async () =>
-        (await (await request.get("/characters")).json()).defaultRange,
-    )
-    .toBe(6);
-});
-
-test("Add PC and Add NPC save one character of each kind", async ({
-  page,
-  request,
-}) => {
-  await page.goto("/?mode=play");
-  const toolbar = page.getByRole("toolbar", { name: "Toolbar", exact: true });
-  const kinds = async () =>
-    (await (await request.get("/characters")).json()).characters.map(
-      (character) => character.kind,
-    );
-  expect(await kinds()).toEqual([]);
-  await toolbar.getByRole("button", { name: "Add PC", exact: true }).click();
-  await expect.poll(kinds).toEqual(["pc"]);
-  await expect(page.locator("[data-character]")).toHaveCount(1);
-  await toolbar.getByRole("button", { name: "Add NPC", exact: true }).click();
-  await expect.poll(kinds).toEqual(["pc", "npc"]);
+  await expect(viewport).toHaveAttribute("data-gm-view", "false");
+  await fog.click();
+  await expect(fog).toHaveAttribute("aria-pressed", "false");
+  await expect(viewport).toHaveAttribute("data-gm-view", "true");
+  await page.keyboard.press("Shift+F");
+  await expect(fog).toHaveAttribute("aria-pressed", "true");
+  await expect(viewport).toHaveAttribute("data-gm-view", "false");
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("V");
+  await page.keyboard.up("Shift");
+  await expect(fog).toHaveAttribute("aria-pressed", "true");
 });
 
 for (const mode of ["edit", "play"]) {
@@ -245,31 +190,13 @@ for (const mode of ["edit", "play"]) {
   });
 }
 
-test("Shift-< raises and < lowers the default range, whatever the layout calls them", async ({
-  page,
-}) => {
-  await page.goto("/?mode=play");
-  const range = page.getByRole("spinbutton", {
-    name: "Default visual range (m)",
-    exact: true,
-  });
-  await expect(range).toHaveValue("6");
-  await expect(
-    page.getByRole("button", { name: "Add PC", exact: true }),
-  ).toBeEnabled();
-  await page.keyboard.down("Shift");
-  await page.keyboard.press(">");
-  await page.keyboard.up("Shift");
-  await expect(range).toHaveValue("7.5");
-  await expect(range).toBeEnabled();
-  await page.keyboard.press("<");
-  await expect(range).toHaveValue("6");
-});
-
 for (const mode of ["edit", "play"]) {
   test(`zoom to 100 percent by button or key in ${mode}`, async ({ page }) => {
     await page.goto(`/?mode=${mode}`);
     await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Calibrate", exact: true }),
+    ).toBeEnabled();
     const percent = page.getByRole("spinbutton", {
       name: "Zoom percentage",
       exact: true,
@@ -370,6 +297,10 @@ test("a command refused because a save is in flight says so instead of doing not
     await route.continue();
   });
   await toolbar.getByRole("button", { name: "Add PC", exact: true }).click();
+  const popup = page.getByRole("dialog", { name: "New PC" });
+  await popup.getByLabel("Name").fill("Ada");
+  await popup.getByLabel("Visual range (m)").fill("6");
+  await popup.getByRole("button", { name: "Add character" }).click();
   await page.keyboard.press("Shift+R");
   await expect(page.getByRole("alert")).toContainText(
     "Reset fog / close all doors: Save in progress",

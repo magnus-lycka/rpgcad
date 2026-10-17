@@ -180,7 +180,7 @@ test("Space drag starting on a character pans without selecting or moving it", a
       "data-observers",
       /./,
     );
-    await page.keyboard.press("Shift+V");
+    await page.keyboard.press("Shift+F");
     const marker = page.locator('[data-character="pan-npc"]');
     await expect(marker).toBeVisible();
     const bounds = await marker.boundingBox();
