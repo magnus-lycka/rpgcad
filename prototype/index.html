@@ -125,6 +125,93 @@
       clip: rect(0 0 0 0);
       white-space: nowrap;
     }
+    .panel {
+      color: #d7d8db;
+      background: #26272b;
+      border: 0;
+      border-radius: 9px;
+      box-shadow:
+        0 10px 24px -8px rgba(0, 0, 0, 0.45),
+        0 1px 0 rgba(255, 255, 255, 0.04) inset;
+      font: 13px system-ui;
+      padding: 14px;
+      box-sizing: border-box;
+    }
+    .panel::backdrop {
+      background: rgba(0, 0, 0, 0.4);
+    }
+    .panel [hidden],
+    .panel[hidden] {
+      display: none;
+    }
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #f3f4f6;
+    }
+    .panel p {
+      margin: 0 0 10px;
+      color: #9a9ba1;
+    }
+    .panel dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 14px;
+      margin: 0 0 12px;
+    }
+    .panel dt {
+      color: #9a9ba1;
+    }
+    .panel dd {
+      margin: 0;
+      color: #f3f4f6;
+    }
+    .panel label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+      color: #9a9ba1;
+      font-size: 11.5px;
+    }
+    .panel :is(input, select) {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 5px 8px;
+      font: 13px system-ui;
+      color: #f3f4f6;
+      background: #1b1c1f;
+      border: 1px solid #45464c;
+      border-radius: 5px;
+    }
+    .panel button {
+      padding: 6px 10px;
+      font: 13px system-ui;
+      color: #d7d8db;
+      background: #35363b;
+      border: 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .panel button:hover {
+      background: #45464c;
+    }
+    .panel button:disabled {
+      color: #6d6e73;
+      cursor: default;
+    }
+    .panel :is(input, select, button):focus-visible {
+      outline: 2px solid #3b6ef0;
+      outline-offset: 1px;
+    }
+    .panel :is(#add-character, #calibration-form button[type="submit"]) {
+      color: #ffffff;
+      background: #3b6ef0;
+    }
+    #calibration-ruler {
+      color: #d7d8db;
+    }
     #character-popup {
       position: fixed;
       z-index: 15;
@@ -132,57 +219,12 @@
       flex-direction: column;
       gap: 10px;
       width: 230px;
-      padding: 12px;
-      box-sizing: border-box;
-      font: 13px system-ui;
-      color: #d7d8db;
-      background: #26272b;
-      border-radius: 9px;
-      box-shadow:
-        0 10px 24px -8px rgba(0, 0, 0, 0.45),
-        0 1px 0 rgba(255, 255, 255, 0.04) inset;
     }
-    #character-popup [hidden],
     #character-popup[hidden] {
       display: none;
     }
     #character-popup label {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      color: #9a9ba1;
-      font-size: 11.5px;
-    }
-    #character-popup input,
-    #character-popup select {
-      font: 13px system-ui;
-      padding: 5px 8px;
-      color: #f3f4f6;
-      background: #1b1c1f;
-      border: 1px solid #45464c;
-      border-radius: 5px;
-    }
-    #character-popup input:focus-visible,
-    #character-popup select:focus-visible,
-    #character-popup button:focus-visible {
-      outline: 2px solid #3b6ef0;
-      outline-offset: 1px;
-    }
-    #character-popup button {
-      font: 13px system-ui;
-      padding: 6px 10px;
-      color: #d7d8db;
-      background: #35363b;
-      border: 0;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #character-popup button:hover {
-      background: #45464c;
-    }
-    #character-popup #add-character {
-      color: #ffffff;
-      background: #3b6ef0;
+      margin: 0;
     }
     #character-popup #remove-character {
       color: #ff8a80;
@@ -289,40 +331,16 @@
       }
     }
     #calibration-dialog {
-      border: 1px solid #adadad;
-      border-radius: 8px;
-      padding: 24px;
       max-width: calc(100vw - 80px);
-      background: #ffffff;
-      color: #313131;
-      font: 14px system-ui;
-      box-shadow: 0 8px 40px #31313130;
     }
-    #calibration-dialog::backdrop {
-      background: #31313130;
-    }
-    #calibration-dialog h2 {
-      margin: 0 0 12px;
-      font-size: 18px;
+    #calibration-form button + button {
+      margin-left: 6px;
     }
     #calibration-ruler {
       display: block;
       overflow: visible;
       height: 32px;
       margin: 18px 0 6px;
-    }
-    #calibration-form label {
-      display: block;
-      margin: 12px 0;
-    }
-    #calibration-form input {
-      width: 90px;
-      padding: 6px;
-      font: inherit;
-    }
-    #calibration-form button {
-      padding: 7px 12px;
-      font: inherit;
     }
     .page {
       margin: 0;
@@ -347,7 +365,7 @@
       --panel-selected: #eeeeee;
       --panel-type: 0.875rem;
     }
-    :is(#component-panel, #calibration-dialog) {
+    #component-panel {
       color: var(--panel-ink);
       background: var(--panel-paper);
       font:
@@ -360,7 +378,7 @@
       box-sizing: border-box;
       scrollbar-color: var(--panel-rule) var(--panel-paper);
     }
-    :is(#component-panel, #calibration-dialog) button {
+    #component-panel button {
       font: inherit;
       font-weight: 550;
       color: var(--panel-ink);
@@ -373,41 +391,16 @@
       line-height: 1.25;
       cursor: pointer;
     }
-    :is(#component-panel, #calibration-dialog) button:hover:not(:disabled) {
+    #component-panel button:hover:not(:disabled) {
       border-color: var(--panel-accent);
       background: #f2f2f2;
     }
-    :is(#component-panel, #calibration-dialog) button:disabled {
+    #component-panel button:disabled {
       color: #808080;
       background: #f0f0f0;
       cursor: default;
     }
-    :is(#calibration-dialog) :is(input, select) {
-      display: block;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      min-height: 34px;
-      margin-top: 4px;
-      padding: 5px 8px;
-      font: inherit;
-      font-variant-numeric: tabular-nums;
-      color: var(--panel-ink);
-      background: #ffffff;
-      border: 1px solid #aaaaaa;
-      border-radius: 3px;
-      caret-color: var(--panel-accent);
-    }
-    :is(#calibration-dialog) label {
-      display: block;
-      margin: 0 0 10px;
-      color: var(--panel-muted);
-      font-size: var(--panel-type);
-      font-weight: 500;
-      line-height: 1.4;
-    }
-    :is(#component-panel, #calibration-dialog)
-      :is(button, a, input, select, summary):focus-visible {
+    #component-panel :is(button, a, input, select, summary):focus-visible {
       outline: 2px solid var(--panel-accent);
       outline-offset: 3px;
     }
@@ -454,28 +447,19 @@
       width: min(34rem, 90vw);
       max-height: 80vh;
       overflow: auto;
-      color: #111;
-      background: white;
-      border: 1px solid #777;
-    }
-    .command-dialog input {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 0.5rem;
     }
     .command-dialog [role="option"] {
       display: block;
       width: 100%;
       text-align: left;
-      padding: 0.5rem;
-      border: 0;
+      padding: 8px 10px;
       background: transparent;
     }
     .command-dialog [aria-selected="true"] {
-      background: #ddd;
+      background: #35363b;
     }
     .command-dialog [aria-disabled="true"] {
-      color: #666;
+      color: #6d6e73;
     }
     @media print {
       .command-dialog {
@@ -726,7 +710,7 @@
   </div>
   <output id="sketch-status" aria-live="polite"></output>
   <div id="problem" role="alert"></div>
-  <dialog id="info-dialog" aria-label="Info" data-toggles="info">
+  <dialog id="info-dialog" class="panel" aria-label="Info" data-toggles="info">
     <h2>Info</h2>
     <dl>
       <dt>Plan</dt>
@@ -743,7 +727,13 @@
     </header>
     <iframe title="Component catalogue" src="about:blank"></iframe>
   </section>
-  <div id="character-popup" role="dialog" aria-label="Character" hidden>
+  <div
+    id="character-popup"
+    class="panel"
+    role="dialog"
+    aria-label="Character"
+    hidden
+  >
     <label id="character-name-label"
       >Name
       <input id="character-name" type="text" maxlength="80" aria-label="Name"
@@ -766,7 +756,11 @@
     <output id="character-action-status" aria-live="polite"></output>
   </div>
   <output id="fog-status" class="sr-only" aria-live="polite"></output>
-  <dialog id="calibration-dialog" aria-labelledby="calibration-title">
+  <dialog
+    id="calibration-dialog"
+    class="panel"
+    aria-labelledby="calibration-title"
+  >
     <form id="calibration-form">
       <h2 id="calibration-title">Calibrate screen scale</h2>
       <p>Measure between the two end ticks with your ruler.</p>

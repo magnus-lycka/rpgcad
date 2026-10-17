@@ -7,7 +7,7 @@ import { createCommands } from "./commands.js";
  */
 export function installCommands(definitions, mode, announce, signal) {
   const palette = document.createElement("dialog");
-  palette.className = "command-dialog";
+  palette.className = "command-dialog panel";
   palette.setAttribute("aria-label", "Commands");
   const heading = document.createElement("h2");
   heading.textContent = "Commands";
@@ -21,7 +21,7 @@ export function installCommands(definitions, mode, announce, signal) {
   results.setAttribute("role", "listbox");
   results.setAttribute("aria-label", "Matching commands");
   const help = document.createElement("dialog");
-  help.className = "command-dialog";
+  help.className = "command-dialog panel";
   help.setAttribute("aria-label", "Keyboard shortcuts");
   help.dataset.toggles = "help";
   palette.append(heading, search, results);
@@ -51,6 +51,7 @@ export function installCommands(definitions, mode, announce, signal) {
         ? document.activeElement
         : null;
     dialog.showModal();
+    dialog.scrollTop = 0;
   }
   const commands = createCommands(
     [
@@ -143,7 +144,7 @@ export function installCommands(definitions, mode, announce, signal) {
     help.append(title);
     const policy = document.createElement("p");
     policy.textContent =
-      "Bare keys perform reversible actions; switching context and destructive actions require a modifier. Mod means Ctrl or Command. Fields retain native editing. S export is removed; use Mod+E. Toggle fog uses Shift+F only; plain F fits the plan. Hold Space to pan in either mode; release restores your interaction. The palette arms the next pan drag only; Escape cancels it. Shift-arrows pan in both modes; plain arrows pan in Edit and move the Observer in Play. Clear marks uses Shift+Backspace (Mac Delete ⌫), not forward Delete. ⌘-click a character marker, or press ⌘/Ctrl+Enter on a focused marker, to edit that character.";
+      "Bare keys perform reversible actions; switching context and destructive actions require a modifier. Mod means Ctrl or Command. Fields retain native editing. S export is removed; use Mod+E. Toggle fog uses Shift+F only; plain F fits the plan. Hold Space to pan in either mode; release restores your interaction. The palette arms the next pan drag only; Escape cancels it. Shift-arrows pan in both modes; plain arrows pan in Edit and move the Observer in Play. Clear marks uses Shift+Backspace (Mac Delete ⌫), not forward Delete. Double-click a character marker, or focus it and press Enter, to edit it; ⌘/Ctrl-click or ⌘/Ctrl+Space adds it to the selection and Space selects it alone.";
     help.append(policy);
     for (const scope of ["both", "edit", "play"]) {
       const heading = document.createElement("h3");

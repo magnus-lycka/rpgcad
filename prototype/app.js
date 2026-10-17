@@ -1540,7 +1540,7 @@ function calibrate() {
     const x = (Math.min(i, squares) / squares) * pixels;
     ticks.push(`M ${x} 4 V 28`);
   }
-  ruler.innerHTML = `<path d="M 0 16 H ${pixels} ${ticks.join(" ")}" fill="none" stroke="black" stroke-width="1"/>`;
+  ruler.innerHTML = `<path d="M 0 16 H ${pixels} ${ticks.join(" ")}" fill="none" stroke="currentColor" stroke-width="1"/>`;
   element("calibration-length").textContent =
     `${squares} grid squares · ${calibrationMetres} m`;
   closeComponents();
