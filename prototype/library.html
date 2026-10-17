@@ -87,6 +87,72 @@
     button {
       font: inherit;
     }
+    /* Same dark language as the toolbar and its panels. */
+    body {
+      background: #1b1c1f;
+      color: #d7d8db;
+    }
+    h1,
+    h2 {
+      color: #f3f4f6;
+    }
+    a {
+      color: #8fc2ee;
+    }
+    article,
+    fieldset {
+      background: #26272b;
+      border: 0;
+      border-radius: 9px;
+      color: #d7d8db;
+    }
+    legend,
+    .caption,
+    label {
+      color: #9a9ba1;
+    }
+    input,
+    textarea,
+    select {
+      box-sizing: border-box;
+      padding: 5px 8px;
+      color: #f3f4f6;
+      background: #1b1c1f;
+      border: 1px solid #45464c;
+      border-radius: 5px;
+    }
+    input[type="checkbox"] {
+      accent-color: #176ca4;
+    }
+    button {
+      padding: 6px 10px;
+      color: #d7d8db;
+      background: #35363b;
+      border: 0;
+      border-radius: 5px;
+    }
+    button:hover:not(:disabled) {
+      background: #45464c;
+    }
+    button:disabled {
+      color: #6b6c72;
+    }
+    dialog {
+      color: #d7d8db;
+      background: #26272b;
+      border: 0;
+      border-radius: 9px;
+    }
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.4);
+    }
+    summary {
+      color: #8fc2ee;
+    }
+    :focus-visible {
+      outline: 2px solid #8fc2ee;
+      outline-offset: 2px;
+    }
   </style>
   <h1>Plan library</h1>
   <p><a href="/components.html">Component catalogue</a></p>

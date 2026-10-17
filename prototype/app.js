@@ -2091,9 +2091,18 @@ element("info-dialog").addEventListener("close", () => {
     infoOpener.focus();
   else viewport.focus();
 });
-element("info-close").addEventListener("click", () =>
-  /** @type {HTMLDialogElement} */ (element("info-dialog")).close(),
-);
+for (const id of ["info-dialog", "levels-dialog", "characters-dialog"])
+  element(id)
+    .querySelector(".panel-close")
+    ?.addEventListener("click", () =>
+      /** @type {HTMLDialogElement} */ (element(id)).close(),
+    );
+element("calibration-dialog")
+  .querySelector(".panel-close")
+  ?.addEventListener("click", () => element("cancel-calibration").click());
+characterPopup
+  .querySelector(".panel-close")
+  ?.addEventListener("click", () => closeCharacterPopup());
 window.addEventListener("resize", draw);
 window.addEventListener("beforeprint", () => {
   const p = Geometry.papers[settings.get("paper") === "a3" ? "a3" : "a4"];

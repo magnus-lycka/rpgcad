@@ -144,6 +144,21 @@
     .panel[hidden] {
       display: none;
     }
+    .panel-close {
+      position: sticky;
+      top: 0;
+      float: right;
+      width: 26px;
+      height: 26px;
+      margin: -6px -6px 4px 10px;
+      padding: 0;
+      font-size: 20px;
+      line-height: 1;
+      z-index: 1;
+    }
+    .panel-close::before {
+      content: "\00d7";
+    }
     .panel h2 {
       margin: 0 0 10px;
       font-size: 15px;
@@ -323,40 +338,24 @@
       right: 14px;
       bottom: 14px;
       width: min(360px, calc(100vw - 28px));
-      background: #ffffff;
-      border: 1px solid #adadad;
-      border-radius: 5px;
-      box-shadow: 0 2px 8px #3a3a3a20;
-      font: 13px system-ui;
       display: flex;
       flex-direction: column;
     }
     #component-panel[hidden] {
       display: none;
     }
-    #component-panel header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px;
-      gap: 8px;
-    }
-    #component-panel h2 {
-      font-size: 15px;
+    #component-panel .panel-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
       margin: 0;
-    }
-    #component-panel button {
-      font: inherit;
-      background: white;
-      border: 1px solid #c1c1c1;
-      border-radius: 4px;
-      padding: 5px 8px;
     }
     #component-panel iframe {
       width: 100%;
       min-height: 0;
       flex: 1;
       border: 0;
+      border-radius: 5px;
     }
     @media (max-width: 600px) {
       #component-panel {
@@ -399,54 +398,12 @@
       --panel-selected: #eeeeee;
       --panel-type: 0.875rem;
     }
-    #component-panel {
-      color: var(--panel-ink);
-      background: var(--panel-paper);
-      font:
-        400 var(--panel-type)/1.45 system-ui,
-        sans-serif;
-      border: 1px solid var(--panel-rule);
-      border-top: 2px solid var(--panel-accent);
-      border-radius: 0;
-      box-shadow: none;
-      box-sizing: border-box;
-      scrollbar-color: var(--panel-rule) var(--panel-paper);
-    }
-    #component-panel button {
-      font: inherit;
-      font-weight: 550;
-      color: var(--panel-ink);
-      background: #ffffff;
-      border: 1px solid var(--panel-rule);
-      border-radius: 3px;
-      padding: 6px 9px;
-      margin: 0;
-      min-height: 32px;
-      line-height: 1.25;
-      cursor: pointer;
-    }
-    #component-panel button:hover:not(:disabled) {
-      border-color: var(--panel-accent);
-      background: #f2f2f2;
-    }
-    #component-panel button:disabled {
-      color: #808080;
-      background: #f0f0f0;
-      cursor: default;
-    }
-    #component-panel :is(button, a, input, select, summary):focus-visible {
-      outline: 2px solid var(--panel-accent);
-      outline-offset: 3px;
-    }
     #fog-status {
       font-size: 0.75rem;
       color: var(--panel-muted);
       font-variant-numeric: tabular-nums;
     }
     /* Appearance follows interaction: tools, tabs, disclosure, commands, navigation. */
-    :is(#component-panel) [hidden] {
-      display: none !important;
-    }
     /* Compact Designer bar: context above commands, overflow below. */
     .zoom-entry {
       display: flex;
@@ -749,6 +706,7 @@
     aria-label="Characters"
     data-toggles="characters"
   >
+    <button type="button" class="panel-close" aria-label="Close"></button>
     <h2>Characters</h2>
     <p id="characters-empty" hidden>No characters in this plan.</p>
     <ul id="characters-list"></ul>
@@ -759,10 +717,17 @@
     aria-label="Levels"
     data-toggles="levels"
   >
+    <button type="button" class="panel-close" aria-label="Close"></button>
     <h2>Levels</h2>
     <ul id="levels-list"></ul>
   </dialog>
   <dialog id="info-dialog" class="panel" aria-label="Info" data-toggles="info">
+    <button
+      type="button"
+      id="info-close"
+      class="panel-close"
+      aria-label="Close"
+    ></button>
     <h2>Info</h2>
     <dl>
       <dt>Plan</dt>
@@ -770,13 +735,20 @@
       <dt>Level</dt>
       <dd id="info-level"></dd>
     </dl>
-    <button id="info-close">Close</button>
   </dialog>
-  <section id="component-panel" aria-label="Component browser" hidden>
-    <header>
-      <h2>Components</h2>
-      <button id="close-components">Close components</button>
-    </header>
+  <section
+    id="component-panel"
+    class="panel"
+    aria-label="Component browser"
+    hidden
+  >
+    <button
+      type="button"
+      id="close-components"
+      class="panel-close"
+      aria-label="Close components"
+    ></button>
+    <h2>Components</h2>
     <iframe title="Component catalogue" src="about:blank"></iframe>
   </section>
   <div
@@ -786,6 +758,7 @@
     aria-label="Character"
     hidden
   >
+    <button type="button" class="panel-close" aria-label="Close"></button>
     <h2 id="character-group-title" hidden></h2>
     <label id="character-name-label"
       >Name
@@ -815,6 +788,7 @@
     aria-labelledby="calibration-title"
   >
     <form id="calibration-form">
+      <button type="button" class="panel-close" aria-label="Close"></button>
       <h2 id="calibration-title">Calibrate screen scale</h2>
       <p>Measure between the two end ticks with your ruler.</p>
       <svg

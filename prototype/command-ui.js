@@ -24,7 +24,16 @@ export function installCommands(definitions, mode, announce, signal) {
   help.className = "command-dialog panel";
   help.setAttribute("aria-label", "Keyboard shortcuts");
   help.dataset.toggles = "help";
-  palette.append(heading, search, results);
+  /** @param {HTMLDialogElement} dialog */
+  const closeButton = (dialog) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "panel-close";
+    button.setAttribute("aria-label", "Close");
+    button.addEventListener("click", () => close(dialog));
+    return button;
+  };
+  palette.append(closeButton(palette), heading, search, results);
   document.body.append(palette, help);
   /** @type {HTMLElement|SVGElement|null} */
   let previous = null;
@@ -138,7 +147,7 @@ export function installCommands(definitions, mode, announce, signal) {
   }
   function showHelp() {
     if (help.open) return close(help);
-    help.replaceChildren();
+    help.replaceChildren(closeButton(help));
     const title = document.createElement("h2");
     title.textContent = "Keyboard shortcuts";
     help.append(title);
@@ -164,10 +173,6 @@ export function installCommands(definitions, mode, announce, signal) {
           help.append(row);
         }
     }
-    const button = document.createElement("button");
-    button.textContent = "Close";
-    button.addEventListener("click", () => close(help));
-    help.append(button);
     open(help);
   }
   search.addEventListener("input", () => {

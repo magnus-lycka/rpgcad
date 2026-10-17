@@ -27,7 +27,10 @@ test("the Levels list shows levels top first, marks the current one and switches
   await toolbar.getByRole("button", { name: "Levels", exact: true }).click();
   const list = page.getByRole("dialog", { name: "Levels" });
   await expect(list).toBeVisible();
-  await expect(list.getByRole("button")).toHaveText([/Ground/, /Maintenance/]);
+  await expect(list.locator("#levels-list button")).toHaveText([
+    /Ground/,
+    /Maintenance/,
+  ]);
   await expect(list.getByRole("button", { name: /Ground/ })).toHaveAttribute(
     "aria-current",
     "true",
