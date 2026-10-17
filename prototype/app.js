@@ -24,6 +24,67 @@ let zoomReference = {
 /** @type {{x:number,y:number,cx:number,cy:number}|null} */
 let drag = null;
 const settings = new URLSearchParams(location.search);
+// Calibration depends on the display; the view depends on the plan and level.
+const calibrationKey = `rpgcad.calibration.${screen.width}x${screen.height}@${devicePixelRatio}`;
+const viewKey = `rpgcad.view.${settings.get("plan") || "default"}.${settings.get("level") || "first"}`;
+let storageProblem = "";
+/** @param {string} key */
+function readStored(key) {
+  try {
+    const text = localStorage.getItem(key);
+    return text === null ? null : JSON.parse(text);
+  } catch (error) {
+    storageProblem = `Browser storage problem (${key}): ${error}`;
+    return null;
+  }
+}
+/** @param {string} key @param {unknown} value */
+function writeStored(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    storageProblem = `Browser storage problem (${key}): ${error}`;
+  }
+}
+/** @param {unknown} n */
+function positive(n) {
+  return typeof n === "number" && Number.isFinite(n) && n > 0;
+}
+const storedCalibration = readStored(calibrationKey);
+if (storedCalibration !== null) {
+  if (
+    positive(storedCalibration.mpp) &&
+    positive(storedCalibration.scale) &&
+    storedCalibration.calibrated === true
+  )
+    zoomReference = storedCalibration;
+  else storageProblem = `Stored calibration (${calibrationKey}) is invalid.`;
+}
+let viewSettled = false;
+let restoredView = false;
+let savedViewJson = "";
+function restoreView() {
+  const stored = readStored(viewKey);
+  if (stored === null) return false;
+  if (
+    !positive(stored.mpp) ||
+    !Number.isFinite(stored.x) ||
+    !Number.isFinite(stored.y)
+  ) {
+    storageProblem = `Stored view (${viewKey}) is invalid.`;
+    return false;
+  }
+  camera = { x: stored.x, y: stored.y, mpp: stored.mpp };
+  restoredView = true;
+  return true;
+}
+function persistView() {
+  if (!viewSettled) return;
+  const json = JSON.stringify(camera);
+  if (json === savedViewJson) return;
+  savedViewJson = json;
+  writeStored(viewKey, camera);
+}
 let editing =
   settings.get("mode") === "edit" ||
   (settings.get("mode") !== "play" && settings.get("fog") !== "1");
@@ -288,6 +349,8 @@ let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
 /** @type {{id:string,x:number,y:number,at:number[],preview?:number[]}|null} */
 let characterDrag = null;
+/** @type {Map<string, number[]>} */
+const pendingPositions = new Map();
 let characterSaveError = "";
 const OBSERVER_RANGE = 6;
 const characterPopup = element("character-popup");
@@ -303,7 +366,7 @@ function syncPov() {
 }
 /** @param {string} id @param {number[]|null} [at] */
 async function characterAction(id, at = null) {
-  if (savingCharacters || savingExploration) return;
+  await settled();
   const c = characterState.characters.find((c) => c.id === id);
   if (!c) return;
   selectedCharacter = id;
@@ -509,7 +572,7 @@ function characterDrawing() {
     )
     .map(
       (c) =>
-        `<g data-character="${Geometry.esc(c.id)}" data-selected="${c.id === selectedCharacter}" data-pov="${c.id === characterState.pov}" role="button" tabindex="0" aria-label="${Geometry.esc(c.name)} ${c.kind.toUpperCase()}${c.id === characterState.pov ? " · POV" : c.id === selectedCharacter ? " · Selected" : ""}" transform="translate(${(characterDrag?.id === c.id ? (characterDrag.preview ?? c.at) : c.at).join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><path d="M -.48 0 A .48 .48 0 1 0 .48 0 A .48 .48 0 1 0 -.48 0" fill="none" stroke="${c.id === selectedCharacter ? "#176ca4" : "none"}" stroke-width=".04" stroke-dasharray=".08 .06"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
+        `<g data-character="${Geometry.esc(c.id)}" data-selected="${c.id === selectedCharacter}" data-pov="${c.id === characterState.pov}" role="button" tabindex="0" aria-label="${Geometry.esc(c.name)} ${c.kind.toUpperCase()}${c.id === characterState.pov ? " · POV" : c.id === selectedCharacter ? " · Selected" : ""}" transform="translate(${(characterDrag?.id === c.id ? (characterDrag.preview ?? c.at) : (pendingPositions.get(c.id) ?? c.at)).join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><path d="M -.48 0 A .48 .48 0 1 0 .48 0 A .48 .48 0 1 0 -.48 0" fill="none" stroke="${c.id === selectedCharacter ? "#176ca4" : "none"}" stroke-width=".04" stroke-dasharray=".08 .06"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
     )
     .join("");
 }
@@ -530,7 +593,11 @@ async function pollCharacters() {
   refreshCharacterControls();
   syncPov();
   updateVisibility();
-  if (first && characterState.characters.some((c) => c.level === currentLevel))
+  if (
+    first &&
+    !restoredView &&
+    characterState.characters.some((c) => c.level === currentLevel)
+  )
     fit();
   else draw();
 }
@@ -544,7 +611,11 @@ function updateBusyControls() {
     ? "Saving character…"
     : characterSaveError;
   element("problem").textContent =
-    rosterError || characterSaveError || explorationSaveError || commandProblem;
+    storageProblem ||
+    rosterError ||
+    characterSaveError ||
+    explorationSaveError ||
+    commandProblem;
   for (const id of [
     "character-range",
     "add-pc",
@@ -982,6 +1053,7 @@ function draw() {
     String(!(fogEnabled && gmView)),
   );
   positionCharacterPopup();
+  persistView();
 }
 function fit() {
   let b = Geometry.bounds(model);
@@ -1024,7 +1096,10 @@ async function poll() {
       commandUi.refreshAvailability();
       if (fogEnabled && exploration) updateVisibility();
       if (first) {
-        fit();
+        if (restoreView()) draw();
+        else fit();
+        viewSettled = true;
+        updateBusyControls();
         document.querySelectorAll("[data-calibrate]").forEach((button) => {
           button.removeAttribute("disabled");
         });
@@ -1132,8 +1207,13 @@ viewport.addEventListener("pointerup", (event) => {
       ) >= 4;
     const destination = characterDrag.preview ?? characterDrag.at;
     characterDrag = null;
+    if (c && moved) pendingPositions.set(c.id, destination);
     draw();
-    if (c) characterAction(c.id, moved ? destination : null);
+    if (c)
+      characterAction(c.id, moved ? destination : null).finally(() => {
+        pendingPositions.delete(c.id);
+        draw();
+      });
     return;
   }
   if (penStroke) {
@@ -1159,7 +1239,7 @@ viewport.addEventListener("pointerup", (event) => {
       doorPointerTarget = at;
       commandUi.execute("toggle-door");
       doorPointerTarget = null;
-    } else placeObserver(at);
+    } else if (!characterState.characters.length) placeObserver(at);
   }
   drag = null;
   if (panNextDrag) cancelTemporaryPan();
@@ -1283,6 +1363,7 @@ element("calibration-form").addEventListener("submit", (event) => {
     scale: scale.valueAsNumber,
     calibrated: true,
   };
+  writeStored(calibrationKey, zoomReference);
   zoom(factor);
   calibrationDialog.close();
 });

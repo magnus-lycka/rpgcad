@@ -308,3 +308,17 @@ test("a command refused because a save is in flight says so instead of doing not
   release();
   await expect(page.getByRole("alert")).toBeHidden();
 });
+
+test("Zoom to 100% comes before Fit, away from the fog reset icon", async ({
+  page,
+}) => {
+  await page.goto("/?mode=play");
+  const names = await page
+    .getByRole("toolbar", { name: "Toolbar", exact: true })
+    .getByRole("button")
+    .evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute("aria-label")),
+    );
+  expect(names.indexOf("Zoom to 100%")).toBeGreaterThan(-1);
+  expect(names.indexOf("Zoom to 100%")).toBe(names.indexOf("Fit plan") - 1);
+});
