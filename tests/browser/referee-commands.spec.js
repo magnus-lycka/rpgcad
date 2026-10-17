@@ -109,7 +109,7 @@ test("Observer movement, range and reset share palette bindings and persist", as
   await expect(page.getByRole("option")).toHaveCount(0);
 });
 
-test("Referee character commands explain targets and perform saved actions from the palette", async ({
+test("Add PC is offered by the palette and the A key and saves a character", async ({
   page,
   request,
 }) => {
@@ -123,25 +123,12 @@ test("Referee character commands explain targets and perform saved actions from 
     "data-observers",
     /./,
   );
-  async function palette(name, execute = true) {
-    await expect(page.locator("#add-pc")).toBeEnabled();
-    await page.keyboard.press("/");
-    await page
-      .getByRole("dialog", { name: "Commands", exact: true })
-      .getByRole("combobox")
-      .fill(name);
-    if (execute) {
-      await expect(
-        page
-          .getByRole("dialog", { name: "Commands", exact: true })
-          .getByRole("option"),
-      ).toHaveAttribute("aria-disabled", "false");
-      await page.keyboard.press("Enter");
-    }
-  }
-  await palette("Remove character", false);
-  await expect(page.getByRole("option")).toContainText("Select a character");
-  await page.getByRole("combobox").fill("Add PC");
+  await expect(page.locator("#add-pc")).toBeEnabled();
+  await page.keyboard.press("/");
+  await page
+    .getByRole("dialog", { name: "Commands", exact: true })
+    .getByRole("combobox")
+    .fill("Add PC");
   await expect(
     page.getByRole("option", { name: "Add PC (A)", exact: true }),
   ).toHaveAttribute("aria-disabled", "false");
@@ -153,75 +140,6 @@ test("Referee character commands explain targets and perform saved actions from 
         (await (await request.get("/characters")).json()).characters.length,
     )
     .toBe(1);
-  await expect(page.locator("#add-pc")).toBeEnabled();
-  await page.keyboard.press("t");
-  await expect(
-    page.getByRole("tab", { name: "Characters", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  await page.locator("#character-name").fill("Keyboard PC");
-  await page.locator("#viewport").focus();
-  await palette("Rename character");
-  await expect
-    .poll(
-      async () =>
-        (await (await request.get("/characters")).json()).characters[0].name,
-    )
-    .toBe("Keyboard PC");
-  await expect(page.locator("#add-pc")).toBeEnabled();
-  await page.keyboard.press("d");
-  await expect(page.locator("#character-options")).toHaveAttribute("open", "");
-  await palette("Remove character");
-  await expect
-    .poll(
-      async () =>
-        (await (await request.get("/characters")).json()).characters.length,
-    )
-    .toBe(0);
-});
-
-test("Move to level requires a different destination and preserves the character through navigation", async ({
-  page,
-  request,
-}) => {
-  const previous = await request.get("/characters");
-  await request.put("/characters", {
-    headers: { "If-Match": previous.headers().etag },
-    data: {
-      characters: [
-        {
-          id: "transfer-key",
-          name: "Traveller",
-          kind: "pc",
-          level: "original",
-          at: [0, 0],
-          range: 6,
-        },
-      ],
-      pov: "transfer-key",
-    },
-  });
-  await page.goto("/?mode=play");
-  await expect(page.locator("#viewport")).toHaveAttribute(
-    "data-observers",
-    /transfer-key/,
-  );
-  await page.keyboard.press("/");
-  await page.getByRole("combobox").fill("Move to level");
-  await expect(page.getByRole("option")).toContainText(
-    "Choose a different level",
-  );
-  await page.keyboard.press("Escape");
-  await page.keyboard.press("t");
-  await page.locator("#character-level").selectOption("below");
-  await page.locator("#viewport").focus();
-  await page.keyboard.press("Shift+M");
-  await expect(page).toHaveURL(/level=below/);
-  await expect
-    .poll(
-      async () =>
-        (await (await request.get("/characters")).json()).characters[0].level,
-    )
-    .toBe("below");
 });
 
 test("door command targets a nearby Observer and explains when no opening is in reach", async ({

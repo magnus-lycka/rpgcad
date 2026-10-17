@@ -126,72 +126,42 @@
       height: 16px;
       display: block;
     }
-    #edit-palette {
-      position: fixed;
-      top: calc(var(--toolbar-height, 36px) + 12px);
-      left: 14px;
-      max-width: calc(100vw - 44px);
-      padding: 8px;
-      background: #fafafaf5;
-      border: 1px solid #adadad;
-      border-radius: 5px;
-      box-shadow: 0 2px 8px #3a3a3a20;
-      font: 13px system-ui;
-    }
-    #edit-palette[hidden] {
-      display: none;
-    }
-    #edit-palette strong {
-      display: block;
-      font-size: 11px;
-      margin-bottom: 5px;
-      color: #646464;
-    }
-    #edit-palette button {
-      font: inherit;
-      padding: 5px 9px;
-      margin: 0;
-      border: 1px solid #c1c1c1;
-      border-radius: 4px;
-      background: white;
-      color: #313131;
-    }
-    .drawing-context {
-      display: grid;
-      gap: 2px;
-      margin-bottom: 8px;
-      min-width: 0;
-      max-width: 32ch;
-      overflow-wrap: anywhere;
-      line-height: 1.35;
-    }
-    .context-plan {
-      font-weight: 650;
-      color: #313131;
-    }
-    .context-level {
-      color: #646464;
-    }
-    #edit-palette button[aria-pressed="true"] {
-      background: #e4e4e4;
-      border: 1px solid #616161;
-    }
-    .sketch-options {
-      position: relative;
-    }
-    #sketch-menu {
+    .sr-only {
       position: absolute;
-      top: calc(100% + 5px);
-      left: 0;
-      padding: 6px;
-      background: white;
-      border: 1px solid #adadad;
-      border-radius: 4px;
-      z-index: 1;
-      min-width: max-content;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
     }
-    #sketch-menu[hidden] {
+    #character-popup {
+      position: fixed;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 220px;
+      padding: 12px;
+      box-sizing: border-box;
+      font: 13px system-ui;
+      color: #222222;
+      background: #ffffff;
+      border: 1px solid #adadad;
+      border-top: 2px solid #222222;
+      box-shadow: 0 2px 10px #00000022;
+    }
+    #character-popup[hidden] {
       display: none;
+    }
+    #character-popup label {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    #character-popup input,
+    #character-popup select {
+      font: inherit;
+      padding: 4px 6px;
     }
     #problem {
       position: fixed;
@@ -221,21 +191,6 @@
       display: block;
       margin-top: 0;
       line-height: 1.4;
-    }
-    .tool-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 5px;
-    }
-    .tool-row + .tool-row {
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px solid #dddddd;
-    }
-    #edit-palette a {
-      padding: 5px;
-      color: #313131;
     }
     button:focus-visible,
     a:focus-visible,
@@ -302,79 +257,6 @@
         max-height: 58vh;
       }
     }
-    #gm-panel {
-      position: fixed;
-      top: calc(var(--toolbar-height, 36px) + 12px);
-      right: 12px;
-      background: #ffffff;
-      border: 1px solid #828282;
-      padding: 16px;
-      font: 15px system-ui;
-      box-shadow: 0 2px 10px #00000022;
-      box-sizing: border-box;
-      width: min(312px, calc(100vw - 24px));
-      max-height: calc(100vh - 24px);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    #gm-panel[hidden] {
-      display: none;
-    }
-    #gm-panel > section {
-      overflow-y: auto;
-      min-height: 0;
-    }
-    #gm-panel .gm-header,
-    #gm-panel .gm-navigation {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-    #gm-panel .gm-navigation {
-      border-top: 1px solid #dddddd;
-      padding-top: 8px;
-    }
-    #gm-panel .tool-row {
-      flex-shrink: 0;
-      flex-wrap: wrap;
-    }
-    #gm-panel button[aria-pressed="true"] {
-      background: #e8e8e8;
-      border-color: #5c5c5c;
-    }
-    #gm-panel :is(button, a, input, select):focus-visible {
-      outline: 2px solid #626262;
-      outline-offset: 2px;
-    }
-    #gm-panel strong {
-      display: block;
-      margin-top: 10px;
-    }
-    #gm-panel label {
-      display: block;
-      margin: 10px 0;
-    }
-    #gm-panel input {
-      width: 70px;
-      font: inherit;
-    }
-    #gm-panel #character-name {
-      width: 150px;
-    }
-    #gm-panel select {
-      font: inherit;
-      max-width: 100%;
-    }
-    #gm-panel button {
-      font: inherit;
-      margin: 5px 5px 5px 0;
-    }
-    #gm-panel p {
-      margin: 8px 0;
-      font-size: 13px;
-    }
     #calibration-dialog {
       border: 1px solid #adadad;
       border-radius: 8px;
@@ -424,11 +306,6 @@
     .page svg {
       display: block;
     }
-    @media (max-width: 600px) {
-      #gm-panel {
-        max-height: 40vh;
-      }
-    }
     /* Quiet, shared instrument-panel typography. */
     :root {
       --panel-paper: #ffffff;
@@ -439,7 +316,7 @@
       --panel-selected: #eeeeee;
       --panel-type: 0.875rem;
     }
-    :is(#edit-palette, #gm-panel, #component-panel, #calibration-dialog) {
+    :is(#component-panel, #calibration-dialog) {
       color: var(--panel-ink);
       background: var(--panel-paper);
       font:
@@ -452,47 +329,7 @@
       box-sizing: border-box;
       scrollbar-color: var(--panel-rule) var(--panel-paper);
     }
-    #edit-palette {
-      padding: 12px;
-      max-height: calc(100dvh - 28px);
-      overflow-y: auto;
-    }
-    #gm-panel {
-      width: min(340px, calc(100vw - 24px));
-      padding: 14px;
-      gap: 12px;
-      max-height: calc(100dvh - 24px);
-    }
-    :is(#edit-palette, #gm-panel) strong {
-      font-size: var(--panel-type);
-      font-weight: 650;
-      color: var(--panel-accent);
-      margin: 0;
-    }
-    #edit-palette > strong {
-      margin-bottom: 8px;
-    }
-    .drawing-context {
-      margin: 0 0 4px;
-      gap: 1px;
-      max-width: 34ch;
-      flex-shrink: 0;
-    }
-    .context-plan {
-      color: var(--panel-ink);
-      font-size: 1rem;
-      font-weight: 650;
-      line-height: 1.3;
-    }
-    .context-level {
-      color: var(--panel-muted);
-      font-size: var(--panel-type);
-    }
-    #edit-palette .drawing-context {
-      margin-bottom: 12px;
-    }
-    :is(#edit-palette, #gm-panel, #component-panel, #calibration-dialog)
-      button {
+    :is(#component-panel, #calibration-dialog) button {
       font: inherit;
       font-weight: 550;
       color: var(--panel-ink);
@@ -505,23 +342,16 @@
       line-height: 1.25;
       cursor: pointer;
     }
-    :is(#edit-palette, #gm-panel, #component-panel, #calibration-dialog)
-      button:hover:not(:disabled) {
+    :is(#component-panel, #calibration-dialog) button:hover:not(:disabled) {
       border-color: var(--panel-accent);
       background: #f2f2f2;
     }
-    :is(#edit-palette, #gm-panel) button[aria-pressed="true"] {
-      background: var(--panel-selected);
-      color: #222222;
-      border-color: #777777;
-    }
-    :is(#edit-palette, #gm-panel, #component-panel, #calibration-dialog)
-      button:disabled {
+    :is(#component-panel, #calibration-dialog) button:disabled {
       color: #808080;
       background: #f0f0f0;
       cursor: default;
     }
-    :is(#gm-panel, #calibration-dialog) :is(input, select) {
+    :is(#calibration-dialog) :is(input, select) {
       display: block;
       width: 100%;
       max-width: 100%;
@@ -537,10 +367,7 @@
       border-radius: 3px;
       caret-color: var(--panel-accent);
     }
-    #gm-panel #character-name {
-      width: 100%;
-    }
-    :is(#gm-panel, #calibration-dialog) label {
+    :is(#calibration-dialog) label {
       display: block;
       margin: 0 0 10px;
       color: var(--panel-muted);
@@ -548,259 +375,21 @@
       font-weight: 500;
       line-height: 1.4;
     }
-    :is(#gm-panel) p {
-      margin: 10px 0 0;
-      color: var(--panel-muted);
-      font-size: 0.8125rem;
-      line-height: 1.5;
-      max-width: 45ch;
-    }
-    #character-details > button {
-      margin-bottom: 12px;
-    }
-    #character-options {
-      margin: 2px 0 12px;
-      padding: 8px 0;
-      border-block: 1px solid var(--panel-rule);
-    }
-    #character-options summary {
-      cursor: pointer;
-      color: var(--panel-muted);
-    }
-    #character-options[open] > button {
-      margin-top: 8px;
-    }
-    #gm-exploration > button {
-      display: block;
-      margin-top: 8px;
-    }
-    #gm-panel #reset-fog {
-      color: var(--panel-accent);
-    }
-    #gm-panel .gm-navigation {
-      border-color: var(--panel-rule);
-      padding-top: 12px;
-      gap: 8px;
-    }
-    #gm-panel [aria-label="GM activities"] {
-      gap: 4px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--panel-rule);
-    }
-    .tool-row {
-      gap: 6px;
-    }
-    #edit-palette .tool-row + .tool-row {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-color: var(--panel-rule);
-    }
-    :is(#edit-palette, #gm-panel) a {
-      color: var(--panel-muted);
-      text-underline-offset: 3px;
-      padding: 5px;
-    }
-    :is(#edit-palette, #gm-panel, #component-panel, #calibration-dialog)
+    :is(#component-panel, #calibration-dialog)
       :is(button, a, input, select, summary):focus-visible {
       outline: 2px solid var(--panel-accent);
       outline-offset: 3px;
-    }
-    :is(#edit-palette, #gm-panel) ::selection {
-      color: var(--panel-ink);
-      background: var(--panel-selected);
     }
     #fog-status {
       font-size: 0.75rem;
       color: var(--panel-muted);
       font-variant-numeric: tabular-nums;
     }
-    #sketch-menu {
-      background: var(--panel-paper);
-      border-color: var(--panel-rule);
-    }
-    @media (max-width: 600px) {
-      #gm-panel {
-        max-height: calc(100dvh - 24px);
-      }
-    }
     /* Appearance follows interaction: tools, tabs, disclosure, commands, navigation. */
-    #edit-palette [aria-label="Design tools"] {
-      gap: 8px;
-    }
-    .tool-choice {
-      display: inline-flex;
-      gap: 0;
-      border: 1px solid var(--panel-rule);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    #edit-palette .tool-choice button {
-      border: 0;
-      border-radius: 0;
-      min-width: 48px;
-    }
-    #edit-palette .tool-choice button + button {
-      border-left: 1px solid var(--panel-rule);
-    }
-    #edit-palette .tool-choice button[aria-pressed="true"] {
-      background: var(--panel-accent);
-      color: white;
-    }
-    #edit-palette button[aria-expanded]::after {
-      content: "";
-      display: inline-block;
-      width: 5px;
-      height: 5px;
-      border-right: 1px solid currentColor;
-      border-bottom: 1px solid currentColor;
-      transform: rotate(45deg);
-      vertical-align: 3px;
-      margin-left: 9px;
-    }
-    #edit-palette button[aria-expanded="true"]::after {
-      transform: rotate(225deg);
-      vertical-align: 0;
-    }
-    #gm-panel [role="tablist"] {
-      display: flex;
-      gap: 0;
-      padding: 0;
-      border-bottom: 1px solid var(--panel-rule);
-    }
-    #gm-panel [role="tab"] {
-      flex: 1;
-      background: transparent;
-      color: var(--panel-muted);
-      border: 0;
-      border-bottom: 2px solid transparent;
-      border-radius: 0;
-      padding: 8px 4px;
-      font-weight: 500;
-    }
-    #gm-panel [role="tab"][aria-selected="true"] {
-      color: var(--panel-accent);
-      border-bottom-color: var(--panel-accent);
-      font-weight: 650;
-    }
-    #gm-panel [role="tab"]:hover {
-      background: var(--panel-selected);
-    }
-    #gm-panel [role="tab"]:focus-visible {
-      outline-offset: -3px;
-    }
-    :is(#edit-palette, #gm-panel)
-      nav:is(
-        [aria-label="Designer navigation"],
-        [aria-label="Play navigation"]
-      ) {
-      justify-content: space-between;
-      align-items: center;
-    }
-    :is(#edit-palette, #gm-panel)
-      nav:is([aria-label="Designer navigation"], [aria-label="Play navigation"])
-      :is(a, button) {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 32px;
-      box-sizing: border-box;
-      padding: 6px 9px;
-      border: 1px solid var(--panel-rule);
-      border-radius: 3px;
-      background: transparent;
-      color: var(--panel-ink);
-      font: inherit;
-      font-weight: 550;
-      text-decoration: none;
-      line-height: 1.25;
-    }
-    :is(#edit-palette, #gm-panel)
-      nav:is([aria-label="Designer navigation"], [aria-label="Play navigation"])
-      :is(a, button):hover {
-      background: var(--panel-selected);
-      border-color: var(--panel-accent);
-    }
-    #gm-panel .field-note {
-      margin: -4px 0 12px;
-      font-size: 0.75rem;
-      color: var(--panel-muted);
-    }
-    #gm-panel #character-range-label[hidden] + .field-note {
-      display: none;
-    }
-    :is(#edit-palette, #gm-panel, #component-panel) [hidden] {
+    :is(#component-panel) [hidden] {
       display: none !important;
     }
     /* Compact Designer bar: context above commands, overflow below. */
-    #edit-palette {
-      padding: 6px;
-      border-top-width: 1px;
-      max-width: calc(100vw - 28px);
-      overflow: visible;
-    }
-    #edit-palette .drawing-context {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      max-width: 100%;
-      margin: 0 2px 5px;
-    }
-    #edit-palette .context-plan,
-    #edit-palette .context-level {
-      font-size: 12px;
-    }
-    #edit-palette .context-level::before {
-      content: "/ ";
-    }
-    #edit-palette [role="toolbar"] {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-    }
-    #edit-palette .tool-row,
-    #edit-palette [aria-label="Design tools"] {
-      gap: 3px;
-    }
-    #edit-palette .tool-row + .tool-row {
-      margin: 0;
-      padding: 0 0 0 6px;
-      border-top: 0;
-      border-left: 1px solid var(--panel-rule);
-    }
-    #edit-palette button {
-      min-height: 30px;
-      padding: 3px 6px;
-    }
-    #edit-palette .tool-choice button {
-      min-width: 36px;
-    }
-    #edit-palette [data-command-icon] {
-      min-width: 30px;
-      font-size: 18px;
-    }
-    #edit-palette #sketch-options::after {
-      display: none;
-    }
-    #zoom-controls {
-      position: relative;
-    }
-    #zoom-controls summary {
-      cursor: pointer;
-      border: 1px solid var(--panel-rule);
-      padding: 5px 7px;
-    }
-    #zoom-controls .zoom-menu {
-      position: absolute;
-      top: calc(100% + 5px);
-      right: 0;
-      display: flex;
-      gap: 3px;
-      padding: 6px;
-      background: var(--panel-paper);
-      border: 1px solid var(--panel-rule);
-      z-index: 1;
-    }
     .zoom-entry {
       display: flex;
       gap: 6px;
@@ -812,43 +401,6 @@
     .zoom-entry input {
       width: 7ch;
     }
-    #zoom-controls .zoom-menu {
-      flex-wrap: wrap;
-      width: 245px;
-      max-width: calc(100vw - 42px);
-    }
-    #zoom-percent {
-      pointer-events: none;
-      min-width: 4ch;
-      text-align: center;
-      font-size: 12px;
-    }
-    #edit-palette #play-mode {
-      border-color: transparent;
-      color: var(--panel-muted);
-    }
-    #edit-palette #sketch-status {
-      font-size: 12px;
-    }
-    #sketch-menu {
-      left: auto;
-      right: 0;
-    }
-    #sketch-menu button {
-      display: block;
-      width: 100%;
-      text-align: left;
-    }
-    @media (max-width: 600px) {
-      #edit-palette {
-        max-height: calc(100dvh - 28px);
-        overflow-y: auto;
-      }
-      #sketch-menu,
-      #zoom-controls .zoom-menu {
-        position: static;
-      }
-    }
     @media print {
       html,
       body {
@@ -856,10 +408,10 @@
         overflow: visible;
       }
       #viewport,
-      #gm-panel,
       #component-panel,
-      #edit-palette,
       #toolbar,
+      #character-popup,
+      #problem,
       #calibration-dialog {
         display: none;
       }
@@ -1244,73 +796,28 @@
     </header>
     <iframe title="Component catalogue" src="about:blank"></iframe>
   </section>
-  <section id="gm-panel" aria-label="GM controls" hidden>
-    <header class="gm-header">
-      <strong>Referee</strong
-      ><button id="close-gm" title="Close controls · Shift-G">Close</button>
-    </header>
-    <div
-      class="drawing-context"
-      data-drawing-context
-      aria-label="Current plan and level"
-    >
-      <span class="context-plan"></span>
-      <span class="context-level"></span>
-    </div>
-    <nav aria-label="GM activities" class="tool-row" role="tablist">
-      <button
-        id="gm-tab-characters"
-        role="tab"
-        data-gm-section="characters"
-        aria-selected="true"
-        tabindex="0"
-        aria-controls="gm-characters"
-      >
-        Characters
-      </button>
-    </nav>
-    <section
-      role="tabpanel"
-      aria-labelledby="gm-tab-characters"
-      id="gm-characters"
-      aria-label="Characters"
-    >
-      <label
-        >Character
-        <select id="character-list" aria-label="Character">
-          <option value="">Choose character</option>
-        </select></label
-      >
-      <div id="roster-character-details">
-        <div id="character-details">
-          <label
-            >Character name
-            <input id="character-name" type="text" maxlength="80"
-          /></label>
-          <button id="rename-character">Rename</button>
-          <label id="character-range-label"
-            >Selected character visual range (m)<input
-              id="character-range"
-              type="number"
-              min="0.1"
-              step="0.5"
-          /></label>
-          <p class="field-note">Range changes save automatically.</p>
-          <details id="character-options">
-            <summary>Character options</summary>
-            <button id="remove-character">Remove character</button>
-          </details>
-          <label
-            >Destination level
-            <select id="character-level" aria-label="Destination level"></select
-          ></label>
-          <button id="transfer-character">Move to level</button>
-          <output id="character-action-status" aria-live="polite"></output>
-        </div>
-      </div>
-    </section>
-    <output id="fog-status" aria-live="polite"></output>
-  </section>
+  <div id="character-popup" role="dialog" aria-label="Character" hidden>
+    <label
+      >Name
+      <input id="character-name" type="text" maxlength="80" aria-label="Name"
+    /></label>
+    <label
+      >Visual range (m)
+      <input
+        id="character-range"
+        type="number"
+        min="0.1"
+        step="0.5"
+        aria-label="Visual range (m)"
+    /></label>
+    <label
+      >Move to level
+      <select id="character-level" aria-label="Move to level"></select
+    ></label>
+    <button id="remove-character">Remove character</button>
+    <output id="character-action-status" aria-live="polite"></output>
+  </div>
+  <output id="fog-status" class="sr-only" aria-live="polite"></output>
   <dialog id="calibration-dialog" aria-labelledby="calibration-title">
     <form id="calibration-form">
       <h2 id="calibration-title">Calibrate screen scale</h2>

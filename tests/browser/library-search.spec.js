@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { addCharacter } from "./helpers.js";
 
 test("text search finds names, descriptions and tags and identifies matching levels", async ({
   page,
@@ -125,9 +126,7 @@ test("saved play activity becomes visible in last-played filters and ordering wi
   );
   await page.goto("/?plan=ancient&level=original&mode=play");
   await expect(page.locator("#viewport")).toContainText("DEPOT");
-  await page.keyboard.press("Shift+G");
-  await page.getByLabel("Character name").fill("Wreck sentinel");
-  await page.getByRole("button", { name: "Add NPC", exact: true }).click();
+  await addCharacter(page, "npc", "Wreck sentinel");
   await expect
     .poll(
       async () =>

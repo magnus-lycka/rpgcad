@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { preserveBrowserFixture } from "../fixtures/browser-state.js";
+import { openCharacter } from "./helpers.js";
 
 preserveBrowserFixture(test);
 
@@ -49,14 +50,28 @@ test("Referee can return to Edit without losing the view or latest marks", async
 
 test("select controls suppress map shortcuts while editing a choice", async ({
   page,
+  request,
 }) => {
+  const previous = await request.get("/characters");
+  await request.put("/characters", {
+    headers: { "If-Match": previous.headers().etag },
+    data: {
+      characters: [
+        {
+          id: "ada",
+          name: "Ada",
+          kind: "pc",
+          level: "original",
+          at: [0, 0],
+          range: 6,
+        },
+      ],
+      pov: "ada",
+    },
+  });
   await page.goto("/?mode=play");
-  await expect(page.locator("#viewport")).toHaveAttribute(
-    "data-observers",
-    /./,
-  );
-  await page.keyboard.press("Shift+G");
-  const select = page.getByLabel("Character", { exact: true });
+  const popup = await openCharacter(page, "ada");
+  const select = popup.getByLabel("Move to level");
   await select.focus();
   await expect(select).toBeFocused();
   const box = await page.locator("#viewport").getAttribute("viewBox");
@@ -103,11 +118,10 @@ test("narrow Designer controls stay reachable and stay off printed plans", async
   await expect(page.locator("#print-pages svg").first()).toBeVisible();
 });
 
-test("Escape closes nested calibration without closing requested Referee controls", async ({
+test("Escape closes calibration and returns focus to its button in Play", async ({
   page,
 }) => {
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+G");
   const calibrate = page.getByRole("button", {
     name: "Calibrate",
     exact: true,
@@ -121,7 +135,6 @@ test("Escape closes nested calibration without closing requested Referee control
   await expect(
     page.getByRole("dialog", { name: "Calibrate screen scale" }),
   ).toBeHidden();
-  await expect(page.locator("#gm-panel")).toBeVisible();
   await expect(calibrate).toBeFocused();
 });
 

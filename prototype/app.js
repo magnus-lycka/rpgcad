@@ -250,7 +250,7 @@ function switchMode(edit) {
   closeComponents();
   fogEnabled = !edit;
   gmView = false;
-  gmPanel.hidden = true;
+  closeCharacterPopup(false);
   drag = null;
   penStroke = null;
   settings.set("mode", edit ? "edit" : "play");
@@ -280,7 +280,8 @@ let fogEnabled = !editing,
 /** @typedef {{id:string,name:string,kind:'pc'|'npc',level:string,at:number[],range:number|null}} Character */
 /** @type {{characters:Character[],pov:string|null,defaultRange?:number}} */
 let characterState = { characters: [], pov: null };
-let commandProblem = "",
+let popupCharacter = "",
+  commandProblem = "",
   problemTimer = 0,
   explorationSaveError = "",
   characterEtag = "",
@@ -335,42 +336,30 @@ async function characterAction(id, at = null) {
   if (c.id === characterState.pov) await saveExploration();
 }
 function refreshCharacterControls() {
-  const list = /** @type {HTMLSelectElement} */ (element("character-list"));
   const input = /** @type {HTMLInputElement} */ (element("character-name"));
+  const range = /** @type {HTMLInputElement} */ (element("character-range"));
+  const level = /** @type {HTMLSelectElement} */ (element("character-level"));
   selectedCharacter ||= characterState.pov || "";
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
-  list.innerHTML =
-    '<option value="">Choose character</option>' +
-    characterState.characters
-      .map(
-        (c) =>
-          `<option value="${Geometry.esc(c.id)}">${Geometry.esc(c.name)} (${c.kind.toUpperCase()})</option>`,
-      )
-      .join("");
-  list.value = c?.id || "";
+  if (
+    popupCharacter &&
+    !characterState.characters.some((x) => x.id === popupCharacter)
+  )
+    closeCharacterPopup(false);
+  element("character-popup").setAttribute(
+    "aria-label",
+    c ? `${c.name} ${c.kind.toUpperCase()}` : "Character",
+  );
   if (document.activeElement !== input) input.value = c?.name || "";
-  const range = /** @type {HTMLInputElement} */ (element("character-range"));
-  element("character-range-label").hidden = !c;
-  element("character-options").hidden = !c;
-  element("rename-character").hidden = !c;
-  const destinationLabel = element("character-level").closest("label");
-  if (destinationLabel) destinationLabel.hidden = !c;
-  element("transfer-character").hidden = !c;
   if (document.activeElement !== range)
     range.value = c?.range == null ? "" : String(c.range);
   range.placeholder = `Default: ${defaultVisualRange()} m`;
+  if (c && document.activeElement !== level) level.value = c.level;
   updateBusyControls();
 }
-element("character-list").addEventListener("change", async (event) => {
-  const input = /** @type {HTMLSelectElement} */ (event.target);
-  selectedCharacter = input.value;
-  const c = characterState.characters.find((c) => c.id === selectedCharacter);
-  if (c?.kind === "pc" && c.level === currentLevel) await characterAction(c.id);
-  else {
-    refreshCharacterControls();
-    draw();
-  }
-});
+element("character-name").addEventListener("change", renameCharacter);
+element("character-level").addEventListener("change", transferCharacter);
+element("remove-character").addEventListener("click", removeCharacter);
 element("character-range").addEventListener("change", async () => {
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const input = /** @type {HTMLInputElement} */ (element("character-range"));
@@ -388,24 +377,34 @@ element("character-range").addEventListener("change", async () => {
     await saveCharacterRange(c, range);
   }
 });
+async function settled() {
+  while (savingCharacters || savingExploration)
+    await new Promise((resolve) => setTimeout(resolve, 25));
+}
 async function renameCharacter() {
-  if (savingCharacters) return;
+  await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
-  const name = /** @type {HTMLInputElement} */ (
-    element("character-name")
-  ).value.trim();
-  if (!c || !name) return;
-  await commitCharacters({
+  const input = /** @type {HTMLInputElement} */ (element("character-name"));
+  const name = input.value.trim();
+  if (!c || name === c.name) return;
+  if (!name) {
+    characterSaveError = "A character needs a name.";
+    input.value = c.name;
+    updateBusyControls();
+    return;
+  }
+  const saved = await commitCharacters({
     ...characterState,
     characters: characterState.characters.map((character) =>
       character.id === c.id ? { ...character, name } : character,
     ),
   });
+  if (!saved) input.value = c.name;
   refreshCharacterControls();
   draw();
 }
 async function removeCharacter() {
-  if (savingCharacters || savingExploration) return;
+  await settled();
   const character = characterState.characters.find(
     (c) => c.id === selectedCharacter,
   );
@@ -437,12 +436,6 @@ async function loadLevels() {
   const plan = await response.json();
   currentLevel = settings.get("level") || plan.levels[0].id;
   const level = plan.levels.find((entry) => entry.id === currentLevel);
-  for (const context of document.querySelectorAll("[data-drawing-context]")) {
-    const planName = context.querySelector(".context-plan");
-    const levelName = context.querySelector(".context-level");
-    if (planName) planName.textContent = plan.name || plan.id;
-    if (levelName) levelName.textContent = level?.name || currentLevel;
-  }
   element("info-plan").textContent = plan.name || plan.id;
   element("info-level").textContent = level?.name || currentLevel;
   const select = /** @type {HTMLSelectElement} */ (element("character-level"));
@@ -456,7 +449,7 @@ async function loadLevels() {
 }
 element("character-level").addEventListener("change", updateBusyControls);
 async function transferCharacter() {
-  if (savingCharacters || savingExploration) return;
+  await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const level = /** @type {HTMLSelectElement} */ (element("character-level"))
     .value;
@@ -515,7 +508,7 @@ async function pollCharacters() {
 }
 function updateBusyControls() {
   commandUi.refreshAvailability();
-  element("character-details").setAttribute(
+  element("character-popup").setAttribute(
     "aria-busy",
     String(savingCharacters || savingExploration),
   );
@@ -531,10 +524,8 @@ function updateBusyControls() {
     "character-range",
     "add-pc",
     "add-npc",
-    "rename-character",
     "remove-character",
     "reset-fog",
-    "transfer-character",
   ]) {
     const control = /** @type {HTMLInputElement|HTMLButtonElement} */ (
       element(id)
@@ -542,22 +533,13 @@ function updateBusyControls() {
     const selected = characterState.characters.find(
       (c) => c.id === selectedCharacter,
     );
-    const needsCharacter = [
-      "character-range",
-      "rename-character",
-      "remove-character",
-      "transfer-character",
-    ].includes(id);
-    const destination = /** @type {HTMLSelectElement} */ (
-      element("character-level")
-    ).value;
+    const needsCharacter = ["character-range", "remove-character"].includes(id);
     control.disabled =
       !characterEtag ||
       !exploration ||
       savingCharacters ||
       savingExploration ||
-      (needsCharacter && !selected) ||
-      (id === "transfer-character" && selected?.level === destination);
+      (needsCharacter && !selected);
   }
 }
 /** @param {typeof characterState} proposed */
@@ -766,51 +748,50 @@ async function resetFog() {
   draw();
   await saveExploration();
 }
-const gmPanel = element("gm-panel");
-const gmSectionIds = {
-  characters: "gm-characters",
-};
-const gmTabs = [...document.querySelectorAll("[data-gm-section]")];
-/** @param {Element} tab */
-function selectGmTab(tab) {
-  const selected = tab.getAttribute("data-gm-section");
-  for (const [name, id] of Object.entries(gmSectionIds))
-    element(id).hidden = name !== selected;
-  for (const control of gmTabs) {
-    control.setAttribute("aria-selected", String(control === tab));
-    control.setAttribute("tabindex", control === tab ? "0" : "-1");
-  }
-}
-for (const [index, tab] of gmTabs.entries()) {
-  tab.addEventListener("keydown", (event) => {
-    if (!(event instanceof KeyboardEvent)) return;
-    let next;
-    if (event.key === "ArrowRight") next = (index + 1) % gmTabs.length;
-    if (event.key === "ArrowLeft")
-      next = (index + gmTabs.length - 1) % gmTabs.length;
-    if (event.key === "Home") next = 0;
-    if (event.key === "End") next = gmTabs.length - 1;
-    if (next === undefined) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const target = gmTabs.at(next);
-    if (!target) return;
-    selectGmTab(target);
-    if (target instanceof HTMLElement) target.focus();
-  });
-}
-
-function closeGm() {
-  gmPanel.hidden = true;
-  viewport.focus();
-}
-function toggleGm() {
-  if (!gmPanel.hidden) return closeGm();
-  gmPanel.hidden = false;
-  const active = gmPanel.querySelector(
-    '[data-gm-section][aria-selected="true"]',
+const characterPopup = element("character-popup");
+/** @param {string} id */
+function markerFor(id) {
+  return [...viewport.querySelectorAll("[data-character]")].find(
+    (marker) => marker.getAttribute("data-character") === id,
   );
-  if (active instanceof HTMLElement) active.focus();
+}
+/** @param {string} id */
+function openCharacterPopup(id) {
+  if (popupCharacter === id) return closeCharacterPopup();
+  selectedCharacter = id;
+  popupCharacter = id;
+  refreshCharacterControls();
+  characterPopup.hidden = false;
+  positionCharacterPopup();
+  const name = /** @type {HTMLInputElement} */ (element("character-name"));
+  name.focus();
+  name.select();
+}
+function closeCharacterPopup(restoreFocus = true) {
+  if (!popupCharacter) return;
+  const marker = markerFor(popupCharacter);
+  popupCharacter = "";
+  characterPopup.hidden = true;
+  if (restoreFocus && marker instanceof SVGElement) marker.focus();
+}
+function positionCharacterPopup() {
+  if (!popupCharacter) return;
+  const marker = markerFor(popupCharacter);
+  if (!marker) return closeCharacterPopup(false);
+  const box = marker.getBoundingClientRect();
+  const width = characterPopup.offsetWidth;
+  const height = characterPopup.offsetHeight;
+  const left = Math.min(
+    Math.max(8, box.left + box.width / 2 - width / 2),
+    window.innerWidth - width - 8,
+  );
+  const below = box.bottom + 8;
+  const top =
+    below + height > window.innerHeight - 8
+      ? Math.max(8, box.top - height - 8)
+      : below;
+  characterPopup.style.left = `${left}px`;
+  characterPopup.style.top = `${top}px`;
 }
 function toggleGmView() {
   gmView = !gmView;
@@ -946,6 +927,7 @@ function draw() {
   if (editing) viewport.innerHTML += sketchDrawing();
   else viewport.innerHTML += characterDrawing();
   viewport.setAttribute("data-gm-view", String(fogEnabled && gmView));
+  positionCharacterPopup();
 }
 function fit() {
   let b = Geometry.bounds(model);
@@ -1003,8 +985,27 @@ async function poll() {
     setTimeout(poll, 250);
   }
 }
+document.addEventListener("pointerdown", (event) => {
+  if (!popupCharacter || !(event.target instanceof Element)) return;
+  if (characterPopup.contains(event.target)) return;
+  if (
+    (event.metaKey || event.ctrlKey) &&
+    event.target.closest("[data-character]")
+  )
+    return;
+  closeCharacterPopup(false);
+});
 viewport.addEventListener("pointerdown", (event) => {
   if (temporaryPan) event.preventDefault();
+  const markerTarget =
+    event.target instanceof Element
+      ? event.target.closest("[data-character]")
+      : null;
+  if (!editing && (event.metaKey || event.ctrlKey) && markerTarget) {
+    event.preventDefault();
+    openCharacterPopup(markerTarget.getAttribute("data-character") || "");
+    return;
+  }
   if (!temporaryPan && !editing && !event.shiftKey && !savingCharacters) {
     const target =
       event.target instanceof Element
@@ -1041,6 +1042,7 @@ viewport.addEventListener("keydown", async (event) => {
     ?.getAttribute("data-character");
   if (!id) return;
   event.preventDefault();
+  if (event.metaKey || event.ctrlKey) return openCharacterPopup(id);
   await characterAction(id);
   const marker = [...viewport.querySelectorAll("[data-character]")].find(
     (marker) => marker.getAttribute("data-character") === id,
@@ -1259,16 +1261,8 @@ function exportSvg() {
 }
 function dismissControl() {
   if (temporaryPan) return cancelTemporaryPan();
+  if (popupCharacter) return closeCharacterPopup();
   if (!componentPanel.hidden) return closeComponents();
-  if (!gmPanel.hidden) {
-    const options = /** @type {HTMLDetailsElement} */ (
-      element("character-options")
-    );
-    if (options.open && options.checkVisibility()) {
-      options.open = false;
-      options.querySelector("summary")?.focus();
-    } else closeGm();
-  }
 }
 function playAvailable() {
   return !exploration
@@ -1283,22 +1277,6 @@ function observerAvailable() {
     : exploration?.observers[0]
       ? true
       : "Place an Observer or select a local PC";
-}
-function selectedAvailable() {
-  return playAvailable() !== true
-    ? playAvailable()
-    : characterState.characters.some((c) => c.id === selectedCharacter) ||
-        "Select a character";
-}
-function showGmSection(name) {
-  gmPanel.hidden = false;
-  const tab = gmTabs.find(
-    (tab) => tab.getAttribute("data-gm-section") === name,
-  );
-  if (tab) {
-    selectGmTab(tab);
-    if (tab instanceof HTMLElement) tab.focus();
-  }
 }
 function cancelTemporaryPan() {
   if (!temporaryPan) return;
@@ -1343,13 +1321,6 @@ const commandUi = installCommands(
             : "Move an Observer beside a door opening",
       run: () => toggleDoor(doorPointerTarget || exploration?.observers[0]?.at),
     },
-    ...[["characters", "Characters", "T"]].map(([id, label, key]) => ({
-      id: `section-${id}`,
-      label: `${label} tab`,
-      keys: [key],
-      scope: /** @type {const} */ ("play"),
-      run: () => showGmSection(id),
-    })),
     ...["pc", "npc"].map((kind) => ({
       id: `add-${kind}`,
       label: `Add ${kind.toUpperCase()}`,
@@ -1363,63 +1334,6 @@ const commandUi = installCommands(
           : !!characterEtag || "Characters are loading",
       run: () => addCharacter(kind),
     })),
-    {
-      id: "rename-character",
-      label: "Rename character",
-      keys: ["Shift+N"],
-      scope: "play",
-      announce: false,
-      repeat: false,
-      enabled: () =>
-        selectedAvailable() !== true
-          ? selectedAvailable()
-          : !!(
-              /** @type {HTMLInputElement} */ (
-                element("character-name")
-              ).value.trim()
-            ) || "Enter a character name",
-      run: renameCharacter,
-    },
-    {
-      id: "transfer-character",
-      label: "Move to level",
-      keys: ["Shift+M"],
-      scope: "play",
-      announce: false,
-      repeat: false,
-      enabled: () =>
-        selectedAvailable() !== true
-          ? selectedAvailable()
-          : characterState.characters.find((c) => c.id === selectedCharacter)
-              ?.level !==
-              /** @type {HTMLSelectElement} */ (element("character-level"))
-                .value || "Choose a different level",
-      run: transferCharacter,
-    },
-    {
-      id: "remove-character",
-      label: "Remove character",
-      keys: ["Shift+D"],
-      scope: "play",
-      announce: false,
-      repeat: false,
-      enabled: selectedAvailable,
-      run: removeCharacter,
-    },
-    {
-      id: "character-options",
-      label: "Character options",
-      keys: ["D"],
-      scope: "play",
-      enabled: selectedAvailable,
-      run: () => {
-        showGmSection("characters");
-        const options = /** @type {HTMLDetailsElement} */ (
-          element("character-options")
-        );
-        options.open = !options.open;
-      },
-    },
     ...Object.entries({
       left: [-1.5, 0],
       right: [1.5, 0],
@@ -1484,13 +1398,6 @@ const commandUi = installCommands(
       announce: false,
       enabled: playAvailable,
       run: resetFog,
-    },
-    {
-      id: "gm-panel",
-      label: "Referee panel",
-      keys: ["G", "Shift+G"],
-      scope: "play",
-      run: toggleGm,
     },
     {
       id: "gm-view",
@@ -1694,18 +1601,7 @@ const commandUi = installCommands(
     updateBusyControls();
   },
 );
-for (const id of [
-  "add-pc",
-  "add-npc",
-  "rename-character",
-  "remove-character",
-  "transfer-character",
-])
-  commandUi.bind(`#${id}`, id);
-commandUi.bind("#character-options summary", "character-options");
-for (const name of ["characters"])
-  commandUi.bind(`[data-gm-section="${name}"]`, `section-${name}`);
-commandUi.bind("#close-gm", "dismiss");
+for (const id of ["add-pc", "add-npc"]) commandUi.bind(`#${id}`, id);
 commandUi.bind("#gm-view", "gm-view");
 commandUi.bind("#range-down", "range-down");
 commandUi.bind("#range-up", "range-up");

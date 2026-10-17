@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { addCharacter } from "./helpers.js";
 
-test("plan and level appear in Info and in the open GM menu during Play", async ({
+test("plan and level appear only in Info, in Edit and in Play", async ({
   page,
 }) => {
   const info = page.getByRole("dialog", { name: "Info" });
@@ -24,14 +24,12 @@ test("plan and level appear in Info and in the open GM menu during Play", async 
       .getByText("Referee building", { exact: true })
       .filter({ visible: true }),
   ).toHaveCount(0);
-  await page.keyboard.press("Shift+G");
-  const referee = page.locator("#gm-panel [data-drawing-context]");
+  await openInfo();
   await expect(
-    referee.getByText("Referee building", { exact: true }),
+    info.getByText("Referee building", { exact: true }),
   ).toBeVisible();
-  await expect(referee.getByText("below", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  await expect(referee).toBeHidden();
+  await expect(info.getByText("below", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
 
   await page.goto("/?plan=depot&mode=edit");
   await openInfo();
@@ -102,7 +100,6 @@ test("characters added to another plan stay there on reload and library navigati
   await page.getByRole("button", { name: "Depot", exact: true }).click();
   await page.getByRole("link", { name: "Play", exact: true }).click();
   await expect(page.locator("#viewport")).toContainText("DEPOT");
-  await page.keyboard.press("Shift+G");
   await addCharacter(page, "npc", "Depot guard");
   await expect
     .poll(
@@ -113,11 +110,8 @@ test("characters added to another plan stay there on reload and library navigati
     .toBe(1);
   await page.reload();
   await expect(page.locator("#viewport")).toContainText("DEPOT");
-  await page.keyboard.press("Shift+G");
-  await expect(page.getByLabel("Character").locator("option")).toContainText([
-    "Choose character",
-    "Depot guard",
-  ]);
+  await page.getByRole("button", { name: "Toggle fog", exact: true }).click();
+  await expect(page.locator("#viewport")).toContainText("Depot guard");
   const original = await (await request.get("/characters")).json();
   expect(original.characters.some((c) => c.name === "Depot guard")).toBe(false);
 });
@@ -250,7 +244,6 @@ test("plan-only play keeps a new marker on the selected plan's first level", asy
   const copy = await response.json();
   await page.goto(`/?plan=${copy.id}&mode=play`);
   await expect(page.locator("#viewport")).toContainText("SECRET");
-  await page.keyboard.press("Shift+G");
   await addCharacter(page, "pc", "Copy scout");
   await expect(page.locator("#viewport [data-character]")).toHaveCount(1);
   await expect

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { preserveBrowserFixture } from "../fixtures/browser-state.js";
+import { openCharacter } from "./helpers.js";
 preserveBrowserFixture(test);
 const ada = {
   id: "ada",
@@ -22,9 +23,8 @@ test("removing a character persists directly without an Undo Remove action", asy
 }) => {
   await seed(request);
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+G");
-  await page.getByText("Character options", { exact: true }).click();
-  await page
+  const popup = await openCharacter(page, "ada");
+  await popup
     .getByRole("button", { name: "Remove character", exact: true })
     .click();
   await expect
@@ -39,14 +39,6 @@ test("removing a character persists directly without an Undo Remove action", asy
   ).toHaveCount(0);
   await page.reload();
   await expect(page.locator("[data-character]")).toHaveCount(0);
-  await page.keyboard.press("Shift+G");
-  await expect(
-    page.getByRole("button", {
-      name: "Undo Remove",
-      exact: true,
-      includeHidden: true,
-    }),
-  ).toHaveCount(0);
 });
 
 test("failed removal leaves the saved character intact and reports the error", async ({
@@ -55,17 +47,16 @@ test("failed removal leaves the saved character intact and reports the error", a
 }) => {
   await seed(request);
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+G");
   await page.route("**/characters*", (route) =>
     route.request().method() === "PUT"
       ? route.fulfill({ status: 500, body: "Failed" })
       : route.continue(),
   );
-  await page.getByText("Character options", { exact: true }).click();
-  await page
+  const popup = await openCharacter(page, "ada");
+  await popup
     .getByRole("button", { name: "Remove character", exact: true })
     .click();
-  await expect(page.locator("#character-action-status")).toContainText(
+  await expect(popup.locator("#character-action-status")).toContainText(
     "Character save failed (500)",
   );
   expect(await (await request.get("/characters")).json()).toEqual({

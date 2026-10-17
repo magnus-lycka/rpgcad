@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { addCharacter } from "./helpers.js";
+import { addCharacter, openCharacter } from "./helpers.js";
 import { preserveBrowserFixture } from "../fixtures/browser-state.js";
 preserveBrowserFixture(test);
 
@@ -25,7 +25,6 @@ test("default sight range applies to new characters, independently of each saved
     },
   });
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+G");
   const defaultRange = page.getByLabel("Default visual range (m)", {
     exact: true,
   });
@@ -46,10 +45,8 @@ test("default sight range applies to new characters, independently of each saved
   expect(
     (await (await request.get("/exploration")).json()).observations,
   ).toEqual(observations);
-  await page.getByRole("tab", { name: "Characters", exact: true }).click();
-  const specificRange = page.getByLabel("Selected character visual range (m)", {
-    exact: true,
-  });
+  const popup = await openCharacter(page, "ada");
+  const specificRange = popup.getByLabel("Visual range (m)");
   await expect(specificRange).toHaveValue("4");
   await specificRange.fill("8");
   await specificRange.dispatchEvent("change");
@@ -60,9 +57,7 @@ test("default sight range applies to new characters, independently of each saved
     )
     .toBe(8);
   await page.reload();
-  await page.keyboard.press("Shift+G");
   await expect(defaultRange).toHaveValue("12");
-  await page.getByRole("tab", { name: "Characters", exact: true }).click();
   await addCharacter(page, "pc", "Ben");
   await expect
     .poll(
@@ -78,7 +73,7 @@ test("default sight range applies to new characters, independently of each saved
   await expect(
     page.getByRole("button", { name: "Add PC", exact: true }),
   ).toBeEnabled();
-  await page.getByLabel("Character", { exact: true }).selectOption(ben.id);
+  await page.locator(`[data-character="${ben.id}"] circle`).click();
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observers",
     /"range":12/,
@@ -113,12 +108,12 @@ test("clearing a character override restores inheritance, including after reset 
     },
   });
   await page.goto("/?mode=play");
-  await page.keyboard.press("Shift+G");
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observers",
     /"range":4/,
   );
-  const specific = page.getByLabel("Selected character visual range (m)");
+  const popup = await openCharacter(page, "ada");
+  const specific = popup.getByLabel("Visual range (m)");
   await specific.fill("");
   await specific.dispatchEvent("change");
   await expect
@@ -154,9 +149,10 @@ test("clearing a character override restores inheritance, including after reset 
     )
     .toBe(15);
   await page.reload();
-  await page.keyboard.press("Shift+G");
-  await expect(specific).toHaveValue("");
-  await expect(specific).toHaveAttribute("placeholder", "Default: 15 m");
+  const reopened = await openCharacter(page, "ada");
+  const restored = reopened.getByLabel("Visual range (m)");
+  await expect(restored).toHaveValue("");
+  await expect(restored).toHaveAttribute("placeholder", "Default: 15 m");
   const saved = await (await request.get("/exploration")).json();
   expect(saved.visibilityPaused).toBe(true);
   expect(saved.observations).toEqual([]);
@@ -198,13 +194,13 @@ test("rejected POV range changes preserve visibility and saved exploration", asy
   const savedCharacters = await (await request.get("/characters")).json();
   const savedExploration = await (await request.get("/exploration")).json();
   await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
-  await page.keyboard.press("Shift+G");
   await page.route("**/characters*", async (route) => {
     if (route.request().method() === "PUT")
       await route.fulfill({ status: 409, body: "Conflict" });
     else await route.continue();
   });
-  const range = page.getByLabel("Selected character visual range (m)");
+  const popup = await openCharacter(page, "ada");
+  const range = popup.getByLabel("Visual range (m)");
   await range.fill("10");
   await range.dispatchEvent("change");
   await expect(page.locator("#character-action-status")).toContainText(
@@ -248,7 +244,6 @@ test("pending and rejected default ranges preserve inherited visibility and repo
   await expect(page.locator("#reset-fog")).toBeEnabled();
   const characters = await (await request.get("/characters")).json();
   const exploration = await (await request.get("/exploration")).json();
-  await page.keyboard.press("Shift+G");
   let rejectSave;
   const pending = new Promise((resolve) => {
     rejectSave = resolve;
