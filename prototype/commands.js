@@ -1,6 +1,8 @@
 /** @typedef {{id:string,label:string,keys:string[],scope:'both'|'edit'|'play',repeat?:boolean,announce?:boolean,enabled?:()=>boolean|string,run:(event?:KeyboardEvent)=>unknown,analogy?:string}} Command */
-/** @param {Command[]} definitions */
-export function createCommands(definitions) {
+/** @param {Command[]} definitions
+ * @param {(command:Command, reason:string)=>void} [unavailable]
+ */
+export function createCommands(definitions, unavailable) {
   for (const [index, command] of definitions.entries()) {
     for (const previous of definitions.slice(0, index)) {
       const overlap =
@@ -29,7 +31,15 @@ export function createCommands(definitions) {
     );
   function execute(id, mode, event = undefined) {
     const command = list(mode).find((item) => item.id === id);
-    if (!command || available(command) !== true) return false;
+    if (!command) return false;
+    const availability = available(command);
+    if (availability !== true) {
+      unavailable?.(
+        command,
+        typeof availability === "string" ? availability : "Unavailable",
+      );
+      return false;
+    }
     command.run(event);
     return true;
   }

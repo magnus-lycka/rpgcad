@@ -3,8 +3,9 @@ import { createCommands } from "./commands.js";
 /** @param {import('./commands.js').Command[]} definitions
  * @param {()=> 'edit'|'play'} mode
  * @param {(message:string)=>void} announce
+ * @param {(message:string)=>void} signal
  */
-export function installCommands(definitions, mode, announce) {
+export function installCommands(definitions, mode, announce, signal) {
   const palette = document.createElement("dialog");
   palette.className = "command-dialog";
   palette.setAttribute("aria-label", "Commands");
@@ -51,35 +52,38 @@ export function installCommands(definitions, mode, announce) {
         : null;
     dialog.showModal();
   }
-  const commands = createCommands([
-    ...definitions.map((command) => ({
-      ...command,
-      run: (event) => {
-        command.run(event);
-        if (command.announce !== false) announce(command.label);
+  const commands = createCommands(
+    [
+      ...definitions.map((command) => ({
+        ...command,
+        run: (event) => {
+          command.run(event);
+          if (command.announce !== false) announce(command.label);
+        },
+      })),
+      {
+        id: "palette",
+        label: "Command palette",
+        keys: ["Mod+K", "/"],
+        scope: "both",
+        run: () => {
+          search.value = "";
+          selected = 0;
+          render();
+          open(palette);
+          search.focus();
+        },
       },
-    })),
-    {
-      id: "palette",
-      label: "Command palette",
-      keys: ["Mod+K", "/"],
-      scope: "both",
-      run: () => {
-        search.value = "";
-        selected = 0;
-        render();
-        open(palette);
-        search.focus();
+      {
+        id: "help",
+        label: "Keyboard shortcuts",
+        keys: ["?"],
+        scope: "both",
+        run: showHelp,
       },
-    },
-    {
-      id: "help",
-      label: "Keyboard shortcuts",
-      keys: ["?"],
-      scope: "both",
-      run: showHelp,
-    },
-  ]);
+    ],
+    (command, reason) => signal(`${command.label}: ${reason}`),
+  );
   function execute(id) {
     commands.execute(id, mode());
   }

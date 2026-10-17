@@ -351,3 +351,29 @@ for (const [button, name] of [
     await expect(icon).toBeFocused();
   });
 }
+
+test("a command refused because a save is in flight says so instead of doing nothing", async ({
+  page,
+}) => {
+  await page.goto("/?mode=play");
+  const toolbar = page.getByRole("toolbar", { name: "Toolbar", exact: true });
+  await expect(
+    toolbar.getByRole("button", { name: "Add PC", exact: true }),
+  ).toBeEnabled();
+  /** @type {() => void} */
+  let release = () => {};
+  const held = new Promise((resolve) => {
+    release = () => resolve(undefined);
+  });
+  await page.route("**/characters*", async (route) => {
+    if (route.request().method() === "PUT") await held;
+    await route.continue();
+  });
+  await toolbar.getByRole("button", { name: "Add PC", exact: true }).click();
+  await page.keyboard.press("Shift+R");
+  await expect(page.getByRole("alert")).toContainText(
+    "Reset fog / close all doors: Save in progress",
+  );
+  release();
+  await expect(page.getByRole("alert")).toBeHidden();
+});

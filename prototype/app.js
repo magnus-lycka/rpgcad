@@ -280,7 +280,9 @@ let fogEnabled = !editing,
 /** @typedef {{id:string,name:string,kind:'pc'|'npc',level:string,at:number[],range:number|null}} Character */
 /** @type {{characters:Character[],pov:string|null,defaultRange?:number}} */
 let characterState = { characters: [], pov: null };
-let explorationSaveError = "",
+let commandProblem = "",
+  problemTimer = 0,
+  explorationSaveError = "",
   characterEtag = "",
   savingCharacters = false,
   characterGeneration = 0;
@@ -520,7 +522,8 @@ function updateBusyControls() {
   element("character-action-status").textContent = savingCharacters
     ? "Saving character…"
     : characterSaveError;
-  element("problem").textContent = characterSaveError || explorationSaveError;
+  element("problem").textContent =
+    characterSaveError || explorationSaveError || commandProblem;
   for (const id of [
     "sight-range",
     "range-down",
@@ -1680,6 +1683,15 @@ const commandUi = installCommands(
   () => (editing ? "edit" : "play"),
   (message) => {
     element(editing ? "sketch-status" : "fog-status").textContent = message;
+  },
+  (message) => {
+    commandProblem = message;
+    clearTimeout(problemTimer);
+    problemTimer = window.setTimeout(() => {
+      commandProblem = "";
+      updateBusyControls();
+    }, 4000);
+    updateBusyControls();
   },
 );
 for (const id of [

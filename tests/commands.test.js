@@ -132,3 +132,36 @@ test("punctuation bindings match however the keyboard layout produces them", () 
   commands.dispatch({ key: "z", altKey: true }, "play");
   assert.deepEqual(ran, [">", "["]);
 });
+
+test("an unavailable command is not run and its reason is reported", () => {
+  const ran = [];
+  const reported = [];
+  const commands = createCommands(
+    [
+      {
+        id: "busy",
+        label: "Busy",
+        keys: ["b"],
+        scope: "both",
+        enabled: () => "Save in progress",
+        run: () => ran.push("busy"),
+      },
+      {
+        id: "plain",
+        label: "Plain",
+        keys: ["p"],
+        scope: "both",
+        enabled: () => false,
+        run: () => ran.push("plain"),
+      },
+    ],
+    (command, reason) => reported.push([command.label, reason]),
+  );
+  commands.dispatch({ key: "b" }, "edit");
+  commands.execute("plain", "edit");
+  assert.deepEqual(ran, []);
+  assert.deepEqual(reported, [
+    ["Busy", "Save in progress"],
+    ["Plain", "Unavailable"],
+  ]);
+});
