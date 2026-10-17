@@ -8,3 +8,14 @@ tmp/
 *.egg-info/
 test-results/
 playwright-report/
+
+# Local prototype plans, library metadata, characters, fog and drawing marks.
+# The server currently stores these alongside the shipped example models.
+/prototype/*.json
+/prototype/*-data/
+/prototype/*.tmp
+!/prototype/component-catalogue.json
+!/prototype/model.PROTOTYPE.json
+!/prototype/level-below.PROTOTYPE.json
+!/prototype/level-below-2.PROTOTYPE.json
+!/prototype/plan.PROTOTYPE.json
