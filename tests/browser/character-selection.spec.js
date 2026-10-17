@@ -190,6 +190,7 @@ test("the group popup shows the count and offers only range and level", async ({
   await circle(page, "ben").dblclick();
   const popup = page.getByRole("dialog", { name: "2 characters" });
   await expect(popup).toBeVisible();
+  await expect(popup.getByRole("heading")).toHaveText("2 characters selected");
   await expect(popup.getByLabel("Name")).toBeHidden();
   await expect(
     popup.getByRole("button", { name: "Remove character" }),
@@ -267,4 +268,8 @@ test("a group level change moves every selected character", async ({
       ["guard", "below"],
     ]);
   await expect(page).toHaveURL(/level=below/);
+  await circle(page, "ada").dblclick();
+  await expect(
+    page.getByRole("dialog", { name: "2 characters" }).getByRole("heading"),
+  ).toHaveText("2 characters selected");
 });

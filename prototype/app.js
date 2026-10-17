@@ -309,7 +309,9 @@ let popupCharacter = "",
 let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
 /** @type {Set<string>} */
-const selection = new Set(selectedCharacter ? [selectedCharacter] : []);
+const selection = new Set(
+  (settings.get("selected") || selectedCharacter).split(",").filter(Boolean),
+);
 let popupGroup = false;
 /** @param {string} id */
 function selectOnly(id) {
@@ -432,6 +434,8 @@ function refreshCharacterControls() {
         `${members.length} characters`,
       );
       renderPopupFields(pcs.length ? "pc" : "npc", false, true);
+      element("character-group-title").textContent =
+        `${members.length} characters selected`;
       const ranges = new Set(pcs.map((x) => x.range));
       if (document.activeElement !== range)
         range.value = ranges.size === 1 ? String([...ranges][0]) : "";
@@ -459,6 +463,7 @@ function refreshCharacterControls() {
 /** @param {'pc'|'npc'} kind @param {boolean} creating @param {boolean} group */
 function renderPopupFields(kind, creating, group) {
   element("character-name-label").hidden = group;
+  element("character-group-title").hidden = !group;
   element("character-range-label").hidden = kind === "npc";
   element("character-level-label").hidden = creating;
   element("remove-character").hidden = creating || group;
@@ -691,7 +696,7 @@ async function transferGroup() {
   draw();
   if (members.some((c) => c.id === characterState.pov)) await saveExploration();
   location.assign(
-    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: members[0].id })}`,
+    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: members[0].id, selected: members.map((c) => c.id).join(",") })}`,
   );
 }
 async function applyGroupRange() {
