@@ -36,7 +36,7 @@ test("focused NPC keeps its normal orange marker without a giant blue focus disk
   await page.keyboard.press("Shift+F");
   const marker = page.locator('[data-character="npc"]');
   await marker.focus();
-  await page.keyboard.press("Enter");
+  await page.keyboard.press("Space");
   await expect(marker).toBeFocused();
   let circle;
   await expect
@@ -165,6 +165,12 @@ test("selecting a PC changes POV and range; dragging it reveals only its destina
   );
   await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
   await expect(page.locator("#reset-fog")).toBeEnabled();
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/exploration")).json()).observations.length,
+    )
+    .toBe(1);
   await page.locator('[data-character="ben"] circle').click();
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observers",
@@ -346,7 +352,7 @@ test("keyboard character selection distinguishes NPC selection from PC POV witho
   await page.getByRole("button", { name: "Toggle fog", exact: true }).click();
   const guard = page.getByRole("button", { name: "Guard NPC", exact: true });
   await guard.focus();
-  await page.keyboard.press("Enter");
+  await page.keyboard.press("Space");
   const selected = page.getByRole("button", {
     name: "Guard NPC · Selected",
     exact: true,

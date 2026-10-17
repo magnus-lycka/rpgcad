@@ -1,11 +1,11 @@
 import { expect } from "@playwright/test";
 
-/** ⌘-click a marker and return its popup.
+/** Double-click a marker and return its popup.
  * @param {import('@playwright/test').Page} page
  * @param {string} id
  */
 export async function openCharacter(page, id) {
-  await page.locator(`[data-character="${id}"]`).click({ modifiers: ["Meta"] });
+  await page.locator(`[data-character="${id}"]`).dblclick();
   const popup = page.locator("#character-popup");
   await expect(popup).toBeVisible();
   return popup;

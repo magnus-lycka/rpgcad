@@ -347,10 +347,35 @@ let popupCharacter = "",
   characterGeneration = 0;
 let currentLevel = settings.get("level") || "original";
 let selectedCharacter = settings.get("character") || "";
-/** @type {{id:string,x:number,y:number,at:number[],preview?:number[]}|null} */
+/** @type {Set<string>} */
+const selection = new Set(selectedCharacter ? [selectedCharacter] : []);
+let popupGroup = false;
+/** @param {string} id */
+function selectOnly(id) {
+  selection.clear();
+  if (id) selection.add(id);
+  selectedCharacter = id;
+}
+/** @param {string} id */
+function toggleSelected(id) {
+  if (selection.has(id)) selection.delete(id);
+  else selection.add(id);
+  selectedCharacter = selection.has(id) ? id : ([...selection].at(-1) ?? "");
+}
+function clearSelection() {
+  selection.clear();
+  selectedCharacter = "";
+  refreshCharacterControls();
+  draw();
+}
+/** @type {{id:string,x:number,y:number,ids:string[],starts:Map<string,number[]>,delta?:number[]}|null} */
 let characterDrag = null;
 /** @type {Map<string, number[]>} */
 const pendingPositions = new Map();
+/** @type {{id:string,at:number,count:number}|null} */
+let lastClick = null;
+let openedByDoubleClick = -Infinity;
+let clickTimer = 0;
 let characterSaveError = "";
 const OBSERVER_RANGE = 6;
 const characterPopup = element("character-popup");
@@ -364,23 +389,17 @@ function syncPov() {
       ? [{ id: pc.id, at: [...pc.at], range: pc.range }]
       : [];
 }
-/** @param {string} id @param {number[]|null} [at] */
-async function characterAction(id, at = null) {
-  await settled();
+/** @param {string} id */
+async function characterAction(id) {
   const c = characterState.characters.find((c) => c.id === id);
   if (!c) return;
-  selectedCharacter = id;
+  if (!selection.has(id)) selectOnly(id);
+  else selectedCharacter = id;
   refreshCharacterControls();
+  await settled();
   const proposed = {
     ...characterState,
-    pov: !at && c.kind === "pc" ? id : characterState.pov,
-    characters: at
-      ? characterState.characters.map((character) =>
-          character.id === id
-            ? { ...character, at: at.map((n) => Math.round(n * 1000) / 1000) }
-            : character,
-        )
-      : characterState.characters,
+    pov: c.kind === "pc" ? id : characterState.pov,
   };
   if (!(await commitCharacters(proposed))) {
     draw();
@@ -394,6 +413,34 @@ async function characterAction(id, at = null) {
   }
   draw();
   if (c.id === characterState.pov) await saveExploration();
+}
+/** @param {Map<string, number[]>} moves */
+async function moveCharacters(moves) {
+  await settled();
+  const proposed = {
+    ...characterState,
+    characters: characterState.characters.map((character) => {
+      const at = moves.get(character.id);
+      return at
+        ? { ...character, at: at.map((n) => Math.round(n * 1000) / 1000) }
+        : character;
+    }),
+  };
+  if (!(await commitCharacters(proposed))) {
+    draw();
+    return;
+  }
+  const mover = characterState.characters.find(
+    (c) => c.id === characterState.pov && moves.has(c.id),
+  );
+  if (exploration && mover) {
+    exploration.visibilityPaused = false;
+    syncPov();
+    recordObservation();
+    updateVisibility();
+  }
+  draw();
+  if (mover) await saveExploration();
 }
 function refreshCharacterControls() {
   const input = /** @type {HTMLInputElement} */ (element("character-name"));
@@ -412,7 +459,27 @@ function refreshCharacterControls() {
     !characterState.characters.some((x) => x.id === popupCharacter)
   )
     closeCharacterPopup(false);
-  if (!newKind) {
+  if (!newKind && popupGroup) {
+    const members = characterState.characters.filter((x) =>
+      selection.has(x.id),
+    );
+    if (members.length < 2) closeCharacterPopup(false);
+    else {
+      const pcs = members.filter((x) => x.kind === "pc");
+      element("character-popup").setAttribute(
+        "aria-label",
+        `${members.length} characters`,
+      );
+      renderPopupFields(pcs.length ? "pc" : "npc", false, true);
+      const ranges = new Set(pcs.map((x) => x.range));
+      if (document.activeElement !== range)
+        range.value = ranges.size === 1 ? String([...ranges][0]) : "";
+      range.placeholder = ranges.size > 1 ? "Mixed" : "";
+      const levels = new Set(members.map((x) => x.level));
+      if (document.activeElement !== level)
+        level.value = levels.size === 1 ? String([...levels][0]) : "";
+    }
+  } else if (!newKind) {
     const popupOf = characterState.characters.find(
       (x) => x.id === popupCharacter,
     );
@@ -420,7 +487,7 @@ function refreshCharacterControls() {
       "aria-label",
       popupOf ? `${popupOf.name} ${popupOf.kind.toUpperCase()}` : "Character",
     );
-    renderPopupFields(popupOf?.kind ?? "pc", false);
+    renderPopupFields(popupOf?.kind ?? "pc", false, false);
     if (document.activeElement !== input) input.value = c?.name || "";
     if (document.activeElement !== range)
       range.value = c?.range == null ? "" : String(c.range);
@@ -428,16 +495,19 @@ function refreshCharacterControls() {
   }
   updateBusyControls();
 }
-/** @param {'pc'|'npc'} kind @param {boolean} creating */
-function renderPopupFields(kind, creating) {
+/** @param {'pc'|'npc'} kind @param {boolean} creating @param {boolean} group */
+function renderPopupFields(kind, creating, group) {
+  element("character-name-label").hidden = group;
   element("character-range-label").hidden = kind === "npc";
   element("character-level-label").hidden = creating;
-  element("remove-character").hidden = creating;
+  element("remove-character").hidden = creating || group;
   element("add-character").hidden = !creating;
 }
 element("character-name").addEventListener("change", renameCharacter);
 element("character-level").addEventListener("change", transferCharacter);
-element("remove-character").addEventListener("click", removeCharacter);
+element("remove-character").addEventListener("click", () => {
+  if (!popupGroup) removeCharacter();
+});
 element("add-character").addEventListener("click", submitNewCharacter);
 characterPopup.addEventListener("keydown", (event) => {
   if (
@@ -451,6 +521,7 @@ characterPopup.addEventListener("keydown", (event) => {
 });
 element("character-range").addEventListener("change", async () => {
   if (newKind) return;
+  if (popupGroup) return applyGroupRange();
   await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const input = /** @type {HTMLInputElement} */ (element("character-range"));
@@ -471,7 +542,7 @@ async function settled() {
     await new Promise((resolve) => setTimeout(resolve, 25));
 }
 async function renameCharacter() {
-  if (newKind) return;
+  if (newKind || popupGroup) return;
   await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const input = /** @type {HTMLInputElement} */ (element("character-name"));
@@ -529,17 +600,73 @@ async function loadLevels() {
   element("info-plan").textContent = plan.name || plan.id;
   element("info-level").textContent = level?.name || currentLevel;
   const select = /** @type {HTMLSelectElement} */ (element("character-level"));
-  select.innerHTML = plan.levels
-    .map(
-      (level) =>
-        `<option value="${Geometry.esc(level.id)}">${Geometry.esc(level.name || level.id)}</option>`,
-    )
-    .join("");
+  select.innerHTML =
+    '<option value="" disabled hidden>Several levels</option>' +
+    plan.levels
+      .map(
+        (level) =>
+          `<option value="${Geometry.esc(level.id)}">${Geometry.esc(level.name || level.id)}</option>`,
+      )
+      .join("");
   select.value = currentLevel;
 }
 element("character-level").addEventListener("change", updateBusyControls);
+async function transferGroup() {
+  await settled();
+  const level = /** @type {HTMLSelectElement} */ (element("character-level"))
+    .value;
+  const members = characterState.characters.filter((c) => selection.has(c.id));
+  if (!level || !members.length || members.every((c) => c.level === level))
+    return;
+  const proposed = {
+    ...characterState,
+    characters: characterState.characters.map((c) =>
+      selection.has(c.id) ? { ...c, level } : c,
+    ),
+  };
+  if (!(await commitCharacters(proposed))) return;
+  syncPov();
+  updateVisibility();
+  draw();
+  if (members.some((c) => c.id === characterState.pov)) await saveExploration();
+  location.assign(
+    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: members[0].id })}`,
+  );
+}
+async function applyGroupRange() {
+  await settled();
+  const input = /** @type {HTMLInputElement} */ (element("character-range"));
+  const range = input.value.trim() === "" ? NaN : Number(input.value);
+  if (!Number.isFinite(range) || range <= 0) {
+    characterSaveError = "A PC needs a visual range.";
+    refreshCharacterControls();
+    return;
+  }
+  const proposed = {
+    ...characterState,
+    characters: characterState.characters.map((c) =>
+      selection.has(c.id) && c.kind === "pc" ? { ...c, range } : c,
+    ),
+  };
+  if (!(await commitCharacters(proposed))) {
+    refreshCharacterControls();
+    return;
+  }
+  const pov = characterState.characters.find(
+    (c) => c.id === characterState.pov && selection.has(c.id),
+  );
+  if (exploration && pov) {
+    syncPov();
+    recordObservation();
+    updateVisibility();
+  }
+  refreshCharacterControls();
+  draw();
+  if (pov) await saveExploration();
+}
 async function transferCharacter() {
   if (newKind) return;
+  if (popupGroup) return transferGroup();
   await settled();
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const level = /** @type {HTMLSelectElement} */ (element("character-level"))
@@ -561,6 +688,16 @@ async function transferCharacter() {
   );
 }
 await loadLevels();
+/** @param {Character} c */
+function displayAt(c) {
+  const start = characterDrag?.starts.get(c.id);
+  if (characterDrag?.delta && start)
+    return [
+      start[0] + characterDrag.delta[0],
+      start[1] + characterDrag.delta[1],
+    ];
+  return pendingPositions.get(c.id) ?? c.at;
+}
 function characterDrawing() {
   return characterState.characters
     .filter(
@@ -572,7 +709,7 @@ function characterDrawing() {
     )
     .map(
       (c) =>
-        `<g data-character="${Geometry.esc(c.id)}" data-selected="${c.id === selectedCharacter}" data-pov="${c.id === characterState.pov}" role="button" tabindex="0" aria-label="${Geometry.esc(c.name)} ${c.kind.toUpperCase()}${c.id === characterState.pov ? " · POV" : c.id === selectedCharacter ? " · Selected" : ""}" transform="translate(${(characterDrag?.id === c.id ? (characterDrag.preview ?? c.at) : (pendingPositions.get(c.id) ?? c.at)).join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><path d="M -.48 0 A .48 .48 0 1 0 .48 0 A .48 .48 0 1 0 -.48 0" fill="none" stroke="${c.id === selectedCharacter ? "#176ca4" : "none"}" stroke-width=".04" stroke-dasharray=".08 .06"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
+        `<g data-character="${Geometry.esc(c.id)}" data-selected="${selection.has(c.id)}" data-pov="${c.id === characterState.pov}" role="button" tabindex="0" aria-label="${Geometry.esc(c.name)} ${c.kind.toUpperCase()}${c.id === characterState.pov ? " · POV" : selection.has(c.id) ? " · Selected" : ""}" transform="translate(${displayAt(c).join(" ")})"><path d="M -.4 0 A .4 .4 0 1 0 .4 0 A .4 .4 0 1 0 -.4 0" fill="none" stroke="${c.id === characterState.pov ? "#e7b52e" : "none"}" stroke-width=".07"/><path d="M -.48 0 A .48 .48 0 1 0 .48 0 A .48 .48 0 1 0 -.48 0" fill="none" stroke="${selection.has(c.id) ? "#176ca4" : "none"}" stroke-width=".04" stroke-dasharray=".08 .06"/><circle r=".32" fill="${c.kind === "pc" ? "#176ca4" : "#ad5931"}" stroke="white" stroke-width=".04"/><text y="-.43" text-anchor="middle" font-family="sans-serif" font-size=".28" fill="#27332e" stroke="white" stroke-width=".06" paint-order="stroke">${Geometry.esc(c.name)}</text></g>`,
     )
     .join("");
 }
@@ -817,20 +954,34 @@ function markerFor(id) {
 }
 /** @param {string} id */
 function openCharacterPopup(id) {
-  if (popupCharacter === id) return closeCharacterPopup();
-  selectedCharacter = id;
+  const group = selection.has(id) && selection.size > 1;
+  if (
+    popupCharacter &&
+    popupGroup === group &&
+    (group || popupCharacter === id)
+  )
+    return closeCharacterPopup();
+  closeCharacterPopup(false);
+  if (group) selectedCharacter = id;
+  else selectOnly(id);
+  popupGroup = group;
   popupCharacter = id;
   refreshCharacterControls();
   characterPopup.hidden = false;
   positionCharacterPopup();
-  const name = /** @type {HTMLInputElement} */ (element("character-name"));
-  name.focus();
-  name.select();
+  draw();
+  const first = element(group ? "character-range" : "character-name");
+  const field = /** @type {HTMLInputElement} */ (
+    first.closest("label")?.hidden ? element("character-level") : first
+  );
+  field.focus();
+  if (field instanceof HTMLInputElement) field.select();
 }
 function closeCharacterPopup(restoreFocus = true) {
   if (!popupCharacter && !newKind) return;
   const marker = popupCharacter ? markerFor(popupCharacter) : null;
   popupCharacter = "";
+  popupGroup = false;
   newKind = "";
   characterSaveError = "";
   characterPopup.hidden = true;
@@ -844,7 +995,7 @@ function startNewCharacter(kind) {
   newKind = kind;
   characterSaveError = "";
   characterPopup.setAttribute("aria-label", `New ${kind.toUpperCase()}`);
-  renderPopupFields(kind, true);
+  renderPopupFields(kind, true, false);
   /** @type {HTMLInputElement} */ (element("character-name")).value = "";
   /** @type {HTMLInputElement} */ (element("character-range")).value = "";
   characterPopup.hidden = false;
@@ -949,7 +1100,7 @@ async function placeObserver(at) {
     const pc = characterState.characters.find(
       (c) => c.id === characterState.pov && c.level === currentLevel,
     );
-    if (pc) await characterAction(pc.id, at);
+    if (pc) await moveCharacters(new Map([[pc.id, at]]));
     return;
   }
   if (
@@ -1118,6 +1269,11 @@ document.addEventListener("pointerdown", (event) => {
   if (!popupCharacter || !(event.target instanceof Element)) return;
   if (characterPopup.contains(event.target)) return;
   if (
+    event.target.closest("[data-character]")?.getAttribute("data-character") ===
+    popupCharacter
+  )
+    return;
+  if (
     (event.metaKey || event.ctrlKey) &&
     event.target.closest("[data-character]")
   )
@@ -1130,25 +1286,38 @@ viewport.addEventListener("pointerdown", (event) => {
     event.target instanceof Element
       ? event.target.closest("[data-character]")
       : null;
-  if (!editing && (event.metaKey || event.ctrlKey) && markerTarget) {
-    event.preventDefault();
-    openCharacterPopup(markerTarget.getAttribute("data-character") || "");
-    return;
+  const markerId = markerTarget?.getAttribute("data-character") || "";
+  if (lastClick && lastClick.id !== markerId) {
+    lastClick = null;
+    clearTimeout(clickTimer);
   }
-  if (!temporaryPan && !editing && !event.shiftKey && !savingCharacters) {
-    const target =
-      event.target instanceof Element
-        ? event.target.closest("[data-character]")
-        : null;
-    const c = characterState.characters.find(
-      (c) => c.id === target?.getAttribute("data-character"),
-    );
-    if (c) {
+  if (!editing && !temporaryPan && markerId) {
+    if (event.metaKey || event.ctrlKey) {
+      event.preventDefault();
+      toggleSelected(markerId);
+      refreshCharacterControls();
+      draw();
+      return;
+    }
+    const c = characterState.characters.find((c) => c.id === markerId);
+    if (c && !event.shiftKey) {
+      if (!selection.has(markerId)) selectOnly(markerId);
+      const ids =
+        selection.size > 1
+          ? characterState.characters
+              .filter((x) => selection.has(x.id) && x.level === currentLevel)
+              .map((x) => x.id)
+          : [markerId];
       characterDrag = {
-        id: c.id,
+        id: markerId,
         x: event.clientX,
         y: event.clientY,
-        at: [...c.at],
+        ids,
+        starts: new Map(
+          characterState.characters
+            .filter((x) => ids.includes(x.id))
+            .map((x) => [x.id, [...x.at]]),
+        ),
       };
       viewport.setPointerCapture(event.pointerId);
       return;
@@ -1171,18 +1340,24 @@ viewport.addEventListener("keydown", async (event) => {
     ?.getAttribute("data-character");
   if (!id) return;
   event.preventDefault();
-  if (event.metaKey || event.ctrlKey) return openCharacterPopup(id);
-  await characterAction(id);
-  const marker = [...viewport.querySelectorAll("[data-character]")].find(
-    (marker) => marker.getAttribute("data-character") === id,
-  );
-  if (marker instanceof SVGElement) marker.focus();
+  if (event.key === "Enter") return openCharacterPopup(id);
+  if (event.metaKey || event.ctrlKey) {
+    toggleSelected(id);
+    refreshCharacterControls();
+    draw();
+  } else await characterAction(id);
+  const marker = markerFor(id);
+  if (
+    marker instanceof SVGElement &&
+    (!document.activeElement || document.activeElement === document.body)
+  )
+    marker.focus();
 });
 viewport.addEventListener("pointermove", (event) => {
   if (characterDrag) {
-    characterDrag.preview = [
-      characterDrag.at[0] + (event.clientX - characterDrag.x) * camera.mpp,
-      characterDrag.at[1] + (event.clientY - characterDrag.y) * camera.mpp,
+    characterDrag.delta = [
+      (event.clientX - characterDrag.x) * camera.mpp,
+      (event.clientY - characterDrag.y) * camera.mpp,
     ];
     draw();
     return;
@@ -1199,21 +1374,46 @@ viewport.addEventListener("pointermove", (event) => {
 });
 viewport.addEventListener("pointerup", (event) => {
   if (characterDrag) {
-    const c = characterState.characters.find((c) => c.id === characterDrag?.id);
+    const { id, ids, starts, delta } = characterDrag;
     const moved =
       Math.hypot(
         event.clientX - characterDrag.x,
         event.clientY - characterDrag.y,
       ) >= 4;
-    const destination = characterDrag.preview ?? characterDrag.at;
     characterDrag = null;
-    if (c && moved) pendingPositions.set(c.id, destination);
+    if (!moved) {
+      draw();
+      const now = event.timeStamp;
+      const count =
+        lastClick && lastClick.id === id && now - lastClick.at < 400
+          ? lastClick.count + 1
+          : 1;
+      clearTimeout(clickTimer);
+      if (count === 2) {
+        lastClick = null;
+        openedByDoubleClick = now;
+        openCharacterPopup(id);
+        return;
+      }
+      lastClick = { id, at: now, count };
+      clickTimer = window.setTimeout(() => {
+        if (selection.has(id)) characterAction(id);
+      }, 400);
+      return;
+    }
+    /** @type {Map<string, number[]>} */
+    const moves = new Map();
+    for (const moverId of ids) {
+      const start = starts.get(moverId);
+      if (start && delta)
+        moves.set(moverId, [start[0] + delta[0], start[1] + delta[1]]);
+    }
+    for (const [moverId, at] of moves) pendingPositions.set(moverId, at);
     draw();
-    if (c)
-      characterAction(c.id, moved ? destination : null).finally(() => {
-        pendingPositions.delete(c.id);
-        draw();
-      });
+    moveCharacters(moves).finally(() => {
+      for (const moverId of moves.keys()) pendingPositions.delete(moverId);
+      draw();
+    });
     return;
   }
   if (penStroke) {
@@ -1239,7 +1439,8 @@ viewport.addEventListener("pointerup", (event) => {
       doorPointerTarget = at;
       commandUi.execute("toggle-door");
       doorPointerTarget = null;
-    } else if (!characterState.characters.length) placeObserver(at);
+    } else if (characterState.characters.length) clearSelection();
+    else placeObserver(at);
   }
   drag = null;
   if (panNextDrag) cancelTemporaryPan();
@@ -1253,7 +1454,8 @@ viewport.addEventListener("pointercancel", () => {
   penStroke = null;
   draw();
 });
-viewport.addEventListener("dblclick", () => {
+viewport.addEventListener("dblclick", (event) => {
+  if (!editing && event.timeStamp - openedByDoubleClick < 600) return;
   if (!editing || sketchTool === "pan") fit();
 });
 function zoom(
@@ -1397,6 +1599,7 @@ function exportSvg() {
 function dismissControl() {
   if (temporaryPan) return cancelTemporaryPan();
   if (popupCharacter || newKind) return closeCharacterPopup();
+  if (selection.size) return clearSelection();
   if (!componentPanel.hidden) return closeComponents();
 }
 function playAvailable() {

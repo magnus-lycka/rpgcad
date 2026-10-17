@@ -21,7 +21,7 @@ async function seed(request, characters = [ada]) {
   });
 }
 
-test("⌘-click opens a popup at the marker; plain click only selects it", async ({
+test("double-click opens a popup at the marker; plain click only selects it", async ({
   page,
   request,
 }) => {
@@ -32,7 +32,7 @@ test("⌘-click opens a popup at the marker; plain click only selects it", async
   const popup = page.getByRole("dialog", { name: "Ada PC" });
   await marker.click();
   await expect(popup).toBeHidden();
-  await marker.click({ modifiers: ["Meta"] });
+  await marker.dblclick();
   await expect(popup).toBeVisible();
   await expect(popup.getByLabel("Name")).toHaveValue("Ada");
   const markerBox = await marker.boundingBox();
@@ -42,7 +42,7 @@ test("⌘-click opens a popup at the marker; plain click only selects it", async
   expect(Math.abs(popupBox.y - markerBox.y)).toBeLessThan(300);
 });
 
-test("the popup closes on Escape, on a second ⌘-click and on a click elsewhere", async ({
+test("the popup closes on Escape, on a second double-click and on a click elsewhere", async ({
   page,
   request,
 }) => {
@@ -50,21 +50,21 @@ test("the popup closes on Escape, on a second ⌘-click and on a click elsewhere
   await page.goto("/?mode=play");
   const marker = page.locator('[data-character="ada"]');
   const popup = page.getByRole("dialog", { name: "Ada PC" });
-  await marker.click({ modifiers: ["Meta"] });
+  await marker.dblclick();
   await expect(popup).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(popup).toBeHidden();
-  await marker.click({ modifiers: ["Meta"] });
+  await marker.dblclick();
   await expect(popup).toBeVisible();
-  await marker.click({ modifiers: ["Meta"] });
+  await marker.dblclick();
   await expect(popup).toBeHidden();
-  await marker.click({ modifiers: ["Meta"] });
+  await marker.dblclick();
   await expect(popup).toBeVisible();
   await page.mouse.click(700, 500);
   await expect(popup).toBeHidden();
 });
 
-test("a focused marker opens its popup with ⌘/Ctrl+Enter and Escape returns focus to it", async ({
+test("a focused marker opens its popup with Enter and Escape returns focus to it", async ({
   page,
   request,
 }) => {
@@ -72,7 +72,7 @@ test("a focused marker opens its popup with ⌘/Ctrl+Enter and Escape returns fo
   await page.goto("/?mode=play");
   const marker = page.locator('[data-character="ada"]');
   await marker.focus();
-  await page.keyboard.press("Control+Enter");
+  await page.keyboard.press("Enter");
   const popup = page.getByRole("dialog", { name: "Ada PC" });
   await expect(popup).toBeVisible();
   await expect(popup.getByLabel("Name")).toBeFocused();
@@ -91,7 +91,7 @@ async function saved(request) {
 /** @param {import('@playwright/test').Page} page
  * @param {string} id */
 async function openPopup(page, id) {
-  await page.locator(`[data-character="${id}"]`).click({ modifiers: ["Meta"] });
+  await page.locator(`[data-character="${id}"]`).dblclick();
 }
 
 test("renaming in the popup saves on Enter and the marker shows the new name", async ({
@@ -402,7 +402,7 @@ test("there is no default visual range anywhere on the toolbar", async ({
 /** @param {import('@playwright/test').Page} page
  * @param {string} id */
 async function openCharacterPopup(page, id) {
-  await page.locator(`[data-character="${id}"]`).click({ modifiers: ["Meta"] });
+  await page.locator(`[data-character="${id}"]`).dblclick();
   return page.locator("#character-popup");
 }
 
