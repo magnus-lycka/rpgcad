@@ -18,7 +18,7 @@ The browser shows only the drawing. The square grid is always visible, including
 
 ### Visual feedback experiment
 
-Open `/?level=below&mode=edit`. Draw freely with Pen, then type your instruction in the existing agent conversation. There is no browser text entry or submit button. Pen-up automatically saves the untouched strokes in model coordinates; undo and clear update them automatically too. Pan moves the view and is the default tool. Select Pen to add marks; its cursor is a pen. In Edit, P selects Pen, H selects Pan, C toggles Components, and O opens Sketch options. Ctrl/Command-Z undoes the latest mark or restores the last Clear. Shift-Backspace clears marks (on Mac, Shift plus backward Delete ⌫, not forward Delete); holding it does not clear repeatedly. These commands are also available in the command palette and shortcut help. Text fields keep native editing, and save errors remain visible without discarding the marks.
+Open `/?level=below&mode=edit`. Draw freely with Pen, then type your instruction in the existing agent conversation. There is no browser text entry or submit button. Pen-up automatically saves the untouched strokes in model coordinates; undo and clear update them automatically too. Pan moves the view and is the default tool. Select Pen to add marks; its cursor is a pen. In Edit, P selects Pen, H selects Pan, C toggles Components. Clear marks and Calibrate are toolbar icons. Ctrl/Command-Z undoes the latest mark or restores the last Clear. Shift-Backspace clears marks (on Mac, Shift plus backward Delete ⌫, not forward Delete); holding it does not clear repeatedly. These commands are also available in the command palette and shortcut help. Text fields keep native editing, and save errors remain visible without discarding the marks.
 
 For each chat layout instruction the agent reads `GET /sketch?level=below` (omit the query for ground level), uses pending nonempty marks as spatial context, edits the same authoritative model and acknowledges with `PATCH /sketch?level=below`: the record's `submittedAt`, `status: "applied"` and a short `reply`. Only the acknowledged marks disappear. The normal model polling displays the result without resetting the camera. The scratch `*.sketch.PROTOTYPE.json` next to the model retains the latest strokes, model snapshot/revision and viewport. Already-applied or empty marks are not new instructions.
 
@@ -29,7 +29,7 @@ Play hides the palette, reference axes and pen strokes; Shift-E returns to editi
 - Drag to pan; scroll to zoom.
 - Double-click or press F to fit the model.
 - Press + or −, or use the zoom buttons, to zoom about the centre. Press Z (or open the zoom menu / Referee View controls) to enter a percentage and press Enter. After calibration at 1:75, 100% means the calibrated 1:75 size; 10% is one tenth that size. The readout includes the reference scale. Before calibration, it explicitly labels the nominal CSS-pixel estimate as uncalibrated.
-- Choose Calibrate in the edit toolbar (or the play GM controls). Measure between the ruler end ticks, enter the measured millimetres and scale denominator, then Apply scale. Five squares represent 7.5 m, requiring 100 mm at 1:75: an 80 mm measurement increases current magnification by 25%. The ruler uses current grid spacing and shows fewer squares if needed to fit the screen. Applying calibration establishes 100% at the entered scale. Fit and zoom change magnification while retaining that reference, so entering 100 returns to the calibrated size. Calibration is temporary to the current page; reloading needs calibration again. Print dimensions remain independent.
+- Choose Calibrate in the toolbar (both modes); the scale field beside it reads Uncalibrated until you apply a scale, then 1:75 or similar. Measure between the ruler end ticks, enter the measured millimetres and scale denominator, then Apply scale. Five squares represent 7.5 m, requiring 100 mm at 1:75: an 80 mm measurement increases current magnification by 25%. The ruler uses current grid spacing and shows fewer squares if needed to fit the screen. Applying calibration establishes 100% at the entered scale. Fit and zoom change magnification while retaining that reference, so entering 100 returns to the calibrated size. Calibration is temporary to the current page; reloading needs calibration again. Print dimensions remain independent.
 - Press S to save the model as SVG at 1:75.
 - Use the browser's print command for tiled A4 landscape output.
 - For A3 portrait printing, open http://127.0.0.1:8765/?paper=a3.
@@ -112,7 +112,7 @@ The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the
 
 ## Character markers in play (prototype)
 
-Enter play with the Play button or Shift-E. Shift-G opens the GM panel. Type a name and choose Add PC or Add NPC; the marker starts at the current view centre. Drag it to its position. Shift-V temporarily shows all characters and the full plan without revealing additional fog.
+Enter play with the Play button or Shift-E. Choose Add PC or Add NPC in the toolbar; the marker starts at the current view centre with a default name (PC 1, NPC 2…) that you can change in the Shift-G panel. Drag it to its position. Shift-V temporarily shows all characters and the full plan without revealing additional fog.
 
 Click a PC marker, or choose a PC on the current level in the Character selector, to use its POV and saved sight range. A gold ring identifies the POV PC. Dragging it reveals from its destination only. Other PC movement and NPC movement do not reveal areas. All PCs on the displayed level remain visible; NPCs appear only within current visibility, with no remembered markers. The character selector also lists hidden characters so the GM can manage them.
 
@@ -273,7 +273,7 @@ Expand **Component details** for dimensions, settings and placement/access guida
 Close or Escape returns to the same drawing, tool, view and pending marks.
 Browsing does not place components or send an instruction; describe placement in chat.
 
-The Exploration form sets **Default visual range (m)** for the plan. **Selected character visual range (m)** is an optional override: leave it blank to inherit the default. New characters inherit; existing explicit ranges remain unchanged. Changing the default immediately affects an inheriting POV, but does not resume visibility after a fog reset. Both the default and overrides survive reload.
+The toolbar's **Default visual range (m)** field (with the dim/bright sun buttons, < and >) sets the default for the plan. **Selected character visual range (m)** is an optional override: leave it blank to inherit the default. New characters inherit; existing explicit ranges remain unchanged. Changing the default immediately affects an inheriting POV, but does not resume visibility after a fog reset. Both the default and overrides survive reload.
 
 ## Local runtime data and Git
 
@@ -290,8 +290,8 @@ this Git policy does not relocate or reset a running session's data.
 ### Referee command discovery
 
 In Play, `/` or Ctrl/Command-K opens the command palette; `?` lists every
-binding. G/Shift-G opens Referee controls, T/X/W selects Characters/Exploration/
-View, A/N adds a PC/NPC, D toggles Character options, Shift-N renames the selected
+binding. G/Shift-G opens Referee controls, T selects Characters,
+A/N adds a PC/NPC, D toggles Character options, Shift-N renames the selected
 character from the name field, Shift-D removes it, and Shift-M transfers it to
 the selected different level. Leave a text/choice field before using map keys;
 ordinary field editing and native tab navigation retain precedence.

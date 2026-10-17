@@ -5,7 +5,6 @@
 - Components — Edit — apps — C
 - Undo drawing marks — Edit — undo — ⌘Z
 - Clear marks — Edit — erase — ⇧⌫
-- Sketch options — Edit — overflow-menu--horizontal — O
 - Pan nudge left — Edit — — — ←/⇧←
 - Pan nudge right — Edit — — — →/⇧→
 - Pan nudge up — Edit — — — ↑/⇧↑
@@ -18,7 +17,10 @@
 - Zoom out — Edit+Play — zoom--out — -
 - Set zoom percentage — Edit+Play — — — Z
 - Fit — Edit+Play — fit-to-screen — F
-- Export SVG — Edit+Play — download — ⌘E
+- Zoom to 100% — Edit+Play — zoom--reset — 0
+- Info — Edit+Play — information — I
+- Export SVG — Edit — download — ⌘E
+- Export PDF — Edit — document--pdf — ⌘P
 - Calibrate — Edit+Play — calibrate — K
 - Library — Edit+Play — folder — ⇧L
 - Switch Edit / Play — Edit+Play — edit / play--filled — ⇧E
@@ -36,6 +38,8 @@
 - Move Observer down — Play — — — ↓
 - Decrease Observer range — Play — — — [
 - Increase Observer range — Play — — — ]
+- Decrease default range — Play — light — <
+- Increase default range — Play — light--filled — >
 - Reset fog / close all doors — Play — — — ⇧R
 - Toggle Fog — Play — — — ⇧V
 
@@ -53,7 +57,7 @@ Only one button, but switching based on mode.
 
 ### File Section
 
-- Info - Edit+Play - I'm sure there is an info ico - I ...show info about file, level etc
+- Info — Edit+Play — information — I
 - Library — Edit+Play — folder — ⇧L
 - Export SVG — Edit — download — ⌘E
 - Export PDF — Edit — download — ⌘P
@@ -62,6 +66,7 @@ Only one button, but switching based on mode.
 
 - Pan (tool) — Edit — move — H
 - Pen — Edit — Edit — P
+- Components — Edit — apps — C
 - Undo drawing marks — Edit — undo — ⌘Z
 - Clear marks — Edit — erase — ⇧⌫
 
@@ -72,12 +77,13 @@ Only one button, but switching based on mode.
 - Set zoom percentage — Edit+Play — — — Z
 - Zoom out — Edit+Play — zoom--out — -
 - Fit — Edit+Play — fit-to-screen — F
+- Zoom to 100% — Edit+Play — zoom--reset — 0
 
 ### Play section
 
 - Toggle Fog — Play — — — ⇧V
 - Reset fog / close all doors — Play — — — ⇧R
-- Decrease Default Observer range — Play — — — <
-- Increase Default Observer range — Play — — — >
+- Decrease default range — Play — light — <
+- Increase default range — Play — light--filled — >
 - Add PC - Play - A
 - Add NPC - Play - N

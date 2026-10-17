@@ -11,6 +11,8 @@ the same check covers adding and renaming. Existing duplicate records are left
 intact for deliberate correction. Regression tests cover HTTP rejection, repeated
 addition, rejected rename and a subsequent valid rename through the browser.
 
+A legacy roster held two PCs named RP on different levels. Every character save was rejected, so every drag snapped back, and the error appeared only inside the closed GM panel. The plan selector in the URL was not the cause. Decision: validation stays strict and the broken record is corrected by hand; no tolerance code accommodates it. Rejected character and exploration saves now show a visible alert in both modes, so such failures cannot pass unnoticed.
+
 Recorded from the Referee's interactive evaluation on 2026-10-08 and 2026-10-09. These are observations and working rules, not a claim that the general design problem is solved.
 
 ## Working loop
