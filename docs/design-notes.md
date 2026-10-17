@@ -211,3 +211,83 @@ Agreed behavior:
 - Initial markers are small named circles, with distinguishable PC/NPC appearance and a selection ring for the POV PC. Clicking a PC makes it the POV; dragging moves a character.
 - The on-demand GM panel provides add, rename, remove, range and level controls. Portraits and combat statistics are deferred.
 - These decisions extend the earlier one-party-POV scope. The Referee confirmed the combined scope. This is implemented in the throwaway prototype; Referee evaluation is pending.
+
+## UX critique decisions — 2026-10-11
+
+- Play is shown to players. Its closed-menu drawing-only presentation is intentional; do not add a discovery hint or permanent controls. The Referee can remember Shift-G.
+- Edit identifies the current plan and level in the Designer palette. In Play, that context appears only inside the open GM menu. Both use saved names and wrap long names.
+- Component browsing and symbols remain work in progress. The empty Characters form suggestion is tentative, not an agreed implementation task.
+- The fog-reset keyboard shortcut requires Shift-R; plain R must preserve exploration. Do not add reset confirmation or Undo Reset: revealing areas again is acceptable. The explicit reset action in the GM menu remains available.
+
+### Menu typography refinement
+
+Designer and Referee controls share a compact 14 px system-font baseline,
+16 px plan titles and quieter 13 px guidance. The Referee rejected the warm
+ivory/red palette because it clashed with the drawing. Menus use white surfaces,
+black text and neutral grey states, without coloured accents. Explicit field/control styling replaces browser-default
+form appearance; form labels sit above full-width fields. Panels remain compact,
+wrap long context names and scroll within the available screen height. Play
+continues to hide all menu chrome until the Referee requests it.
+
+### Controls follow their function
+
+Character names identify individuals and must be unique within a plan across
+PCs, NPCs and levels. Adding or renaming to an existing name is rejected, including
+case differences and surrounding whitespace. Rejection preserves the roster and
+creation/edit/play dates; the browser explains the name conflict. Separate plans
+may reuse names. Existing duplicate records are not silently deleted or renamed.
+
+- Pen/Pan are a joined, mutually exclusive tool choice. Controls opening additional UI show disclosure indicators and expanded state.
+- Referee activities are real tabs, with one selected panel and Left/Right/Home/End keyboard navigation, rather than independent toggle buttons.
+- Library and mode-switch navigation share one visual treatment while retaining link semantics for URLs and button semantics for local mode changes.
+- Full-plan GM visibility is a persistent on/off control with a stable label, rather than an action whose wording changes after activation.
+- Rename, range, character options and destination controls appear only with a selected character. Moving to its existing level is disabled; choosing another level enables the action. Range fields identify their automatic-save behavior.
+- Explicit hidden states take precedence over form-display styling. Native links, buttons, tabs and disclosures remain semantically distinct for accessibility.
+
+### Referee controls remain in one place
+
+The Referee rejected floating character forms. All character fields and actions
+remain in the Characters section of the Referee menu. Selection, movement, pan
+and zoom must never reparent or relocate that form. This supersedes the contextual
+character-control proposal in spec #22 and ticket #27. Native SVG focus paint must
+not enlarge or obscure markers; retain a thin selection contour and the PC/NPC
+colors.
+
+### Character removal has no undo
+
+The Referee withdrew Undo Remove on 2026-10-11. Remove character is a direct,
+persisted action with no recovery snapshot, restore command or undo notification.
+Failed saves still preserve the character and report the error in the Referee
+menu. This supersedes the removal-recovery requirement in spec #22 and ticket #28.
+
+### Outstanding integration and cleanup, 2026-10-11
+
+- The current UI corrections, unique-character-name validation, removal of floating
+  forms/native SVG focus paint, direct removal without undo, and runtime Git policy
+  are local uncommitted changes. Review the complete diff, commit and push them;
+  they are not yet published on GitHub.
+- Impeccable was uninstalled at the Referee's request: all three local skill
+  copies, installed agents, hooks and generated critique/live data were removed.
+  The previously reported helper-script lint errors are no longer applicable.
+- The existing referee-building roster contains one duplicate-name group. New
+  validation rejects the entire roster when it contains duplicate trimmed,
+  case-insensitive names, so old duplicates can block subsequent character writes.
+  Resolve these explicitly, retaining the intended individuals and their state;
+  do not silently delete or rename them. Component-demo currently has no duplicates.
+- GitHub spec #22 and tickets #27/#28 describe withdrawn floating character forms
+  and removal recovery. Update them to reflect fixed Referee-menu controls and
+  direct character removal, so future work does not reintroduce rejected behavior.
+
+
+Runtime files are ignored but remain alongside the prototype. This does not provide
+backups or move all mutable shipped example models out of tracked source files;
+separating shipped examples from live authored models remains a follow-up.
+
+## Calibrated zoom percentage
+
+The displayed zoom percentage is relative to the chosen calibrated screen scale,
+not an internal camera constant. Applying calibration at 1:75 establishes
+"100% at 1:75". Fit, wheel zoom and zoom buttons preserve that reference; direct
+percentage entry supports values such as 100 and 10 in Edit and Play. Before
+measurement the nominal estimate is explicitly labelled uncalibrated. Screen
+calibration remains temporary page state and does not change print scale.

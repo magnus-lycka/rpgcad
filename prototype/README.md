@@ -18,7 +18,7 @@ The browser shows only the drawing. The square grid is always visible, including
 
 ### Visual feedback experiment
 
-Open `/?level=below&mode=edit`. Draw freely with Pen, then type your instruction in the existing agent conversation. There is no browser text entry or submit button. Pen-up automatically saves the untouched strokes in model coordinates; undo and clear update them automatically too. Pan moves the view and is the default tool. Select Pen to add marks; its cursor is a pen.
+Open `/?level=below&mode=edit`. Draw freely with Pen, then type your instruction in the existing agent conversation. There is no browser text entry or submit button. Pen-up automatically saves the untouched strokes in model coordinates; undo and clear update them automatically too. Pan moves the view and is the default tool. Select Pen to add marks; its cursor is a pen. In Edit, P selects Pen, H selects Pan, C toggles Components, and O opens Sketch options. Ctrl/Command-Z undoes the latest mark or restores the last Clear. Shift-Backspace clears marks (on Mac, Shift plus backward Delete ⌫, not forward Delete); holding it does not clear repeatedly. These commands are also available in the command palette and shortcut help. Text fields keep native editing, and save errors remain visible without discarding the marks.
 
 For each chat layout instruction the agent reads `GET /sketch?level=below` (omit the query for ground level), uses pending nonempty marks as spatial context, edits the same authoritative model and acknowledges with `PATCH /sketch?level=below`: the record's `submittedAt`, `status: "applied"` and a short `reply`. Only the acknowledged marks disappear. The normal model polling displays the result without resetting the camera. The scratch `*.sketch.PROTOTYPE.json` next to the model retains the latest strokes, model snapshot/revision and viewport. Already-applied or empty marks are not new instructions.
 
@@ -28,8 +28,8 @@ Play hides the palette, reference axes and pen strokes; Shift-E returns to editi
 
 - Drag to pan; scroll to zoom.
 - Double-click or press F to fit the model.
-- Press + or −, or use the zoom buttons, to zoom about the centre.
-- Choose Calibrate in the edit toolbar (or the play GM controls). Measure between the ruler end ticks, enter the measured millimetres and scale denominator, then Apply scale. Five squares represent 7.5 m, requiring 100 mm at 1:75: an 80 mm measurement increases current magnification to 125%. The ruler uses current grid spacing and shows fewer squares if needed to fit the screen. Calibration affects the current view only; Fit, zooming or reloading changes that view. Print dimensions remain independent.
+- Press + or −, or use the zoom buttons, to zoom about the centre. Press Z (or open the zoom menu / Referee View controls) to enter a percentage and press Enter. After calibration at 1:75, 100% means the calibrated 1:75 size; 10% is one tenth that size. The readout includes the reference scale. Before calibration, it explicitly labels the nominal CSS-pixel estimate as uncalibrated.
+- Choose Calibrate in the edit toolbar (or the play GM controls). Measure between the ruler end ticks, enter the measured millimetres and scale denominator, then Apply scale. Five squares represent 7.5 m, requiring 100 mm at 1:75: an 80 mm measurement increases current magnification by 25%. The ruler uses current grid spacing and shows fewer squares if needed to fit the screen. Applying calibration establishes 100% at the entered scale. Fit and zoom change magnification while retaining that reference, so entering 100 returns to the calibrated size. Calibration is temporary to the current page; reloading needs calibration again. Print dimensions remain independent.
 - Press S to save the model as SVG at 1:75.
 - Use the browser's print command for tiled A4 landscape output.
 - For A3 portrait printing, open http://127.0.0.1:8765/?paper=a3.
@@ -62,7 +62,7 @@ Open http://127.0.0.1:8765/?fog=1. The normal URL still shows the full authored 
 - Shift-click near a door's centre to toggle its open/closed state. You can also ask the agent to change a named door in the exploration file.
 - Shift-G (or G) shows/hides GM controls, including direct numeric range entry and a reset button. Escape closes the panel.
 - Shift-R (or R) covers the entire plan with fog and closes all doors, keeping POV position and range. Click to place the observer or use an arrow key to start revealing again. Reset persists across reloads and exits GM view.
-- Shift-F toggles fog off/on for a temporary full-plan GM view with the blue POV marker (V remains an alias); the panel also has a full-plan button. Plain F still fits the plan to the window. This does not reveal exploration. Placement and door toggling still work, recording only normally visible areas. Returning to fog restores the player view; print/export from the fog URL stays fogged even during GM view.
+- Shift-V toggles fog off/on for a temporary full-plan GM view with the blue POV marker (bare V and the former Shift-F alias are intentionally removed); the panel also has a full-plan button. Plain F still fits the plan to the window. This does not reveal exploration. Placement and door toggling still work, recording only normally visible areas. Returning to fog restores the player view; print/export from the fog URL stays fogged even during GM view.
 - Bright areas are currently visible, muted areas have been explored, and the grey grid is still unknown. Walls and closed doors block sight. Furniture/equipment outlines, hatches, and step irons do not block merely because they are drawn.
 
 `prototype/exploration.PROTOTYPE.json` holds version-2 scratch play state independently of the building. `observers` holds POV positions in model metres and positive sight ranges; `doors` holds current overrides. Ordered `observations` store only position, range, door states and a model-revision reference. Shared `revisions` store each observed model revision once, preserving last-seen geometry across edits. No fog polygons are saved. Reset clears observations and unused revisions.
@@ -90,7 +90,7 @@ The technical update mechanism appears viable, and the Referee positively evalua
 - Openings cut only their own wall; crossing walls can obstruct them.
 - Connected wall segments and labels do not automatically move together.
 - The model has no fixed outer boundary; printing is limited to 200 sheets per request in this prototype.
-- No direct geometry editing, room semantics, or undo. Six reusable component families are implemented: bed, chair, wall door, ceiling hatch, crew console and generic service machinery. Their dimensions are proposed defaults; Referee viability approval under ticket #13 remains pending before catalogue expansion. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were also added during the interactive evaluation.
+- No direct geometry editing, room semantics, or undo. Six reusable component families are implemented: bed, chair, wall door, hinged hatch, iris valve and crew console. Generic service machinery was withdrawn from the usable catalogue. Their dimensions are proposed defaults; Referee viability approval under ticket #13 remains pending before catalogue expansion. Closed door panels, ceiling hatch circles, rounded step irons, lift outlines, and a spiral-stair symbol were also added during the interactive evaluation.
 - Regression tests cover HTTP saves, pure exploration behaviour, browser controls, and fog rendering; this remains a prototype without a production framework. See `docs/agents/development.md` for the required TDD workflow.
 
 ## Levels in one server
@@ -106,17 +106,17 @@ uv run python prototype/server.py
 - Ground-floor fog: http://127.0.0.1:8765/?fog=1
 - Lower-floor fog: http://127.0.0.1:8765/?level=below&fog=1
 
-The level parameter selects both the model and its independent exploration state. Unknown IDs return 404 instead of displaying another level. The default/original level retains `exploration.PROTOTYPE.json`; the lower level saves `level-below.PROTOTYPE.exploration.json`. Fresh levels start fully fogged with no POV; click to place one, or use Shift-F to orient in GM view first. The plan manifest is read at server startup; restart after adding a new level entry.
+The level parameter selects both the model and its independent exploration state. Unknown IDs return 404 instead of displaying another level. The default/original level retains `exploration.PROTOTYPE.json`; the lower level saves `level-below.PROTOTYPE.exploration.json`. Fresh levels start fully fogged with no POV; click to place one, or use Shift-V to orient in GM view first. The plan manifest is read at server startup; restart after adding a new level entry.
 
 The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the original floor and has its own rooms and corridors. The original drawing is unchanged. These URLs replace the temporary port-8767 setup. The plan library below provides level selection; a drawing-only level-switching control remains future work.
 
 ## Character markers in play (prototype)
 
-Enter play with the Play button or Shift-E. Shift-G opens the GM panel. Type a name and choose Add PC or Add NPC; the marker starts at the current view centre. Drag it to its position. Shift-F temporarily shows all characters and the full plan without revealing additional fog.
+Enter play with the Play button or Shift-E. Shift-G opens the GM panel. Type a name and choose Add PC or Add NPC; the marker starts at the current view centre. Drag it to its position. Shift-V temporarily shows all characters and the full plan without revealing additional fog.
 
 Click a PC marker, or choose a PC on the current level in the Character selector, to use its POV and saved sight range. A gold ring identifies the POV PC. Dragging it reveals from its destination only. Other PC movement and NPC movement do not reveal areas. All PCs on the displayed level remain visible; NPCs appear only within current visibility, with no remembered markers. The character selector also lists hidden characters so the GM can manage them.
 
-With GM controls requested, visible selected characters have compact actions beside their marker (docked below the GM controls in narrow windows). Rename and change the selected character's visual range there; Remove character is under Character options. Hidden or other-level characters remain manageable in the roster, without exposing their marker location. Escape closes character actions first and returns focus to the roster. Enter/Space selects a focused marker. A dashed blue ring marks selection independently of the gold POV ring. Choose a destination level and Move to level to transfer the selected character; the browser opens that level, preserving its coordinates so it can be dragged into place using GM full-plan view. Automatic stair/lift travel and combat integration are deferred. Shift-R clears exploration and closes doors while preserving character positions, ranges and selection; reveal pauses until POV selection or movement.
+All character controls stay in the Characters section of the Referee menu. Selecting or moving a marker never opens a separate form or relocates its controls. Rename and change the selected character's visual range there; Remove character is under Character options. Hidden or other-level characters remain manageable in the roster, without exposing their marker location. Escape closes expanded Character options first, then the Referee menu. Enter/Space selects a focused marker. A dashed blue ring marks selection independently of the gold POV ring. Choose a destination level and Move to level to transfer the selected character; the browser opens that level, preserving its coordinates so it can be dragged into place using GM full-plan view. Automatic stair/lift travel and combat integration are deferred. Shift-R clears exploration and closes doors while preserving character positions, ranges and selection; reveal pauses until POV selection or movement.
 
 `characters.PROTOTYPE.json` is scratch play state shared by the existing building’s levels; other plans have their own rosters. It is separate from authored geometry and level-specific exploration. HTTP optimistic concurrency rejects stale saves. No sample characters are inserted into the Referee's plan.
 
@@ -274,3 +274,30 @@ Close or Escape returns to the same drawing, tool, view and pending marks.
 Browsing does not place components or send an instruction; describe placement in chat.
 
 The Exploration form sets **Default visual range (m)** for the plan. **Selected character visual range (m)** is an optional override: leave it blank to inherit the default. New characters inherit; existing explicit ranges remain unchanged. Changing the default immediately affects an inheriting POV, but does not resume visibility after a fog reset. Both the default and overrides survive reload.
+
+## Local runtime data and Git
+
+Prototype runtime JSON is ignored: local library metadata and backups, character
+rosters, fog history, drawing marks, duplicated plan models, and `*-data/` plan
+folders. Keep these files when updating or switching code; they contain your work.
+Ignored does not mean backed up: include them in your own backups.
+
+The catalogue, demo source under `demos/`, building example models and initial
+plan manifest remain tracked as shipped examples. New local plans are not source
+code and should remain ignored. The server still uses its existing file paths;
+this Git policy does not relocate or reset a running session's data.
+
+### Referee command discovery
+
+In Play, `/` or Ctrl/Command-K opens the command palette; `?` lists every
+binding. G/Shift-G opens Referee controls, T/X/W selects Characters/Exploration/
+View, A/N adds a PC/NPC, D toggles Character options, Shift-N renames the selected
+character from the name field, Shift-D removes it, and Shift-M transfers it to
+the selected different level. Leave a text/choice field before using map keys;
+ordinary field editing and native tab navigation retain precedence.
+
+Shift-O toggles a door opening within 0.6 m of the Observer. Move the Observer
+beside the opening first; the palette explains unavailable targets. Shift-click
+continues to use the pointer position with the same door action. Arrows move the
+Observer, brackets adjust its range, and Shift-R clears exploration/closes doors.
+Saving actions use the existing save status/error feedback for clicks and keys.

@@ -1,5 +1,16 @@
 # Prototype findings
 
+## Character identity: duplicate names are a bug
+
+The Referee confirmed that repeated Add actions must never create another
+character with the same name. Names distinguish individuals within the plan,
+regardless of PC/NPC kind or level. HTTP saves now reject duplicate trimmed,
+case-insensitive names without changing the saved roster or date metadata.
+The browser checks the proposed roster before saving and reports the conflict;
+the same check covers adding and renaming. Existing duplicate records are left
+intact for deliberate correction. Regression tests cover HTTP rejection, repeated
+addition, rejected rename and a subsequent valid rename through the browser.
+
 Recorded from the Referee's interactive evaluation on 2026-10-08 and 2026-10-09. These are observations and working rules, not a claim that the general design problem is solved.
 
 ## Working loop
@@ -314,7 +325,7 @@ drawing-only presentation; the same view controls are available in its GM panel.
 Calibration measures a screen ruler at the current model magnification rather
 than assuming CSS millimetres equal physical millimetres. Five grid squares are
 7.5 m and should measure 100 mm at 1:75. Entering 80 mm therefore increases
-magnification to 125%, without changing geometry or print dimensions. Fewer
+magnification by 25%, without changing geometry or print dimensions. Fewer
 squares are shown if five would exceed the viewport; the stated length and
 calculation follow the actual ruler. Calibration is temporary view state.
 
@@ -349,11 +360,18 @@ part of the drawing remains visible even in the narrow view.
 
 Clear marks now offers one in-memory Undo Clear snapshot only after a successful save. It survives Edit/Play switching; another successful sketch save, page navigation or an incompatible authoritative revision discards it. Failed Clear restores the local draft; a failed Undo remains retryable unless the server reports a stale revision. Recovery saves use optional If-Match checked atomically with the sketch write under the server lock, so an unseen agent acknowledgement or another browser cannot be overwritten. Existing unconditional sketch writers remain supported. Recovery controls are part of the screen-only Designer toolbar, and normal Undo stroke remains separate.
 
-## Character removal recovery, 2026-10-11
+## Character removal recovery, 2026-10-11 (withdrawn)
+
+The Referee explicitly rejected Undo Remove. Its control, recovery state and
+restore code were deleted; the following describes the former implementation.
 
 Undo Remove retains the latest successfully removed character for the current drawing page. It restores the same identity, position, range and applicable POV without adding an observation, changing door state or lifting reset's visibility pause. Switching Edit/Play preserves recovery; successful character mutations, incompatible authoritative character changes and leaving the page invalidate it. Recovery uses the existing conditional character save: a stale restore cannot overwrite another client's characters. Transient failed restores retain an explicit retry; failed removals retain the character and do not announce success. Browser/HTTP checks exercise these behaviours, keyboard use in a narrow window, print exclusion and plan isolation against disposable data.
 
-## Contextual character management, ticket #27
+## Contextual character management, ticket #27 (withdrawn)
+
+The Referee rejected this interaction on 2026-10-11. The following records the
+original implementation, superseded by fixed character controls in the Referee
+menu.
 
 Requested Referee controls move the existing character operations beside a visible
 selected marker. Hidden NPCs and characters on another level keep their controls
@@ -389,7 +407,7 @@ redraw must use the saved range throughout a pending or rejected save. Rejection
 must preserve both exploration history and the actionable save error.
 
 Escape now closes expanded Character options and focuses its summary before a
-second Escape closes contextual actions and returns focus to the roster. Each
+second Escape closes the Referee menu (originally the contextual actions). Each
 regression was observed failing before its implementation.
 
 The same Escape rule applies to visible roster Character options for hidden or
@@ -409,8 +427,8 @@ All character mutations now use one proposal/save/commit boundary. Only successf
 persistence updates the live character state, and level navigation and observation
 recording follow that success. Drag previews are separate from saved positions, so
 polling cannot reveal an unsaved movement destination. Failed actions retain an
-error and the saved state; removal recovery and visual-range retry semantics remain
-covered by the existing browser tests.
+error and the saved state; direct-removal failure handling and visual-range retry
+semantics remain covered by the browser tests.
 
 ### Attached-door catalogue framing
 
@@ -423,3 +441,182 @@ regression checks that both leaves together are centred and large enough to
 inspect. Catalogue and Designer drawer checks pass, and visual inspection shows
 the complete closed door centred in its preview. Door-state visibility continues
 to use the existing opening path independently of preview bounds.
+
+### Fog-reset shortcut safety
+
+A browser regression first demonstrated that plain R immediately erased saved
+exploration despite the advertised Shift-R shortcut. Requiring the Shift modifier
+fixes that mismatch. The regression checks that plain R preserves both the visible
+exploration and the saved HTTP record, while Shift-R resets and survives reload.
+The Referee explicitly chose this shortcut restriction without confirmation or
+undo. Existing coverage checks that reset closes doors too.
+
+### Plan and level context in the drawing
+
+The Designer palette and open GM menu now identify the selected plan and level
+using the existing plan metadata response, including the first-level default for
+plan-only URLs. Text is inserted as text content and long names can wrap. A
+failing-first browser regression covers Edit, closed/open Play controls and
+navigation to another plan. The GM destination dropdown also contains the level
+name, so the assertion targets the context display rather than ambiguous text.
+Live visual inspection confirms that closing the GM menu hides this context.
+
+### Shared menu typography
+
+Desktop and 390 px wide visual checks show matching Designer/Referee type,
+controls and warm paper surfaces. Referee fields now align below their labels;
+the roster scrolls within the screen while navigation remains reachable. The
+type detector reports no findings. A sketch browser test initially drew inside
+the resized palette: pointer coordinates now derive from the visible palette
+bounds, keeping its behavioral assertions independent of menu dimensions.
+
+### Interaction consistency and hidden controls
+
+Menu inspection found that range-label `display:block` overrode the browser's
+hidden attribute styling, exposing character settings even without selection.
+The scoped hidden rule now wins over all panel display rules. Browser regressions
+first failed on missing tab semantics, active commands without a selected
+character and the visible hidden range field; all three behaviors are corrected.
+The tab test exercises selection, panel visibility and arrow/Home/End focus.
+Character-action coverage restores its roster fixture after creating a character
+so it cannot interfere with later plan-isolation tests.
+
+### Menu palette correction
+
+The Referee rejected the warm ivory/red menu palette because it did not match
+the drawing behind it. Both menus now use white, black and neutral greys,
+including focus, selected, disabled and toggle states. Visual inspection confirms
+that the interaction improvements remain while the colour accents are removed.
+
+### Referee rejects character management behavior
+
+The Referee reported and rejected the marker-attached character form, repeated
+Add producing identically named/positioned characters, and a large blue selection
+appearance for either character kind. Diagnosis against isolated browser data
+reproduced the first two: `updateCharacterActions` physically reparents the form
+from the GM roster to a positioned popup; `addCharacter` reuses the selected
+character's name input and always places new records at the camera centre.
+The contextual form and blue selection contour originated in commit 6fe9f2e;
+the shared add/name field dates to the character prototype. Existing tests
+asserted the contextual behavior, so green tests did not establish approval.
+An isolated NPC click retained the orange body at radius 0.32 m and added a blue
+selection contour at radius 0.48 m. Literal tenfold enlargement or a blue NPC
+body was not reproduced, and remains to diagnose rather than claim resolved.
+The Referee expects character management to stay in the GM menu; creating a new
+character must not reuse the selected character as an implicit creation draft.
+
+## Oversized blue marker and unstable character forms
+
+The supplied screenshot was reproduced by focusing an NPC SVG marker and pressing
+Enter. Browser-native SVG focus paint rendered a large blue disk even though the
+circle retained its normal orange fill and 0.32 m radius. A screenshot-pixel
+regression failed with 78,918 blue pixels outside the normal marker region, then
+passed after disabling native focus outline on character SVG groups. The existing
+thin selection contour remains, and keyboard selection still works. DOM radius
+checks alone missed the painting defect.
+
+The floating character form was removed completely. Fields and actions remain
+inside the Referee menu through selection, dragging, pan and zoom. Tests expecting
+floating controls were replaced with the corrected behavior. No form should move
+between popups based on map focus.
+
+## Direct character removal
+
+Removal now persists immediately without Undo Remove. Regression coverage checks
+that there is no undo control, removal survives reload, and a failed save preserves
+the character and displays the error. Tests for the withdrawn restoration workflow
+were replaced with direct-removal tests.
+
+## Shared commands and discovery, ticket #33
+
+Shared view and navigation commands now use one command registry, searchable with
+Ctrl/Command-K or /. The palette shows unavailable commands with reasons, supports
+fuzzy label matching, arrow selection and Enter, and restores focus on dismissal.
+The ? sheet derives labels and bindings from that registry. Field and modal-dialog
+editing suppresses drawing shortcuts; calibration retains local Enter/Escape.
+A failing browser check exposed focus remaining in the closed calibration field;
+Escape now returns focus to the drawing synchronously.
+
+SVG export changes from S to Ctrl/Command-E; Library requires Shift-L and mode
+switching remains Shift-E. Both modifier variants were verified in Chromium through
+actual downloads. Shared click and key actions announce through the existing live
+regions. Later Designer and Referee slices extend the registry and replace their
+remaining legacy handlers. The final policy removes V and Shift-F in favour of
+Shift-V, and uses Shift-Backspace for clearing marks.
+
+## Compact Designer toolbar, ticket #37
+
+The Designer card is now a context breadcrumb above a compact command bar.
+Pen/Pan remain a segmented choice; Undo and Sketch options use named icons;
+Clear marks and Calibrate share overflow. Library is grouped as navigation and
+Play uses subdued styling. A single percentage disclosure opens Zoom in/out and
+Fit. Its initial percentage used an arbitrary camera baseline; the Referee
+rejected that interpretation. The calibrated-scale correction below supersedes it.
+
+A recorded disposable-fixture baseline at 1280 × 800 measured 511.359375 ×
+239.984375 CSS pixels, including context. The replacement measures 487.03125 ×
+67.484375: 32,867.00 CSS pixels squared, 26.78% of the former footprint (limit 40%).
+Actual screenshots were inspected at 1280 × 800 with both light and dark system
+preferences, and at 390 × 700 with overflow closed and open. Both preferences
+retain the existing neutral white/black panel presentation; no theme was added.
+The narrow bar wraps and keeps calibration and Clear reachable. Referee panel
+layout is unchanged; print checks hide the complete Designer bar.
+
+A browser regression first failed because the toolbar did not exist, then
+passed with arrow/Home/End navigation, pressed tools and unchanged Model view.
+Additional characterization verifies one Tab entry, icon shortcut metadata,
+zoom readout and nested calibration/overflow focus restoration. Existing
+calibration tests now enter overflow before clicking its button, preserving
+the same scale, loading and component-panel expectations.
+A further red/green browser case found that starting in Play left every hidden
+Designer command outside the Tab order. Initializing the toolbar's first entry
+even while hidden restores keyboard entry after switching to Edit.
+
+The percentage disclosure received its own red/green check: hidden zoom actions,
+Enter to open, arrows to traverse, and Escape to restore focus. Pointer tests
+caught the nested percentage output consuming summary clicks; it now lets the
+summary receive them. Final visual inspection includes the expanded zoom menu
+at desktop and narrow widths as well as the overflow menu.
+
+## Referee commands, ticket #35
+
+The Referee inventory now shares command dispatch, availability and discovery.
+Only Shift-V toggles full-plan view; bare V and Shift-F deliberately do nothing.
+Character mutations retain authoritative save feedback. Door keyboard targeting
+uses the existing 0.6 m opening target radius around the Observer, avoiding
+focusable hidden door geometry; Shift-click supplies the pointer target instead.
+
+Failing-first disposable browser tests cover deliberate reveal, Observer movement
+and range, reset persistence, character mutation, level transfer and nearby-door
+targeting. Palette dismissal exposed missing SVG/body focus restoration; it now
+returns focus to the viewport when no usable HTML launcher exists. Referee tabs
+retain local arrow navigation rather than moving the Observer.
+
+## Temporary and directional panning, ticket #36
+
+Holding Space now pans in Edit and Play, retaining the previous tool until
+release. Focus loss, pointer cancellation and mode switching clear the temporary
+interaction. Space on a focused control retains native activation. The palette
+arms one pan drag, restoring the prior interaction after pointer-up or Escape.
+Shift-arrows pan in both modes; plain arrows pan in Edit and move the Observer
+in Play. Pan gestures never place or move the Observer.
+
+Failing-first disposable browser regressions cover hold/release, directional pan,
+focus recovery and the one-gesture palette action. Characterisation checks cover
+blur, mode cancellation, native control activation and Escape recovery.
+
+A further failing browser check caught SVG character focus cancelling a held pan
+on pointer-down. Temporary pan now suppresses that pointer focus default, so
+dragging from a marker pans without selecting or moving the character.
+
+## Calibrated zoom correction
+
+The Referee rejected a 271% readout after calibrating at 1:75: the old display
+divided the initial 0.04 m/CSS-pixel constant by the current camera scale.
+Calibration now defines the 100% reference and displays the chosen denominator,
+so calibrated 1:75 reads "100% at 1:75". Before calibration, the nominal 96 CSS
+pixels/inch estimate is explicitly uncalibrated. Fit and zoom keep the reference.
+The zoom menu and Referee View controls accept numeric percentages with Enter; Z
+focuses the active field. Fields retain normal arrow-key editing. Browser
+regressions first reproduced the wrong calibration label and missing direct
+entry, then verified 100%, 125%, 10% and Play entry against rendered view extents.
