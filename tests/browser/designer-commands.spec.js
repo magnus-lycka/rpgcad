@@ -34,7 +34,7 @@ test("Designer tools and Components are discoverable keyboard commands with focu
   );
 });
 
-test("Designer undo and clear use backward Delete, preserve level and restore exact marks", async ({
+test("Designer undo and clear use backward Delete, and preserve level; Clear is final", async ({
   page,
   request,
 }) => {
@@ -63,18 +63,10 @@ test("Designer undo and clear use backward Delete, preserve level and restore ex
     "Drawing marks cleared",
   );
   await page.keyboard.press("Meta+z");
-  await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
-  await expect(page.locator("#sketch-status")).toHaveText(
-    "Cleared drawing marks restored",
-  );
+  await expect(page.locator("[data-sketch-stroke]")).toHaveCount(0);
   expect(
     (await (await request.get("/sketch?level=below")).json()).strokes,
-  ).toEqual([marks[0]]);
-  await page.keyboard.press("Control+z");
-  await expect(page.locator("[data-sketch-stroke]")).toHaveCount(0);
-  await expect(page.locator("#sketch-status")).toHaveText(
-    "Drawing mark undone",
-  );
+  ).toEqual([]);
   await page.keyboard.press("/");
   const palette = page.getByRole("dialog", { name: "Commands" });
   await palette.getByRole("combobox").fill("Undo");

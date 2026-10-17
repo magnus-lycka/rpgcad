@@ -98,16 +98,8 @@ let penStroke = null;
 let savingSketch = 0;
 let savedSketchId = "";
 let sketchSave = Promise.resolve();
-let sketchEtag = "";
 let sketchGeneration = 0;
-/** @type {{strokes:number[][][],etag:string}|null} */
-let clearedMarks = null;
-function updateClearRecovery() {
-  commandUi.refreshAvailability();
-  element("undo-clear").hidden = !clearedMarks;
-}
-/** @param {string} [expected] */
-function savePenMarks(expected = "") {
+function savePenMarks() {
   const body = JSON.stringify({ strokes, modelRevision: etag, view: view() });
   const generation = ++sketchGeneration;
   savingSketch++;
@@ -119,19 +111,11 @@ function savePenMarks(expected = "") {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          ...(expected ? { "If-Match": expected } : {}),
         },
         body,
       });
-      if (response.status === 412) {
-        clearedMarks = null;
-        updateClearRecovery();
-      }
       if (!response.ok) throw Error(`Marks not saved (${response.status})`);
       success = true;
-      clearedMarks = null;
-      updateClearRecovery();
-      sketchEtag = response.headers.get("ETag") || "";
       savedSketchId = response.headers.get("X-Sketch-Id") || "";
       element("sketch-status").textContent = "";
     } catch (error) {
@@ -203,7 +187,6 @@ function selectSketchTool(tool) {
   updateEditTools();
 }
 async function undoMarks() {
-  if (clearedMarks) return undoClear();
   const previous = structuredClone(strokes);
   strokes.pop();
   draw();
@@ -220,32 +203,14 @@ async function clearMarks() {
   const snapshot = structuredClone(strokes);
   strokes = [];
   draw();
-  const result = await savePenMarks(sketchEtag);
+  const result = await savePenMarks();
   if (result.generation !== sketchGeneration) return;
-  if (result.success && snapshot.length) {
-    clearedMarks = { strokes: snapshot, etag: sketchEtag };
+  if (result.success && snapshot.length)
     element("sketch-status").textContent = "Drawing marks cleared";
-    updateClearRecovery();
-  } else if (!result.success) {
+  else if (!result.success) {
     strokes = snapshot;
     draw();
   }
-}
-async function undoClear() {
-  const snapshot = clearedMarks;
-  if (!snapshot || savingSketch) return;
-  const previous = strokes;
-  strokes = snapshot.strokes;
-  const result = await savePenMarks(snapshot.etag);
-  if (result.generation !== sketchGeneration) return;
-  if (!result.success) {
-    strokes = previous;
-    await restoreMarks();
-  }
-  if (result.success)
-    element("sketch-status").textContent = "Cleared drawing marks restored";
-  if (!clearedMarks) element("undo-stroke").focus();
-  draw();
 }
 updateEditTools();
 async function pollSketchReply() {
@@ -254,10 +219,6 @@ async function pollSketchReply() {
   const response = await fetch(`/sketch${levelQuery}`, { cache: "no-store" });
   if (!response.ok || generation !== sketchGeneration || savingSketch) return;
   const feedback = await response.json();
-  if (clearedMarks && response.headers.get("ETag") !== clearedMarks.etag) {
-    clearedMarks = null;
-    updateClearRecovery();
-  }
   if (
     feedback?.submittedAt === savedSketchId &&
     feedback.status === "applied"
@@ -1737,7 +1698,7 @@ const commandUi = installCommands(
       enabled: () =>
         savingSketch
           ? "Drawing marks are saving"
-          : clearedMarks || strokes.length
+          : strokes.length
             ? true
             : "No drawing marks to undo",
       run: undoMarks,
@@ -1925,7 +1886,7 @@ const commandUi = installCommands(
 for (const id of ["add-pc", "add-npc"]) commandUi.bind(`#${id}`, id);
 commandUi.bind("#gm-view", "gm-view");
 commandUi.bind("#reset-fog", "reset-fog");
-commandUi.bind("#undo-stroke, #undo-clear", "undo-marks");
+commandUi.bind("#undo-stroke", "undo-marks");
 commandUi.bind("#clear-sketch", "clear-marks");
 commandUi.bind("#export-svg", "export");
 commandUi.bind("#export-pdf", "export-pdf");
@@ -1986,11 +1947,6 @@ async function restoreMarks() {
   const response = await fetch(`/sketch${levelQuery}`, { cache: "no-store" });
   if (!response.ok) return;
   const saved = await response.json();
-  sketchEtag = response.headers.get("ETag") || "";
-  if (clearedMarks && clearedMarks.etag !== sketchEtag) {
-    clearedMarks = null;
-    updateClearRecovery();
-  }
   if (saved && saved.status !== "applied" && Array.isArray(saved.strokes)) {
     strokes = saved.strokes;
     savedSketchId = saved.submittedAt;

@@ -358,9 +358,9 @@ replaces it rather than stacking large controls. Desktop and 390 px disposable
 views were inspected: previews remain legible, details scroll within the panel and
 part of the drawing remains visible even in the narrow view.
 
-### Undo Clear recovery
+### Undo Clear recovery (withdrawn)
 
-Clear marks now offers one in-memory Undo Clear snapshot only after a successful save. It survives Edit/Play switching; another successful sketch save, page navigation or an incompatible authoritative revision discards it. Failed Clear restores the local draft; a failed Undo remains retryable unless the server reports a stale revision. Recovery saves use optional If-Match checked atomically with the sketch write under the server lock, so an unseen agent acknowledgement or another browser cannot be overwritten. Existing unconditional sketch writers remain supported. Recovery controls are part of the screen-only Designer toolbar, and normal Undo stroke remains separate.
+The Undo Clear button and snapshot were removed: it was never requested. Undo (Cmd/Ctrl-Z) undoes only the latest stroke; Clear is final.
 
 ## Character removal recovery, 2026-10-11 (withdrawn)
 
