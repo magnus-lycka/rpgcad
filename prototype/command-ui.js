@@ -22,6 +22,7 @@ export function installCommands(definitions, mode, announce) {
   const help = document.createElement("dialog");
   help.className = "command-dialog";
   help.setAttribute("aria-label", "Keyboard shortcuts");
+  help.dataset.toggles = "help";
   palette.append(heading, search, results);
   document.body.append(palette, help);
   /** @type {HTMLElement|SVGElement|null} */
@@ -131,6 +132,7 @@ export function installCommands(definitions, mode, announce) {
     execute(command.id);
   }
   function showHelp() {
+    if (help.open) return close(help);
     help.replaceChildren();
     const title = document.createElement("h2");
     title.textContent = "Keyboard shortcuts";
@@ -179,6 +181,25 @@ export function installCommands(definitions, mode, announce) {
       choose(selected);
     }
   });
+  document.addEventListener("click", (event) => {
+    const open = document.querySelector("dialog[open]");
+    if (
+      !(open instanceof HTMLDialogElement) ||
+      event.target !== open ||
+      !open.matches(".command-dialog, [data-toggles]")
+    )
+      return;
+    const box = open.getBoundingClientRect();
+    if (
+      event.clientX >= box.left &&
+      event.clientX <= box.right &&
+      event.clientY >= box.top &&
+      event.clientY <= box.bottom
+    )
+      return;
+    const cancel = new Event("cancel", { cancelable: true });
+    if (open.dispatchEvent(cancel)) open.close();
+  });
   for (const dialog of [palette, help])
     dialog.addEventListener("cancel", (event) => {
       event.preventDefault();
@@ -187,8 +208,17 @@ export function installCommands(definitions, mode, announce) {
   document.addEventListener(
     "keydown",
     (event) => {
-      if (event.defaultPrevented || document.querySelector("dialog[open]"))
+      if (event.defaultPrevented) return;
+      const open = document.querySelector("dialog[open]");
+      if (open) {
+        const id = open instanceof HTMLElement ? open.dataset.toggles : "";
+        if (id && commands.binds(id, event, mode())) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          execute(id);
+        }
         return;
+      }
       if (
         event.key !== "Escape" &&
         event.target instanceof Element &&

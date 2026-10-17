@@ -17,10 +17,10 @@ test("drawing alone makes raw strokes available to the chat agent without editin
   await page.goto("/?level=below&mode=edit");
   await expect(page.locator("#viewport")).toContainText("LOWER LEVEL");
   await page.getByRole("button", { name: "Pen", exact: true }).click();
-  const palette = await page.locator("#edit-palette").boundingBox();
-  if (!palette) throw Error("Expected visible Designer palette");
-  const x = palette.x + palette.width + 40;
-  const y = palette.y + palette.height + 40;
+  const toolbar = await page.locator("#toolbar").boundingBox();
+  if (!toolbar) throw Error("Expected visible toolbar");
+  const x = toolbar.x + 200;
+  const y = toolbar.y + toolbar.height + 40;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + 49, y + 13);
@@ -119,9 +119,6 @@ test("Undo Clear restores exact marks on their level after switching modes", asy
   await request.put("/sketch?level=below", { data: { strokes: marks } });
   await page.goto("/?level=below&mode=edit");
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(2);
-  await page
-    .getByRole("button", { name: "Sketch options", exact: true })
-    .click();
   await page.getByRole("button", { name: "Clear marks", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Undo Clear", exact: true }),
@@ -157,9 +154,6 @@ test("failed Clear keeps the visible and saved marks without offering recovery",
       await route.fulfill({ status: 503 });
     else await route.continue();
   });
-  await page
-    .getByRole("button", { name: "Sketch options", exact: true })
-    .click();
   await page.getByRole("button", { name: "Clear marks", exact: true }).click();
   await expect(page.locator("#sketch-status")).toContainText(
     "Marks not saved (503)",
@@ -184,9 +178,6 @@ test("failed Undo Clear can be retried without falsely displaying restored marks
   await request.put("/sketch", { data: { strokes: marks } });
   await page.goto("/?mode=edit");
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
-  await page
-    .getByRole("button", { name: "Sketch options", exact: true })
-    .click();
   await page.getByRole("button", { name: "Clear marks", exact: true }).click();
   const undo = page.getByRole("button", { name: "Undo Clear", exact: true });
   await expect(undo).toBeVisible();
@@ -215,9 +206,6 @@ test("Undo Clear cannot overwrite another writer before the browser notices the 
   await request.put("/sketch", { data: { strokes: [[[1, 2]]] } });
   await page.goto("/?mode=edit");
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
-  await page
-    .getByRole("button", { name: "Sketch options", exact: true })
-    .click();
   await page.getByRole("button", { name: "Clear marks", exact: true }).click();
   const undo = page.getByRole("button", { name: "Undo Clear", exact: true });
   await expect(undo).toBeVisible();
@@ -258,9 +246,6 @@ test("a later saved stroke and page reload discard Clear recovery", async ({
   await request.put("/sketch", { data: { strokes: [[[1, 2]]] } });
   await page.goto("/?mode=edit");
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
-  await page
-    .getByRole("button", { name: "Sketch options", exact: true })
-    .click();
   await page.getByRole("button", { name: "Clear marks", exact: true }).click();
   const undo = page.getByRole("button", { name: "Undo Clear", exact: true });
   await expect(undo).toBeVisible();
@@ -268,9 +253,6 @@ test("a later saved stroke and page reload discard Clear recovery", async ({
   await page.mouse.click(600, 400);
   await expect(undo).toBeHidden();
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
-  await page
-    .getByRole("button", { name: "Sketch options", exact: true })
-    .click();
   await page.getByRole("button", { name: "Clear marks", exact: true }).click();
   await expect(undo).toBeVisible();
   await page.reload();
@@ -286,9 +268,6 @@ test("agent acknowledgement invalidates Clear recovery without consuming other l
   await request.put("/sketch?level=below", { data: { strokes: [[[7, 8]]] } });
   await page.goto("/?mode=edit");
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
-  await page
-    .getByRole("button", { name: "Sketch options", exact: true })
-    .click();
   await page.getByRole("button", { name: "Clear marks", exact: true }).click();
   const undo = page.getByRole("button", { name: "Undo Clear", exact: true });
   await expect(undo).toBeVisible();

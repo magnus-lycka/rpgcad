@@ -88,8 +88,26 @@ function savePenMarks(expected = "") {
   });
   return sketchSave.then(() => ({ success, generation }));
 }
+new ResizeObserver(() =>
+  document.documentElement.style.setProperty(
+    "--toolbar-height",
+    `${element("toolbar").offsetHeight}px`,
+  ),
+).observe(element("toolbar"));
+/** @type {Element|null} */
+let infoOpener = null;
+const MODE_ICONS = {
+  play: '<svg viewBox="0 0 32 32" fill="currentColor"><path d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Zm7.4473,14.8945-12,6A1,1,0,0,1,10,22V10a1,1,0,0,1,1.4473-.8945l12,6a1,1,0,0,1,0,1.789Z"/></svg>',
+  stop: '<svg viewBox="0 0 32 32" fill="currentColor"><path d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Zm6,18a2,2,0,0,1-2,2H12a2,2,0,0,1-2-2V12a2,2,0,0,1,2-2h8a2,2,0,0,1,2,2Z"/></svg>',
+};
 function updateEditTools() {
-  element("edit-palette").hidden = !editing;
+  const modeToggle = element("mode-toggle");
+  modeToggle.setAttribute("aria-label", editing ? "Play" : "Stop");
+  modeToggle.innerHTML = editing ? MODE_ICONS.play : MODE_ICONS.stop;
+  document.querySelectorAll("#toolbar [data-mode]").forEach((item) => {
+    if (item instanceof HTMLElement)
+      item.hidden = item.dataset.mode !== (editing ? "edit" : "play");
+  });
   document.body.dataset.mode = editing ? "edit" : "play";
   document.body.dataset.tool = temporaryPan
     ? "pan"
@@ -143,30 +161,8 @@ async function undoMarks() {
     draw();
   }
 }
-const sketchMenu = element("sketch-menu");
-const sketchOptions = element("sketch-options");
-element("zoom-controls").addEventListener("toggle", (event) => {
-  if (
-    event.currentTarget instanceof HTMLDetailsElement &&
-    event.currentTarget.open
-  )
-    closeSketchOptions();
-});
-function closeSketchOptions() {
-  sketchMenu.hidden = true;
-  sketchOptions.setAttribute("aria-expanded", "false");
-}
-function toggleSketchOptions() {
-  element("zoom-controls").removeAttribute("open");
-  sketchMenu.hidden = !sketchMenu.hidden;
-  sketchOptions.setAttribute("aria-expanded", String(!sketchMenu.hidden));
-  if (!sketchMenu.hidden) element("clear-sketch").focus();
-}
 async function clearMarks() {
   const snapshot = structuredClone(strokes);
-  closeSketchOptions();
-  sketchOptions.focus();
-
   strokes = [];
   draw();
   const result = await savePenMarks(sketchEtag);
@@ -227,14 +223,13 @@ function closeComponents() {
   if (editing) componentsTool.focus();
 }
 function toggleComponents() {
-  element("zoom-controls").removeAttribute("open");
   if (!componentPanel.hidden) {
     closeComponents();
     return;
   }
   if (catalogueFrame.getAttribute("src") === "about:blank")
     catalogueFrame.src = "/components.html?embedded=1";
-  componentPanel.style.top = `${element("edit-palette").getBoundingClientRect().bottom + 8}px`;
+  componentPanel.style.top = `${element("toolbar").getBoundingClientRect().bottom + 8}px`;
   componentPanel.hidden = false;
   componentsTool.setAttribute("aria-expanded", "true");
   element("close-components").focus();
@@ -250,8 +245,6 @@ window.addEventListener("message", (event) => {
 });
 
 function switchMode(edit) {
-  element("zoom-controls").removeAttribute("open");
-  closeSketchOptions();
   cancelTemporaryPan();
   editing = edit;
   closeComponents();
@@ -287,7 +280,8 @@ let fogEnabled = !editing,
 /** @typedef {{id:string,name:string,kind:'pc'|'npc',level:string,at:number[],range:number|null}} Character */
 /** @type {{characters:Character[],pov:string|null,defaultRange?:number}} */
 let characterState = { characters: [], pov: null };
-let characterEtag = "",
+let explorationSaveError = "",
+  characterEtag = "",
   savingCharacters = false,
   characterGeneration = 0;
 let currentLevel = settings.get("level") || "original";
@@ -447,6 +441,8 @@ async function loadLevels() {
     if (planName) planName.textContent = plan.name || plan.id;
     if (levelName) levelName.textContent = level?.name || currentLevel;
   }
+  element("info-plan").textContent = plan.name || plan.id;
+  element("info-level").textContent = level?.name || currentLevel;
   const select = /** @type {HTMLSelectElement} */ (element("character-level"));
   select.innerHTML = plan.levels
     .map(
@@ -524,8 +520,11 @@ function updateBusyControls() {
   element("character-action-status").textContent = savingCharacters
     ? "Saving character…"
     : characterSaveError;
+  element("problem").textContent = characterSaveError || explorationSaveError;
   for (const id of [
     "sight-range",
+    "range-down",
+    "range-up",
     "character-range",
     "add-pc",
     "add-npc",
@@ -550,6 +549,8 @@ function updateBusyControls() {
       element("character-level")
     ).value;
     control.disabled =
+      !characterEtag ||
+      !exploration ||
       savingCharacters ||
       savingExploration ||
       (needsCharacter && !selected) ||
@@ -599,12 +600,14 @@ async function commitCharacters(proposed) {
 }
 async function addCharacter(kind) {
   if (savingCharacters || !characterEtag) return;
-  const input = /** @type {HTMLInputElement} */ (element("character-name"));
+  const taken = new Set(
+    characterState.characters.map((c) => c.name.trim().toLowerCase()),
+  );
+  let number = characterState.characters.length + 1;
+  while (taken.has(`${kind} ${number}`)) number++;
   const character = {
     id: crypto.randomUUID(),
-    name:
-      input.value.trim() ||
-      `${kind.toUpperCase()} ${characterState.characters.length + 1}`,
+    name: `${kind.toUpperCase()} ${number}`,
     kind,
     level: currentLevel,
     at: [camera.x, camera.y],
@@ -664,7 +667,8 @@ function updateVisibility() {
     "data-observations",
     String(exploration.observations.length),
   );
-  rangeInput.value = String(defaultVisualRange());
+  if (document.activeElement !== rangeInput)
+    rangeInput.value = String(defaultVisualRange());
   element("fog-status").textContent =
     characterSaveError || `${exploration.observations.length} observations`;
 }
@@ -689,10 +693,12 @@ async function saveExploration() {
     if (!response.ok)
       throw Error(`Exploration save failed (${response.status})`);
     explorationEtag = response.headers.get("ETag") || "";
+    explorationSaveError = "";
   } catch (error) {
     explorationEtag = "";
     console.error(String(error));
-    element("fog-status").textContent = String(error);
+    explorationSaveError = String(error);
+    element("fog-status").textContent = explorationSaveError;
   } finally {
     savingExploration = false;
     updateBusyControls();
@@ -760,8 +766,6 @@ async function resetFog() {
 const gmPanel = element("gm-panel");
 const gmSectionIds = {
   characters: "gm-characters",
-  exploration: "gm-exploration",
-  view: "gm-view-controls",
 };
 const gmTabs = [...document.querySelectorAll("[data-gm-section]")];
 /** @param {Element} tab */
@@ -812,14 +816,10 @@ function toggleGmView() {
 }
 
 rangeInput.addEventListener("change", async () => {
+  while (savingCharacters || savingExploration)
+    await new Promise((resolve) => setTimeout(resolve, 25));
   const range = Number(rangeInput.value);
-  if (
-    savingCharacters ||
-    savingExploration ||
-    !Number.isFinite(range) ||
-    range <= 0
-  )
-    return;
+  if (!Number.isFinite(range) || range <= 0) return;
   if (!(await commitCharacters({ ...characterState, defaultRange: range }))) {
     rangeInput.value = String(defaultVisualRange());
     return;
@@ -914,8 +914,10 @@ function view() {
 function draw() {
   commandUi.refreshAvailability();
   const percent = Number(((zoomReference.mpp / camera.mpp) * 100).toFixed(2));
-  document.querySelectorAll("[data-zoom-readout]").forEach((output) => {
-    output.textContent = `${percent}% at 1:${zoomReference.scale}${zoomReference.calibrated ? "" : " (uncalibrated)"}`;
+  document.querySelectorAll("[data-scale-readout]").forEach((output) => {
+    output.textContent = zoomReference.calibrated
+      ? `1:${zoomReference.scale}`
+      : "Uncalibrated";
   });
   document.querySelectorAll("[data-zoom-value]").forEach((input) => {
     if (input instanceof HTMLInputElement && document.activeElement !== input)
@@ -1142,16 +1144,7 @@ document.querySelectorAll("[data-zoom-form]").forEach((form) => {
   });
 });
 function editZoomPercentage() {
-  if (editing) element("zoom-controls").setAttribute("open", "");
-  else {
-    if (gmPanel.hidden) toggleGm();
-    selectGmTab(element("gm-tab-view"));
-  }
-  const input = document.querySelector(
-    editing
-      ? "#zoom-controls [data-zoom-value]"
-      : "#gm-view-controls [data-zoom-value]",
-  );
+  const input = document.querySelector("#toolbar [data-zoom-value]");
   if (input instanceof HTMLInputElement) {
     input.focus();
     input.select();
@@ -1263,18 +1256,7 @@ function exportSvg() {
 }
 function dismissControl() {
   if (temporaryPan) return cancelTemporaryPan();
-  const zoomControls = element("zoom-controls");
-  if (zoomControls instanceof HTMLDetailsElement && zoomControls.open) {
-    zoomControls.open = false;
-    zoomControls.querySelector("summary")?.focus();
-    return;
-  }
   if (!componentPanel.hidden) return closeComponents();
-  if (!sketchMenu.hidden) {
-    closeSketchOptions();
-    sketchOptions.focus();
-    return;
-  }
   if (!gmPanel.hidden) {
     const options = /** @type {HTMLDetailsElement} */ (
       element("character-options")
@@ -1358,11 +1340,7 @@ const commandUi = installCommands(
             : "Move an Observer beside a door opening",
       run: () => toggleDoor(doorPointerTarget || exploration?.observers[0]?.at),
     },
-    ...[
-      ["characters", "Characters", "T"],
-      ["exploration", "Exploration", "X"],
-      ["view", "View", "W"],
-    ].map(([id, label, key]) => ({
+    ...[["characters", "Characters", "T"]].map(([id, label, key]) => ({
       id: `section-${id}`,
       label: `${label} tab`,
       keys: [key],
@@ -1477,6 +1455,23 @@ const commandUi = installCommands(
           ),
         ),
     })),
+    ...[
+      ["down", "Decrease", -1.5, "<"],
+      ["up", "Increase", 1.5, ">"],
+    ].map(([direction, label, delta, key]) => ({
+      id: `range-${direction}`,
+      label: `${label} default range`,
+      keys: [String(key)],
+      scope: /** @type {const} */ ("play"),
+      announce: false,
+      enabled: playAvailable,
+      run: () => {
+        rangeInput.value = String(
+          Math.max(0.1, Number(rangeInput.value) + Number(delta)),
+        );
+        rangeInput.dispatchEvent(new Event("change"));
+      },
+    })),
     {
       id: "reset-fog",
       label: "Reset fog / close all doors",
@@ -1496,7 +1491,7 @@ const commandUi = installCommands(
     },
     {
       id: "gm-view",
-      label: "GM full-plan view",
+      label: "Toggle fog",
       keys: ["Shift+V"],
       scope: "play",
       repeat: false,
@@ -1530,14 +1525,6 @@ const commandUi = installCommands(
             ? true
             : "No drawing marks to clear",
       run: clearMarks,
-    },
-    {
-      id: "sketch-options",
-      label: "Sketch options",
-      keys: ["O"],
-      scope: "edit",
-      repeat: false,
-      run: toggleSketchOptions,
     },
     {
       id: "pen",
@@ -1614,12 +1601,45 @@ const commandUi = installCommands(
     },
     { id: "fit", label: "Fit", keys: ["F"], scope: "both", run: fit },
     {
+      id: "zoom-100",
+      label: "Zoom to 100%",
+      keys: ["0"],
+      scope: "both",
+      enabled: () => loaded || "Plan is loading",
+      run: () => zoom(zoomReference.mpp / camera.mpp),
+    },
+    {
+      id: "info",
+      label: "Info",
+      keys: ["I"],
+      scope: "both",
+      announce: false,
+      run: () => {
+        const dialog = /** @type {HTMLDialogElement} */ (
+          element("info-dialog")
+        );
+        if (dialog.open) dialog.close();
+        else {
+          infoOpener = document.activeElement;
+          dialog.showModal();
+        }
+      },
+    },
+    {
       id: "export",
       label: "Export SVG",
       keys: ["Mod+E"],
-      scope: "both",
+      scope: "edit",
       enabled: () => loaded || "Plan is loading",
       run: exportSvg,
+    },
+    {
+      id: "export-pdf",
+      label: "Export PDF",
+      keys: ["Mod+P"],
+      scope: "edit",
+      enabled: () => loaded || "Plan is loading",
+      run: () => window.print(),
     },
     {
       id: "calibrate",
@@ -1645,6 +1665,7 @@ const commandUi = installCommands(
       keys: ["Shift+E"],
       scope: "both",
       repeat: false,
+      announce: false,
       run: () => switchMode(!editing),
     },
     {
@@ -1670,14 +1691,17 @@ for (const id of [
 ])
   commandUi.bind(`#${id}`, id);
 commandUi.bind("#character-options summary", "character-options");
-for (const name of ["characters", "exploration", "view"])
+for (const name of ["characters"])
   commandUi.bind(`[data-gm-section="${name}"]`, `section-${name}`);
 commandUi.bind("#close-gm", "dismiss");
 commandUi.bind("#gm-view", "gm-view");
+commandUi.bind("#range-down", "range-down");
+commandUi.bind("#range-up", "range-up");
 commandUi.bind("#reset-fog", "reset-fog");
 commandUi.bind("#undo-stroke, #undo-clear", "undo-marks");
 commandUi.bind("#clear-sketch", "clear-marks");
-commandUi.bind("#sketch-options", "sketch-options");
+commandUi.bind("#export-svg", "export");
+commandUi.bind("#export-pdf", "export-pdf");
 commandUi.bind("#pen-tool", "pen");
 commandUi.bind("#pan-tool", "pan");
 commandUi.bind("#components-tool", "components");
@@ -1687,7 +1711,22 @@ commandUi.bind('[data-zoom="out"]', "zoom-out");
 commandUi.bind("[data-fit]", "fit");
 commandUi.bind("[data-calibrate]", "calibrate");
 commandUi.bind('a[href="/library.html"]', "library");
-commandUi.bind("#play-mode, #return-edit", "mode");
+commandUi.bind("#mode-toggle, #return-edit", "mode");
+commandUi.bind("#help-tool", "help");
+commandUi.bind("#zoom-100", "zoom-100");
+commandUi.bind("#info-tool", "info");
+element("info-dialog").addEventListener("close", () => {
+  if (
+    infoOpener instanceof HTMLElement &&
+    infoOpener !== document.body &&
+    infoOpener.checkVisibility()
+  )
+    infoOpener.focus();
+  else viewport.focus();
+});
+element("info-close").addEventListener("click", () =>
+  /** @type {HTMLDialogElement} */ (element("info-dialog")).close(),
+);
 window.addEventListener("resize", draw);
 window.addEventListener("beforeprint", () => {
   const p = Geometry.papers[settings.get("paper") === "a3" ? "a3" : "a4"];

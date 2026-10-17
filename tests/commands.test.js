@@ -101,3 +101,34 @@ test("registry rejects bindings that dispatch the same event despite modifier or
     );
   }
 });
+
+test("punctuation bindings match however the keyboard layout produces them", () => {
+  const ran = [];
+  const commands = createCommands([
+    {
+      id: "up",
+      label: "Up",
+      keys: [">"],
+      scope: "play",
+      run: () => ran.push(">"),
+    },
+    {
+      id: "open",
+      label: "Open",
+      keys: ["["],
+      scope: "play",
+      run: () => ran.push("["),
+    },
+    {
+      id: "letter",
+      label: "Letter",
+      keys: ["z"],
+      scope: "play",
+      run: () => ran.push("z"),
+    },
+  ]);
+  commands.dispatch({ key: ">", shiftKey: true }, "play");
+  commands.dispatch({ key: "[", altKey: true }, "play");
+  commands.dispatch({ key: "z", altKey: true }, "play");
+  assert.deepEqual(ran, [">", "["]);
+});

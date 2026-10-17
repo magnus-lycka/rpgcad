@@ -37,6 +37,10 @@ export function createCommands(definitions) {
     list,
     available,
     execute,
+    binds(id, event, mode) {
+      const command = list(mode).find((item) => item.id === id);
+      return !!command && command.keys.some((key) => matches(key, event));
+    },
     dispatch(event, mode) {
       const command = list(mode).find((item) =>
         item.keys.some((key) => matches(key, event)),
@@ -51,8 +55,7 @@ export function createCommands(definitions) {
 function signatures(binding) {
   const parts = binding.split("+");
   const key = parts.pop() || "+";
-  const shifts =
-    key === "+" || key === "?" ? [false, true] : [parts.includes("Shift")];
+  const shifts = isSymbol(key) ? [false, true] : [parts.includes("Shift")];
   return shifts.map((shift) =>
     JSON.stringify([
       key === "Space" ? " " : key.toLowerCase(),
@@ -61,9 +64,13 @@ function signatures(binding) {
     ]),
   );
 }
+function isSymbol(key) {
+  return key.length === 1 && !/[a-z0-9]/i.test(key);
+}
 function matches(binding, event) {
+  const key = binding.split("+").pop() || "+";
   return (
-    !event.altKey &&
+    (!event.altKey || isSymbol(key)) &&
     signatures(binding).includes(
       JSON.stringify([
         event.key.toLowerCase(),

@@ -70,9 +70,6 @@ test("Designer undo and clear use backward Delete, preserve level and restore ex
   expect(
     (await (await request.get("/sketch?level=below")).json()).strokes,
   ).toEqual([marks[0]]);
-  await page.keyboard.press("o");
-  await expect(page.locator("#sketch-menu")).toBeVisible();
-  await page.keyboard.press("Escape");
   await page.keyboard.press("Control+z");
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(0);
   await expect(page.locator("#sketch-status")).toHaveText(

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { addCharacter } from "./helpers.js";
 import { PNG } from "pngjs";
 test.use({ actionTimeout: 5000 });
 
@@ -37,7 +38,13 @@ test("focused NPC keeps its normal orange marker without a giant blue focus disk
   await marker.focus();
   await page.keyboard.press("Enter");
   await expect(marker).toBeFocused();
-  const circle = await marker.locator("circle").boundingBox();
+  let circle;
+  await expect
+    .poll(async () => {
+      circle = await marker.locator("circle").boundingBox();
+      return circle;
+    })
+    .toBeTruthy();
   if (!circle) throw Error("Expected normal marker");
   const image = PNG.sync.read(
     await page.screenshot({ path: "/tmp/rpgcad-focused-npc.png" }),
@@ -94,24 +101,24 @@ test("selected character controls stay in the Referee menu when the marker moves
   await expect(gm).toBeHidden();
 });
 
-test("adding an existing character name reports the conflict without creating a clone", async ({
+test("added characters get unique default names even when one already holds the next name", async ({
   page,
   request,
 }) => {
   await page.goto("/?mode=play");
   await page.keyboard.press("Shift+G");
-  await page.getByLabel("Character name").fill("Ada");
-  await page.getByRole("button", { name: "Add PC", exact: true }).click();
-  await expect(page.locator("[data-character]")).toHaveCount(1);
-  const before = await (await request.get("/characters")).json();
-  await page.getByLabel("Character name").fill(" ada ");
-  await page.getByRole("button", { name: "Add NPC", exact: true }).click();
-  await expect(page.locator("#character-action-status")).toContainText(
-    "A character named “ada” already exists in this plan.",
-  );
-  expect(await (await request.get("/characters")).json()).toEqual(before);
-  await page.reload();
-  await expect(page.locator("[data-character]")).toHaveCount(1);
+  await addCharacter(page, "pc", "PC 2");
+  await page
+    .getByRole("toolbar", { name: "Toolbar", exact: true })
+    .getByRole("button", { name: "Add PC", exact: true })
+    .click();
+  await expect
+    .poll(async () =>
+      (await (await request.get("/characters")).json()).characters.map(
+        (c) => c.name,
+      ),
+    )
+    .toEqual(["PC 2", "PC 3"]);
 });
 
 test("GM can add named PCs and NPCs and retain them after reloading", async ({
@@ -119,11 +126,9 @@ test("GM can add named PCs and NPCs and retain them after reloading", async ({
 }) => {
   await page.goto("/?mode=play");
   await page.keyboard.press("Shift+G");
-  await page.getByLabel("Character name").fill("Ada");
-  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await addCharacter(page, "pc", "Ada");
   await expect(page.locator("[data-character]")).toHaveCount(1);
-  await page.getByLabel("Character name").fill("Guard");
-  await page.getByRole("button", { name: "Add NPC", exact: true }).click();
+  await addCharacter(page, "npc", "Guard");
   await page.keyboard.press("Shift+V");
   await expect(page.locator("[data-character]")).toHaveCount(2);
   await page.reload();
@@ -258,9 +263,8 @@ test("GM can rename a PC, save its range, reset fog without losing characters, a
         ).range,
     )
     .toBe(4);
-  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
   await page
-    .getByRole("button", { name: "Reset fog · close all doors" })
+    .getByRole("button", { name: "Reset fog / close all doors" })
     .click();
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observations",
@@ -425,10 +429,7 @@ test("keyboard character selection distinguishes NPC selection from PC POV witho
   await page.getByLabel("Character", { exact: true }).selectOption("guard");
 
   await expect(page.locator('[data-character="guard"]')).toHaveCount(0);
-  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Show full plan (GM)", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Toggle fog", exact: true }).click();
   const guard = page.getByRole("button", {
     name: "Guard NPC · Selected",
     exact: true,
@@ -565,33 +566,6 @@ test("Escape closes Character options before Referee controls and returns focus 
   await expect(page.locator("#viewport")).toBeFocused();
 });
 
-test("Escape closes visible roster Character options before GM controls without intercepting other sections", async ({
-  page,
-  request,
-}) => {
-  await seed(request);
-  await page.goto("/?mode=play");
-  await expect(page.locator('[data-character="ada"]')).toBeVisible();
-  await page.keyboard.press("Shift+G");
-  await page.getByLabel("Character", { exact: true }).selectOption("guard");
-  await expect(page.locator("#character-actions")).toHaveCount(0);
-  const summary = page.getByText("Character options", { exact: true });
-  const remove = page.getByRole("button", {
-    name: "Remove character",
-    exact: true,
-  });
-  await summary.click();
-  await remove.focus();
-  await page.keyboard.press("Escape");
-  await expect(page.locator("#gm-panel")).toBeVisible();
-  await expect(remove).toBeHidden();
-  await expect(summary).toBeFocused();
-  await summary.click();
-  await page.getByRole("tab", { name: "Exploration", exact: true }).click();
-  await page.keyboard.press("Escape");
-  await expect(page.locator("#gm-panel")).toBeHidden();
-});
-
 test("a rejected level transfer stays on the source level and cannot leak into a later save", async ({
   page,
   request,
@@ -707,21 +681,22 @@ test("a rejected addition creates no ghost character and a later addition saves 
       await route.fulfill({ status: 500, body: "Unavailable" });
     else await route.continue();
   });
-  await page.getByLabel("Character name").fill("Ghost");
-  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await page
+    .getByRole("toolbar", { name: "Toolbar", exact: true })
+    .getByRole("button", { name: "Add PC", exact: true })
+    .click();
   await expect(page.locator("#fog-status")).toContainText(
     "Character save failed (500)",
   );
   await expect(
-    page.locator("[data-character]").filter({ hasText: "Ghost" }),
+    page.locator("[data-character]").filter({ hasText: "PC 4" }),
   ).toHaveCount(0);
   await expect(page.getByLabel("Character", { exact: true })).not.toContainText(
-    "Ghost",
+    "PC 4",
   );
   expect(await (await request.get("/characters")).json()).toEqual(before);
   await page.unroute("**/characters*");
-  await page.getByLabel("Character name").fill("Real");
-  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await addCharacter(page, "pc", "Real");
   await expect
     .poll(async () =>
       (await (await request.get("/characters")).json()).characters.map(
@@ -821,4 +796,39 @@ test("a network-rejected POV selection keeps the saved viewpoint through a later
     .toBe(4);
   expect((await (await request.get("/characters")).json()).pov).toBe("ada");
   expect(await (await request.get("/exploration")).json()).toEqual(explored);
+});
+
+test("a rejected marker move is announced as an alert while the Referee panel is closed", async ({
+  page,
+}) => {
+  const roster = {
+    pov: "first",
+    characters: ["first", "second"].map((id, index) => ({
+      id,
+      name: "RP",
+      kind: "pc",
+      level: index ? "below" : "original",
+      at: [0, 0],
+      range: 6,
+    })),
+  };
+  await page.route("**/characters*", (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({ json: roster, headers: { ETag: '"broken"' } })
+      : route.continue(),
+  );
+  await page.goto("/?mode=play");
+  const marker = page.locator('[data-character="first"]');
+  await expect(marker).toBeVisible();
+  const box = await marker.boundingBox();
+  if (!box) throw Error("Expected character marker");
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 60, y + 40, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.getByRole("alert")).toContainText(
+    "A character named “RP” already exists in this plan.",
+  );
 });

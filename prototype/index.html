@@ -30,9 +30,105 @@
     #print-pages {
       display: none;
     }
+    #toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2px;
+      min-height: 36px;
+      padding: 4px 6px;
+      box-sizing: border-box;
+      background: #26272b;
+    }
+    #toolbar button {
+      all: unset;
+      box-sizing: border-box;
+      width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d7d8db;
+      cursor: pointer;
+    }
+    #toolbar button:hover,
+    #toolbar button:focus-visible {
+      background: #35363b;
+    }
+    #toolbar [hidden] {
+      display: none !important;
+    }
+    #toolbar .menu-group {
+      display: contents;
+    }
+    #toolbar .sep {
+      width: 1px;
+      height: 18px;
+      margin-inline: 3px;
+      background: #45464c;
+    }
+    #toolbar a {
+      all: unset;
+      box-sizing: border-box;
+      width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d7d8db;
+      cursor: pointer;
+    }
+    #toolbar a:hover,
+    #toolbar a:focus-visible {
+      background: #35363b;
+    }
+    #toolbar button[aria-pressed="true"] {
+      background: #3b6ef0;
+      color: #ffffff;
+    }
+    #toolbar #sight-range {
+      width: 4.5em;
+      color: #d7d8db;
+      background: transparent;
+      border: 1px solid #45464c;
+      border-radius: 4px;
+      font: 11.5px system-ui;
+      text-align: right;
+    }
+    #toolbar .readout,
+    #toolbar .zoom-entry {
+      display: flex;
+      align-items: center;
+      color: #9a9ba1;
+      font: 11.5px system-ui;
+      white-space: nowrap;
+      padding-inline: 4px;
+    }
+    #toolbar .zoom-entry input {
+      width: 5em;
+      margin-right: 2px;
+      color: #d7d8db;
+      background: transparent;
+      border: 1px solid #45464c;
+      border-radius: 4px;
+      font: inherit;
+      text-align: right;
+    }
+    #toolbar svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
     #edit-palette {
       position: fixed;
-      top: 14px;
+      top: calc(var(--toolbar-height, 36px) + 12px);
       left: 14px;
       max-width: calc(100vw - 44px);
       padding: 8px;
@@ -97,7 +193,31 @@
     #sketch-menu[hidden] {
       display: none;
     }
+    #problem {
+      position: fixed;
+      left: 12px;
+      bottom: 10px;
+      z-index: 20;
+      max-width: calc(100vw - 24px);
+      padding: 6px 10px;
+      font: 13px system-ui;
+      color: #ffffff;
+      background: #b3261e;
+      border-radius: 4px;
+    }
+    #problem:empty {
+      display: none;
+    }
+    #sketch-status:empty,
+    body[data-mode="play"] #sketch-status {
+      display: none;
+    }
     #sketch-status {
+      position: fixed;
+      left: 12px;
+      bottom: 10px;
+      font: 12px system-ui;
+      color: #444444;
       display: block;
       margin-top: 0;
       line-height: 1.4;
@@ -184,7 +304,7 @@
     }
     #gm-panel {
       position: fixed;
-      top: 12px;
+      top: calc(var(--toolbar-height, 36px) + 12px);
       right: 12px;
       background: #ffffff;
       border: 1px solid #828282;
@@ -600,39 +720,6 @@
       background: var(--panel-selected);
       border-color: var(--panel-accent);
     }
-    #gm-panel #gm-view {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      text-align: left;
-      background: transparent;
-      border-color: transparent;
-      padding-left: 0;
-    }
-    #gm-view::before {
-      content: "";
-      width: 26px;
-      height: 16px;
-      flex-shrink: 0;
-      border-radius: 9px;
-      border: 1px solid #999999;
-      background: radial-gradient(
-          circle at 7px 8px,
-          #606060 4px,
-          transparent 5px
-        )
-        #dddddd;
-    }
-    #gm-view[aria-pressed="true"]::before {
-      border-color: var(--panel-accent);
-      background: radial-gradient(
-          circle at 19px 8px,
-          white 4px,
-          transparent 5px
-        )
-        var(--panel-accent);
-    }
     #gm-panel .field-note {
       margin: -4px 0 12px;
       font-size: 0.75rem;
@@ -772,6 +859,7 @@
       #gm-panel,
       #component-panel,
       #edit-palette,
+      #toolbar,
       #calibration-dialog {
         display: none;
       }
@@ -826,81 +914,329 @@
     role="img"
   ></svg>
   <div id="print-pages"></div>
-  <section id="edit-palette" aria-label="Edit tools" hidden>
-    <div
-      class="drawing-context"
-      data-drawing-context
-      aria-label="Current plan and level"
-    >
-      <span class="context-plan"></span>
-      <span class="context-level"></span>
-    </div>
-    <div role="toolbar" aria-label="Designer commands">
-      <div class="tool-row" role="group" aria-label="Design tools">
-        <span class="tool-choice" role="group" aria-label="Drawing tool">
-          <button id="pen-tool" aria-pressed="false">Pen</button>
-          <button id="pan-tool" aria-pressed="true">Pan</button>
-        </span>
-        <button
-          id="components-tool"
-          aria-expanded="false"
-          aria-controls="component-panel"
-        >
-          Components
-        </button>
-        <button id="undo-stroke" data-command-icon>↶</button>
-        <button id="undo-clear" hidden>Undo Clear</button>
-        <span class="sketch-options">
-          <button
-            id="sketch-options"
-            data-command-icon
-            aria-expanded="false"
-            aria-controls="sketch-menu"
-          >
-            ···
-          </button>
-          <div id="sketch-menu" role="group" aria-label="Sketch options" hidden>
-            <button id="clear-sketch">Clear marks</button>
-            <button data-calibrate disabled>Calibrate</button>
-          </div>
-        </span>
-      </div>
-      <div class="tool-row" role="group" aria-label="View controls">
-        <details id="zoom-controls">
-          <summary aria-label="Zoom controls" title="Zoom controls">
-            <output
-              id="zoom-percent"
-              data-zoom-readout
-              aria-label="Zoom percentage"
-            ></output>
-          </summary>
-          <div class="zoom-menu" role="group" aria-label="Zoom actions">
-            <button data-zoom="out" data-command-icon>−</button>
-            <button data-zoom="in" data-command-icon>+</button>
-            <button data-fit aria-label="Fit plan">Fit</button>
-            <form class="zoom-entry" data-zoom-form>
-              <label
-                >Zoom (%)
-                <input
-                  type="number"
-                  aria-label="Zoom (%)"
-                  min="0.01"
-                  step="any"
-                  required
-                  data-zoom-value
-              /></label>
-              <button type="submit">Set zoom</button>
-            </form>
-          </div>
-        </details>
-      </div>
-      <nav class="tool-row" aria-label="Designer navigation">
-        <a href="/library.html">Library</a>
-        <button id="play-mode">Play</button>
-      </nav>
-    </div>
-    <output id="sketch-status" aria-live="polite"></output>
-  </section>
+  <div id="toolbar" role="toolbar" aria-label="Toolbar">
+    <button id="mode-toggle" aria-label="Play"></button>
+    <span class="sep"></span>
+    <button id="info-tool" data-command-icon>
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <polygon
+          points="17 22 17 14 13 14 13 16 15 16 15 22 12 22 12 24 20 24 20 22 17 22"
+        />
+        <path d="M16,8a1.5,1.5,0,1,0,1.5,1.5A1.5,1.5,0,0,0,16,8Z" />
+        <path
+          d="M16,30A14,14,0,1,1,30,16,14,14,0,0,1,16,30ZM16,4A12,12,0,1,0,28,16,12,12,0,0,0,16,4Z"
+        />
+      </svg>
+    </button>
+    <a href="/library.html" data-command-icon
+      ><svg viewBox="0 0 32 32" fill="currentColor">
+        <path
+          d="M11.17,6l3.42,3.41.58.59H28V26H4V6h7.17m0-2H4A2,2,0,0,0,2,6V26a2,2,0,0,0,2,2H28a2,2,0,0,0,2-2V10a2,2,0,0,0-2-2H16L12.59,4.59A2,2,0,0,0,11.17,4Z"
+        /></svg
+    ></a>
+    <button id="export-svg" data-command-icon data-mode="edit">
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <path d="M26,24v4H6V24H4v4H4a2,2,0,0,0,2,2H26a2,2,0,0,0,2-2h0V24Z" />
+        <polygon
+          points="26 14 24.59 12.59 17 20.17 17 2 15 2 15 20.17 7.41 12.59 6 14 16 24 26 14"
+        />
+      </svg>
+    </button>
+    <button id="export-pdf" data-command-icon data-mode="edit">
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <polygon
+          points="30 18 30 16 24 16 24 26 26 26 26 22 29 22 29 20 26 20 26 18 30 18"
+        />
+        <path
+          d="M19,26H15V16h4a3.0033,3.0033,0,0,1,3,3v4A3.0033,3.0033,0,0,1,19,26Zm-2-2h2a1.0011,1.0011,0,0,0,1-1V19a1.0011,1.0011,0,0,0-1-1H17Z"
+        />
+        <path
+          d="M11,16H6V26H8V23h3a2.0027,2.0027,0,0,0,2-2V18A2.0023,2.0023,0,0,0,11,16ZM8,21V18h3l.001,3Z"
+        />
+        <path
+          d="M22,14V10a.9092.9092,0,0,0-.3-.7l-7-7A.9087.9087,0,0,0,14,2H4A2.0059,2.0059,0,0,0,2,4V28a2,2,0,0,0,2,2H20V28H4V4h8v6a2.0059,2.0059,0,0,0,2,2h6v2Zm-8-4V4.4L19.6,10Z"
+        />
+      </svg>
+    </button>
+    <span class="menu-group" data-mode="edit">
+      <span class="sep"></span>
+      <button id="pan-tool" data-command-icon aria-pressed="true">
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <polygon
+            points="25 11 23.59 12.41 26.17 15 17 15 17 5.83 19.59 8.41 21 7 16 2 11 7 12.41 8.41 15 5.83 15 15 5.83 15 8.41 12.41 7 11 2 16 7 21 8.41 19.59 5.83 17 15 17 15 26.17 12.41 23.59 11 25 16 30 21 25 19.59 23.59 17 26.17 17 17 26.17 17 23.59 19.59 25 21 30 16 25 11"
+          />
+        </svg>
+      </button>
+      <button id="pen-tool" data-command-icon aria-pressed="false">
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <rect x="2" y="26" width="28" height="2" />
+          <path
+            d="M25.4,9c0.8-0.8,0.8-2,0-2.8c0,0,0,0,0,0l-3.6-3.6c-0.8-0.8-2-0.8-2.8,0c0,0,0,0,0,0l-15,15V24h6.4L25.4,9z M20.4,4L24,7.6 l-3,3L17.4,7L20.4,4z M6,22v-3.6l10-10l3.6,3.6l-10,10H6z"
+          />
+        </svg>
+      </button>
+      <button
+        id="components-tool"
+        data-command-icon
+        aria-expanded="false"
+        aria-controls="component-panel"
+      >
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <path
+            d="M8,4V8H4V4Zm2-2H2v8h8Zm8,2V8H14V4Zm2-2H12v8h8Zm8,2V8H24V4Zm2-2H22v8h8ZM8,14v4H4V14Zm2-2H2v8h8Zm8,2v4H14V14Zm2-2H12v8h8Zm8,2v4H24V14Zm2-2H22v8h8ZM8,24v4H4V24Zm2-2H2v8h8Zm8,2v4H14V24Zm2-2H12v8h8Zm8,2v4H24V24Zm2-2H22v8h8Z"
+          />
+        </svg>
+      </button>
+      <button id="undo-stroke" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <path
+            d="M20,10H7.8149l3.5874-3.5859L10,5,4,11,10,17l1.4023-1.4146L7.8179,12H20a6,6,0,0,1,0,12H12v2h8a8,8,0,0,0,0-16Z"
+          />
+        </svg>
+      </button>
+      <button id="undo-clear" hidden>Undo Clear</button>
+      <button id="clear-sketch" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <rect x="7" y="27" width="23" height="2" />
+          <path
+            d="M27.38,10.51,19.45,2.59a2,2,0,0,0-2.83,0l-14,14a2,2,0,0,0,0,2.83L7.13,24h9.59L27.38,13.34A2,2,0,0,0,27.38,10.51ZM15.89,22H8L4,18l6.31-6.31,7.93,7.92Zm3.76-3.76-7.92-7.93L18,4,26,11.93Z"
+          />
+        </svg>
+      </button>
+    </span>
+    <span class="sep"></span>
+    <button data-calibrate data-command-icon disabled>
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <path
+          d="M28.83,21.17,25,17.37l.67-.67a1,1,0,0,0,0-1.41l-6-6a1,1,0,0,0-1.41,0h0l-.79.79L10.71,3.29a1,1,0,0,0-1.41,0h0l-4,4-.12.15-4,6a1,1,0,0,0,.12,1.26l3,3a1,1,0,0,0,1.42,0L10,13.41l2.09,2.09-4.8,4.79a1,1,0,0,0,0,1.41l2,2A1,1,0,0,0,10,24a1,1,0,0,0,.52-.15l4.33-2.6,2.44,2.45a1,1,0,0,0,1.41,0h0l.67-.7,3.79,3.83a4,4,0,0,0,5.66-5.66ZM10,10.58l-5,5L3.29,13.87,6.78,8.63,10,5.41l6.09,6.09L13.5,14.08Zm8,11-2.84-2.84-5,3L9.42,21,19,11.41,23.59,16Zm9.42,3.83a2,2,0,0,1-2.83,0h0l-3.8-3.79,2.83-2.83,3.8,3.79a2,2,0,0,1,0,2.83Z"
+        />
+      </svg>
+    </button>
+    <output class="readout" data-scale-readout aria-label="Scale"></output>
+    <button data-zoom="out" data-command-icon>
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <rect x="8" y="12" width="10" height="2" />
+        <path
+          d="M21.4479,20A10.856,10.856,0,0,0,24,13,11,11,0,1,0,13,24a10.856,10.856,0,0,0,7-2.5521L27.5859,29,29,27.5859ZM13,22a9,9,0,1,1,9-9A9.01,9.01,0,0,1,13,22Z"
+        />
+      </svg>
+    </button>
+    <form class="zoom-entry" data-zoom-form>
+      <input
+        type="number"
+        aria-label="Zoom percentage"
+        min="0.01"
+        step="any"
+        required
+        data-zoom-value
+      />%
+    </form>
+    <button data-zoom="in" data-command-icon>
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <polygon
+          points="18 12 14 12 14 8 12 8 12 12 8 12 8 14 12 14 12 18 14 18 14 14 18 14 18 12"
+        />
+        <path
+          d="M21.4479,20A10.856,10.856,0,0,0,24,13,11,11,0,1,0,13,24a10.856,10.856,0,0,0,7-2.5521L27.5859,29,29,27.5859ZM13,22a9,9,0,1,1,9-9A9.01,9.01,0,0,1,13,22Z"
+        />
+      </svg>
+    </button>
+    <button data-fit aria-label="Fit plan">
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <polygon points="22 16 24 16 24 8 16 8 16 10 22 10 22 16" />
+        <polygon points="8 24 16 24 16 22 10 22 10 16 8 16 8 24" />
+        <path
+          d="M26,28H6a2.0023,2.0023,0,0,1-2-2V6A2.0023,2.0023,0,0,1,6,4H26a2.0023,2.0023,0,0,1,2,2V26A2.0023,2.0023,0,0,1,26,28ZM6,6V26H26.0012L26,6Z"
+        />
+      </svg>
+    </button>
+    <button id="zoom-100" data-command-icon>
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <path
+          d="M22.4478,21A10.855,10.855,0,0,0,25,14,10.99,10.99,0,0,0,6,6.4658V2H4v8h8V8H7.332a8.9768,8.9768,0,1,1-2.1,8H3.1912A11.0118,11.0118,0,0,0,14,25a10.855,10.855,0,0,0,7-2.5522L28.5859,30,30,28.5859Z"
+        />
+      </svg>
+    </button>
+    <span class="menu-group" data-mode="play">
+      <span class="sep"></span>
+      <button id="gm-view" data-command-icon aria-pressed="false">
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <path
+            d="M24.8008,11.1382a8.9938,8.9938,0,0,0-17.6006,0A6.533,6.533,0,0,0,2,17.5H2V19a1,1,0,0,0,1,1H15a1,1,0,0,0,0-2H4v-.4966H4a4.5176,4.5176,0,0,1,4.144-4.4819l.8155-.064.0991-.812a6.9936,6.9936,0,0,1,13.8838,0l.0986.812.8154.064A4.4962,4.4962,0,0,1,23.5,22H7a1,1,0,0,0,0,2H23.5a6.4963,6.4963,0,0,0,1.3008-12.8618Z"
+          />
+          <rect x="2" y="26" width="18" height="2" rx="1" />
+        </svg>
+      </button>
+      <button id="reset-fog" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <path
+            d="M18,28A12,12,0,1,0,6,16v6.2L2.4,18.6,1,20l6,6,6-6-1.4-1.4L8,22.2V16H8A10,10,0,1,1,18,26Z"
+          />
+        </svg>
+      </button>
+      <button id="range-down" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <rect x="15" y="2" width="2" height="5" />
+          <rect
+            x="21.6675"
+            y="6.8536"
+            width="4.958"
+            height="1.9998"
+            transform="translate(1.5191 19.3744) rotate(-45)"
+          />
+          <rect x="25" y="15" width="5" height="2" />
+          <rect
+            x="23.1466"
+            y="21.6675"
+            width="1.9998"
+            height="4.958"
+            transform="translate(-10.0018 24.1465) rotate(-45)"
+          />
+          <rect x="15" y="25" width="2" height="5" />
+          <rect
+            x="5.3745"
+            y="23.1466"
+            width="4.958"
+            height="1.9998"
+            transform="translate(-14.7739 12.6256) rotate(-45)"
+          />
+          <rect x="2" y="15" width="5" height="2" />
+          <rect
+            x="6.8536"
+            y="5.3745"
+            width="1.9998"
+            height="4.958"
+            transform="translate(-3.253 7.8535) rotate(-45)"
+          />
+          <path
+            d="M16,12a4,4,0,1,1-4,4,4.0045,4.0045,0,0,1,4-4m0-2a6,6,0,1,0,6,6,6,6,0,0,0-6-6Z"
+          />
+        </svg>
+      </button>
+      <input
+        id="sight-range"
+        type="number"
+        min="0.1"
+        step="0.5"
+        value="6"
+        aria-label="Default visual range (m)"
+      />
+      <button id="range-up" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <rect x="15" y="2" width="2" height="5" />
+          <rect
+            x="21.6675"
+            y="6.8536"
+            width="4.958"
+            height="1.9998"
+            transform="translate(1.5191 19.3744) rotate(-45)"
+          />
+          <rect x="25" y="15" width="5" height="2" />
+          <rect
+            x="23.1466"
+            y="21.6675"
+            width="1.9998"
+            height="4.958"
+            transform="translate(-10.0018 24.1465) rotate(-45)"
+          />
+          <rect x="15" y="25" width="2" height="5" />
+          <rect
+            x="5.3745"
+            y="23.1466"
+            width="4.958"
+            height="1.9998"
+            transform="translate(-14.7739 12.6256) rotate(-45)"
+          />
+          <rect x="2" y="15" width="5" height="2" />
+          <rect
+            x="6.8536"
+            y="5.3745"
+            width="1.9998"
+            height="4.958"
+            transform="translate(-3.253 7.8535) rotate(-45)"
+          />
+          <path d="M16,10a6,6,0,1,0,6,6,6,6,0,0,0-6-6Z" />
+        </svg>
+      </button>
+      <button id="add-pc" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <polygon
+            points="32 14 28 14 28 10 26 10 26 14 22 14 22 16 26 16 26 20 28 20 28 16 32 16 32 14"
+          />
+          <path
+            d="M12,4A5,5,0,1,1,7,9a5,5,0,0,1,5-5m0-2a7,7,0,1,0,7,7A7,7,0,0,0,12,2Z"
+          />
+          <path
+            d="M22,30H20V25a5,5,0,0,0-5-5H9a5,5,0,0,0-5,5v5H2V25a7,7,0,0,1,7-7h6a7,7,0,0,1,7,7Z"
+          />
+        </svg>
+      </button>
+      <button id="add-npc" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
+          <rect
+            x="25.2321"
+            y="12.866"
+            width="4"
+            height="2"
+            transform="translate(10.5814 -11.7583) rotate(30)"
+          />
+          <rect x="26" y="8" width="4" height="2" />
+          <rect
+            x="2.7679"
+            y="12.866"
+            width="4"
+            height="2"
+            transform="translate(15.8301 23.4904) rotate(150)"
+          />
+          <path
+            d="M26,30H24V25a5.0059,5.0059,0,0,0-5-5H13a5.0059,5.0059,0,0,0-5,5v5H6V25a7.0082,7.0082,0,0,1,7-7h6a7.0082,7.0082,0,0,1,7,7Z"
+          />
+          <path
+            d="M16,4a5,5,0,1,1-5,5,5,5,0,0,1,5-5m0-2a7,7,0,1,0,7,7A7,7,0,0,0,16,2Z"
+          />
+          <rect
+            x="25.2321"
+            y="3.134"
+            width="4"
+            height="2"
+            transform="translate(1.5814 14.1699) rotate(-30)"
+          />
+          <rect x="2" y="8" width="4" height="2" />
+          <rect
+            x="2.7679"
+            y="3.134"
+            width="4"
+            height="2"
+            transform="translate(6.8301 10.0981) rotate(-150)"
+          />
+        </svg>
+      </button>
+    </span>
+    <span class="sep"></span>
+    <button id="help-tool" data-command-icon>
+      <svg viewBox="0 0 32 32" fill="currentColor">
+        <path
+          d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Zm0,26A12,12,0,1,1,28,16,12,12,0,0,1,16,28Z"
+        />
+        <circle cx="16" cy="23.5" r="1.5" />
+        <path
+          d="M17,8H15.5A4.49,4.49,0,0,0,11,12.5V13h2v-.5A2.5,2.5,0,0,1,15.5,10H17a2.5,2.5,0,0,1,0,5H15v4.5h2V17a4.5,4.5,0,0,0,0-9Z"
+        />
+      </svg>
+    </button>
+  </div>
+  <output id="sketch-status" aria-live="polite"></output>
+  <div id="problem" role="alert"></div>
+  <dialog id="info-dialog" aria-label="Info" data-toggles="info">
+    <h2>Info</h2>
+    <dl>
+      <dt>Plan</dt>
+      <dd id="info-plan"></dd>
+      <dt>Level</dt>
+      <dd id="info-level"></dd>
+    </dl>
+    <button id="info-close">Close</button>
+  </dialog>
   <section id="component-panel" aria-label="Component browser" hidden>
     <header>
       <h2>Components</h2>
@@ -931,26 +1267,6 @@
         aria-controls="gm-characters"
       >
         Characters
-      </button>
-      <button
-        id="gm-tab-exploration"
-        role="tab"
-        data-gm-section="exploration"
-        aria-selected="false"
-        tabindex="-1"
-        aria-controls="gm-exploration"
-      >
-        Exploration
-      </button>
-      <button
-        id="gm-tab-view"
-        role="tab"
-        data-gm-section="view"
-        aria-selected="false"
-        tabindex="-1"
-        aria-controls="gm-view-controls"
-      >
-        View
       </button>
     </nav>
     <section
@@ -992,62 +1308,7 @@
           <output id="character-action-status" aria-live="polite"></output>
         </div>
       </div>
-      <button id="add-pc">Add PC</button><button id="add-npc">Add NPC</button>
-      <p>
-        Add at the view centre, then drag into place. Click a PC to use its POV.
-      </p>
     </section>
-    <section
-      role="tabpanel"
-      aria-labelledby="gm-tab-exploration"
-      id="gm-exploration"
-      aria-label="Exploration"
-      hidden
-    >
-      <label
-        >Default visual range (m)
-        <input id="sight-range" type="number" min="0.1" step="0.5" value="6"
-      /></label>
-      <p class="field-note">Range changes save automatically.</p>
-      <button id="gm-view" aria-pressed="false">Show full plan (GM)</button>
-      <button id="reset-fog">Reset fog · close all doors</button>
-      <p>Shift-F: fog on/off · Shift-R: reset · Shift-click: toggle door</p>
-    </section>
-    <section
-      role="tabpanel"
-      aria-labelledby="gm-tab-view"
-      id="gm-view-controls"
-      aria-label="View"
-      hidden
-    >
-      <div class="tool-row">
-        <button data-zoom="out" aria-label="Zoom out">−</button>
-        <button data-zoom="in" aria-label="Zoom in">+</button>
-        <button data-fit aria-label="Fit plan">Fit</button>
-        <button data-calibrate disabled>Calibrate</button>
-      </div>
-      <output data-zoom-readout aria-label="Play zoom percentage"></output>
-      <form class="zoom-entry" data-zoom-form>
-        <label
-          >Zoom (%)
-          <input
-            type="number"
-            aria-label="Zoom (%)"
-            min="0.01"
-            step="any"
-            required
-            data-zoom-value
-        /></label>
-        <button type="submit">Set zoom</button>
-      </form>
-      <p>+/−: zoom · F: Fit · Z: Set zoom</p>
-    </section>
-    <nav aria-label="Play navigation" class="gm-navigation">
-      <a href="/library.html">Library</a
-      ><button id="return-edit" title="Return to Edit · Shift-E">
-        Return to Edit
-      </button>
-    </nav>
     <output id="fog-status" aria-live="polite"></output>
   </section>
   <dialog id="calibration-dialog" aria-labelledby="calibration-title">

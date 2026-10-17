@@ -1,14 +1,23 @@
 import { test, expect } from "@playwright/test";
+import { addCharacter } from "./helpers.js";
 
-test("drawing context stays visible in Designer and only in the open GM menu during Play", async ({
+test("plan and level appear in Info and in the open GM menu during Play", async ({
   page,
 }) => {
+  const info = page.getByRole("dialog", { name: "Info" });
+  const openInfo = async () => {
+    await page
+      .getByRole("toolbar", { name: "Toolbar", exact: true })
+      .getByRole("button", { name: "Info", exact: true })
+      .click();
+  };
   await page.goto("/?level=below&mode=edit");
-  const designer = page.locator("#edit-palette");
+  await openInfo();
   await expect(
-    designer.getByText("Referee building", { exact: true }),
+    info.getByText("Referee building", { exact: true }),
   ).toBeVisible();
-  await expect(designer.getByText("below", { exact: true })).toBeVisible();
+  await expect(info.getByText("below", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(
     page
@@ -25,10 +34,9 @@ test("drawing context stays visible in Designer and only in the open GM menu dur
   await expect(referee).toBeHidden();
 
   await page.goto("/?plan=depot&mode=edit");
-  await expect(designer.getByText("Depot", { exact: true })).toBeVisible();
-  await expect(
-    designer.getByText("Depot floor", { exact: true }),
-  ).toBeVisible();
+  await openInfo();
+  await expect(info.getByText("Depot", { exact: true })).toBeVisible();
+  await expect(info.getByText("Depot floor", { exact: true })).toBeVisible();
 });
 
 test("Referee browses plan levels and explicitly opens edit or fullscreen play", async ({
@@ -54,10 +62,6 @@ test("Referee browses plan levels and explicitly opens edit or fullscreen play",
     .getByRole("link", { name: "Play", exact: true })
     .click();
   await expect(page.locator("body")).toHaveAttribute("data-mode", "play");
-  await expect(
-    page.getByRole("link", { name: "Library", exact: true }),
-  ).toBeHidden();
-  await page.keyboard.press("Shift+G");
   await page.getByRole("link", { name: "Library", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Plan library" }),
@@ -99,8 +103,7 @@ test("characters added to another plan stay there on reload and library navigati
   await page.getByRole("link", { name: "Play", exact: true }).click();
   await expect(page.locator("#viewport")).toContainText("DEPOT");
   await page.keyboard.press("Shift+G");
-  await page.getByLabel("Character name").fill("Depot guard");
-  await page.getByRole("button", { name: "Add NPC", exact: true }).click();
+  await addCharacter(page, "npc", "Depot guard");
   await expect
     .poll(
       async () =>
@@ -248,8 +251,7 @@ test("plan-only play keeps a new marker on the selected plan's first level", asy
   await page.goto(`/?plan=${copy.id}&mode=play`);
   await expect(page.locator("#viewport")).toContainText("SECRET");
   await page.keyboard.press("Shift+G");
-  await page.getByLabel("Character name").fill("Copy scout");
-  await page.getByRole("button", { name: "Add PC", exact: true }).click();
+  await addCharacter(page, "pc", "Copy scout");
   await expect(page.locator("#viewport [data-character]")).toHaveCount(1);
   await expect
     .poll(

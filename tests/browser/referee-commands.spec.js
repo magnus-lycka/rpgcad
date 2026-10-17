@@ -36,19 +36,13 @@ test("full-plan reveal requires Shift-V and is discoverable without stealing tab
     "false",
   );
   await page.keyboard.press("/");
-  await page.getByRole("combobox").fill("full-plan");
+  await page.getByRole("combobox").fill("Toggle fog");
   await expect(page.getByRole("option")).toContainText("Shift+V");
   await page.keyboard.press("Enter");
   await expect(page.locator("#gm-view")).toHaveAttribute(
     "aria-pressed",
     "true",
   );
-  await page.keyboard.press("g");
-  await page.getByRole("tab", { name: "Characters", exact: true }).focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(
-    page.getByRole("tab", { name: "Exploration", exact: true }),
-  ).toBeFocused();
 });
 
 test("Observer movement, range and reset share palette bindings and persist", async ({
@@ -183,14 +177,6 @@ test("Referee character commands explain targets and perform saved actions from 
         (await (await request.get("/characters")).json()).characters.length,
     )
     .toBe(0);
-  await page.keyboard.press("x");
-  await expect(
-    page.getByRole("tab", { name: "Exploration", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("w");
-  await expect(
-    page.getByRole("tab", { name: "View", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
 });
 
 test("Move to level requires a different destination and preserves the character through navigation", async ({

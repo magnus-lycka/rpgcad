@@ -44,11 +44,12 @@ test("shared shortcuts preserve native fields, support Ctrl and Command exports 
   await page.goto("/?mode=edit&level=below");
   await expect(page.locator("[data-calibrate]").first()).toBeEnabled();
   for (const mode of ["edit", "play"]) {
-    for (const modifier of ["Control", "Meta"]) {
-      const download = page.waitForEvent("download");
-      await page.keyboard.press(`${modifier}+e`);
-      expect((await download).suggestedFilename()).toBe("rpgcad.svg");
-    }
+    if (mode === "edit")
+      for (const modifier of ["Control", "Meta"]) {
+        const download = page.waitForEvent("download");
+        await page.keyboard.press(`${modifier}+e`);
+        expect((await download).suggestedFilename()).toBe("rpgcad.svg");
+      }
     await page.keyboard.press("+");
     await expect(
       page.locator(mode === "edit" ? "#sketch-status" : "#fog-status"),
