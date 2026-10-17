@@ -134,6 +134,7 @@ const playTools = [
   "Reset fog / close all doors",
   "Add PC",
   "Add NPC",
+  "Characters",
 ];
 
 test("fog, range and character tools show in Play and not in Edit", async ({

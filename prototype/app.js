@@ -552,6 +552,58 @@ async function removeCharacter() {
   draw();
   await saveExploration();
 }
+/** @type {Map<string,string>} */
+let levelNames = new Map();
+/** Characters to centre on once the roster and plan are loaded. */
+let focusCharacter = settings.get("focus") || "";
+function renderCharacterList() {
+  const list = element("characters-list");
+  list.replaceChildren(
+    ...characterState.characters.map((c) => {
+      const item = document.createElement("li"),
+        button = document.createElement("button"),
+        name = document.createElement("span"),
+        level = document.createElement("span");
+      button.type = "button";
+      button.dataset.focusCharacter = c.id;
+      name.textContent = `${c.name} (${c.kind.toUpperCase()})`;
+      level.className = "level";
+      level.textContent = levelNames.get(c.level) || c.level;
+      button.append(name, level);
+      item.append(button);
+      return item;
+    }),
+  );
+  element("characters-empty").hidden = characterState.characters.length > 0;
+}
+/** @param {string} id */
+function goToCharacter(id) {
+  const c = characterState.characters.find((entry) => entry.id === id);
+  if (!c) return;
+  /** @type {HTMLDialogElement} */ (element("characters-dialog")).close();
+  if (c.level === currentLevel) {
+    selectOnly(id);
+    camera = { ...camera, x: c.at[0], y: c.at[1] };
+    refreshCharacterControls();
+    draw();
+    return;
+  }
+  location.assign(
+    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level: c.level, mode: "play", character: id, focus: id })}`,
+  );
+}
+function applyFocus() {
+  if (!focusCharacter || !loaded || !viewSettled) return;
+  const c = characterState.characters.find(
+    (entry) => entry.id === focusCharacter,
+  );
+  if (!c || c.level !== currentLevel) return;
+  focusCharacter = "";
+  settings.delete("focus");
+  history.replaceState(null, "", `?${settings}`);
+  camera = { ...camera, x: c.at[0], y: c.at[1] };
+  draw();
+}
 async function loadLevels() {
   const response = await fetch(`/plan${planQuery}`);
   if (!response.ok) return;
@@ -570,6 +622,9 @@ async function loadLevels() {
       )
       .join("");
   select.value = currentLevel;
+  levelNames = new Map(
+    plan.levels.map((entry) => [entry.id, entry.name || entry.id]),
+  );
 }
 element("character-level").addEventListener("change", updateBusyControls);
 async function transferGroup() {
@@ -1220,6 +1275,7 @@ async function poll() {
     if (loaded) await pollExploration();
     if (loaded) await pollSketchReply();
     if (loaded) await pollCharacters();
+    applyFocus();
   } catch (error) {
     console.error("Keeping the last valid drawing:", String(error));
   } finally {
@@ -1818,6 +1874,23 @@ const commandUi = installCommands(
       },
     },
     {
+      id: "characters",
+      label: "Characters",
+      keys: ["M"],
+      scope: "play",
+      announce: false,
+      run: () => {
+        const dialog = /** @type {HTMLDialogElement} */ (
+          element("characters-dialog")
+        );
+        if (dialog.open) dialog.close();
+        else {
+          renderCharacterList();
+          dialog.showModal();
+        }
+      },
+    },
+    {
       id: "export",
       label: "Export SVG",
       keys: ["Mod+E"],
@@ -1903,6 +1976,15 @@ commandUi.bind("#mode-toggle, #return-edit", "mode");
 commandUi.bind("#help-tool", "help");
 commandUi.bind("#zoom-100", "zoom-100");
 commandUi.bind("#info-tool", "info");
+commandUi.bind("#characters-tool", "characters");
+element("characters-list").addEventListener("click", (event) => {
+  const target =
+    event.target instanceof Element
+      ? event.target.closest("[data-focus-character]")
+      : null;
+  if (target instanceof HTMLElement && target.dataset.focusCharacter)
+    goToCharacter(target.dataset.focusCharacter);
+});
 element("info-dialog").addEventListener("close", () => {
   if (
     infoOpener instanceof HTMLElement &&

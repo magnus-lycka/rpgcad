@@ -185,6 +185,31 @@
       border: 1px solid #45464c;
       border-radius: 5px;
     }
+    #characters-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 2px;
+      min-width: 260px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    #characters-list button {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      width: 100%;
+      text-align: left;
+      background: none;
+    }
+    #characters-list button:hover,
+    #characters-list button:focus-visible {
+      background: #35363b;
+    }
+    #characters-list .level {
+      color: #9a9ba1;
+    }
     .panel button {
       padding: 6px 10px;
       font: 13px system-ui;
@@ -642,6 +667,21 @@
       </button>
       <button id="add-pc" data-command-icon>
         <svg viewBox="0 0 32 32" fill="currentColor">
+          <path
+            d="M16,22a6,6,0,0,1-5.14-2.92l-1.71,1a8,8,0,0,0,13.7,0l-1.71-1A6,6,0,0,1,16,22Z"
+          />
+          <polygon
+            points="30 4 26 4 26 0 24 0 24 4 20 4 20 6 24 6 24 10 26 10 26 6 30 6 30 4"
+          />
+          <path d="M11.5,11A2.5,2.5,0,1,0,14,13.5,2.48,2.48,0,0,0,11.5,11Z" />
+          <path d="M20.5,11A2.5,2.5,0,1,0,23,13.5,2.48,2.48,0,0,0,20.5,11Z" />
+          <path
+            d="M27.61,13A12.33,12.33,0,0,1,28,16,12,12,0,1,1,16,4V2A14,14,0,1,0,29.67,13Z"
+          />
+        </svg>
+      </button>
+      <button id="add-npc" data-command-icon>
+        <svg viewBox="0 0 32 32" fill="currentColor">
           <polygon
             points="32 14 28 14 28 10 26 10 26 14 22 14 22 16 26 16 26 20 28 20 28 16 32 16 32 14"
           />
@@ -653,43 +693,17 @@
           />
         </svg>
       </button>
-      <button id="add-npc" data-command-icon>
+      <button id="characters-tool" data-command-icon>
         <svg viewBox="0 0 32 32" fill="currentColor">
-          <rect
-            x="25.2321"
-            y="12.866"
-            width="4"
-            height="2"
-            transform="translate(10.5814 -11.7583) rotate(30)"
-          />
-          <rect x="26" y="8" width="4" height="2" />
-          <rect
-            x="2.7679"
-            y="12.866"
-            width="4"
-            height="2"
-            transform="translate(15.8301 23.4904) rotate(150)"
+          <path
+            d="M30,30H28V25a5.0057,5.0057,0,0,0-5-5V18a7.0078,7.0078,0,0,1,7,7Z"
           />
           <path
-            d="M26,30H24V25a5.0059,5.0059,0,0,0-5-5H13a5.0059,5.0059,0,0,0-5,5v5H6V25a7.0082,7.0082,0,0,1,7-7h6a7.0082,7.0082,0,0,1,7,7Z"
+            d="M22,30H20V25a5.0059,5.0059,0,0,0-5-5H9a5.0059,5.0059,0,0,0-5,5v5H2V25a7.0082,7.0082,0,0,1,7-7h6a7.0082,7.0082,0,0,1,7,7Z"
           />
+          <path d="M20,2V4a5,5,0,0,1,0,10v2A7,7,0,0,0,20,2Z" />
           <path
-            d="M16,4a5,5,0,1,1-5,5,5,5,0,0,1,5-5m0-2a7,7,0,1,0,7,7A7,7,0,0,0,16,2Z"
-          />
-          <rect
-            x="25.2321"
-            y="3.134"
-            width="4"
-            height="2"
-            transform="translate(1.5814 14.1699) rotate(-30)"
-          />
-          <rect x="2" y="8" width="4" height="2" />
-          <rect
-            x="2.7679"
-            y="3.134"
-            width="4"
-            height="2"
-            transform="translate(6.8301 10.0981) rotate(-150)"
+            d="M12,4A5,5,0,1,1,7,9a5,5,0,0,1,5-5m0-2a7,7,0,1,0,7,7A7,7,0,0,0,12,2Z"
           />
         </svg>
       </button>
@@ -709,6 +723,16 @@
   </div>
   <output id="sketch-status" aria-live="polite"></output>
   <div id="problem" role="alert"></div>
+  <dialog
+    id="characters-dialog"
+    class="panel"
+    aria-label="Characters"
+    data-toggles="characters"
+  >
+    <h2>Characters</h2>
+    <p id="characters-empty" hidden>No characters in this plan.</p>
+    <ul id="characters-list"></ul>
+  </dialog>
   <dialog id="info-dialog" class="panel" aria-label="Info" data-toggles="info">
     <h2>Info</h2>
     <dl>

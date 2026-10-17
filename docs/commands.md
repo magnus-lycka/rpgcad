@@ -29,8 +29,9 @@
 - Keyboard shortcuts — Edit+Play — help — ?
 - Close topmost control — Edit+Play — — — Esc
 - Toggle nearby door — Play — — — ⇧O
-- Add PC — Play — user--follow — A
-- Add NPC — Play — user--simulation — N
+- Add PC — Play — face--add — A
+- Add NPC — Play — user--follow — N
+- Characters (list of all characters in the plan with name and level; choosing one goes to its level with it selected and centred) — Play — user--multiple — M
 - Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu; with several selected, a group popup with range and level only) — Play — — — double-click marker, Enter on a focused marker
 - Select character — Play — — — click marker, Space on a focused marker
 - Extend selection — Play — — — ⌘/Ctrl-click marker, ⌘/Ctrl+Space on a focused marker
@@ -84,5 +85,6 @@ Only one button, but switching based on mode.
 
 - Toggle fog — Play — fog — ⇧F
 - Reset fog / close all doors — Play — — — ⇧R
-- Add PC — Play — user--follow — A (opens the creation popup)
-- Add NPC — Play — user--simulation — N (opens the creation popup)
+- Add PC — Play — face--add — A (opens the creation popup)
+- Add NPC — Play — user--follow — N (opens the creation popup)
+- Characters — Play — user--multiple — M (lists every character with its level; choosing one centres it, switching level if needed)

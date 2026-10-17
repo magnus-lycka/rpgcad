@@ -112,7 +112,7 @@ The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the
 
 ## Character markers in play (prototype)
 
-Enter play with the Play button or Shift-E. Choose Add PC or Add NPC in the toolbar (or press A or N): a popup opens at once and nothing is saved until the character has a name and, for a PC, a visual range. An NPC has no visual range. Press Enter or Add character; the marker starts at the current view centre, so drag it to its position. Escape cancels. Shift-F temporarily shows all characters and the full plan without revealing additional fog.
+Enter play with the Play button or Shift-E. Choose Add PC or Add NPC in the toolbar (or press A or N): a popup opens at once and nothing is saved until the character has a name and, for a PC, a visual range. An NPC has no visual range. Press Enter or Add character; the marker starts at the current view centre, so drag it to its position. Escape cancels. The Characters icon (or M) lists every character in the plan with its level; choosing one goes to that level and centres the character. Shift-F temporarily shows all characters and the full plan without revealing additional fog.
 
 Click a PC marker to use its POV and saved sight range; the switch waits a moment so a double-click does not trigger it. A gold ring identifies the POV PC. Dragging it, or pressing the arrow keys, reveals from its destination only; clicking empty plan does nothing but clear the selection. Other PC movement and NPC movement do not reveal areas. All PCs on the displayed level remain visible; NPCs appear only within current visibility, with no remembered markers.
 
