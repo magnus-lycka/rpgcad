@@ -62,7 +62,7 @@ Open http://127.0.0.1:8765/?fog=1. The normal URL still shows the full authored 
 - Shift-click near a door's centre to toggle its open/closed state. You can also ask the agent to change a named door in the exploration file.
 - The toolbar's range field and Reset fog icon provide numeric range entry and reset.
 - Shift-R (or R) covers the entire plan with fog and closes all doors, keeping POV position and range. Click to place the observer or use an arrow key to start revealing again. Reset persists across reloads and exits GM view.
-- Shift-V toggles fog off/on for a temporary full-plan GM view with the blue POV marker (bare V and the former Shift-F alias are intentionally removed); the panel also has a full-plan button. Plain F still fits the plan to the window. This does not reveal exploration. Placement and door toggling still work, recording only normally visible areas. Returning to fog restores the player view; print/export from the fog URL stays fogged even during GM view.
+- Shift-F, or the toolbar's Toggle fog button, switches fog off and on for a temporary full-plan GM view with the blue POV marker; the button is blue while fog is on (bare V and Shift-V do nothing). Plain F still fits the plan to the window. This does not reveal exploration. Placement and door toggling still work, recording only normally visible areas. Returning to fog restores the player view; print/export from the fog URL stays fogged even during GM view.
 - Bright areas are currently visible, muted areas have been explored, and the grey grid is still unknown. Walls and closed doors block sight. Furniture/equipment outlines, hatches, and step irons do not block merely because they are drawn.
 
 `prototype/exploration.PROTOTYPE.json` holds version-2 scratch play state independently of the building. `observers` holds POV positions in model metres and positive sight ranges; `doors` holds current overrides. Ordered `observations` store only position, range, door states and a model-revision reference. Shared `revisions` store each observed model revision once, preserving last-seen geometry across edits. No fog polygons are saved. Reset clears observations and unused revisions.
@@ -112,7 +112,7 @@ The lower model is `level-below.PROTOTYPE.json`. It preserves alignment with the
 
 ## Character markers in play (prototype)
 
-Enter play with the Play button or Shift-E. Choose Add PC or Add NPC in the toolbar; the marker starts at the current view centre with a default name (PC 1, NPC 2…) that you can change in the marker's popup. Drag it to its position. Shift-V temporarily shows all characters and the full plan without revealing additional fog.
+Enter play with the Play button or Shift-E. Choose Add PC or Add NPC in the toolbar (or press A or N): a popup opens at once and nothing is saved until the character has a name and, for a PC, a visual range. An NPC has no visual range. Press Enter or Add character; the marker starts at the current view centre, so drag it to its position. Escape cancels. Shift-F temporarily shows all characters and the full plan without revealing additional fog.
 
 Click a PC marker, or choose a PC on the current level in the Character selector, to use its POV and saved sight range. A gold ring identifies the POV PC. Dragging it reveals from its destination only. Other PC movement and NPC movement do not reveal areas. All PCs on the displayed level remain visible; NPCs appear only within current visibility, with no remembered markers. The character selector also lists hidden characters so the GM can manage them.
 
@@ -273,7 +273,7 @@ Expand **Component details** for dimensions, settings and placement/access guida
 Close or Escape returns to the same drawing, tool, view and pending marks.
 Browsing does not place components or send an instruction; describe placement in chat.
 
-The toolbar's **Default visual range (m)** field (with the dim/bright sun buttons, < and >) sets the default for the plan. **Selected character visual range (m)** is an optional override: leave it blank to inherit the default. New characters inherit; existing explicit ranges remain unchanged. Changing the default immediately affects an inheriting POV, but does not resume visibility after a fog reset. Both the default and overrides survive reload.
+Every PC has its own **Visual range (m)**, required when it is created and shown in its popup; it cannot be cleared. An NPC has no visual range. There is no default range, so changing one PC's range never affects another. Ranges survive reload; a saved PC without a range is rejected and flagged in a red alert.
 
 ## Local runtime data and Git
 

@@ -162,7 +162,7 @@ Referee feedback on the first unfog prototype:
 - Previously explored areas must remain clearly readable when no longer visible; the first prototype's treatment is too similar to unseen areas.
 - Geometry behind a sight blocker must not leak into the reveal. The supplied screenshot shows unwanted cargo-lift detail beyond its upper-right blocking corner; retain this as a concrete failing case while investigating the cause.
 - Agreed next-version scope: one movable party point of view, one sight range, and shared exploration history.
-- Keep the player-facing drawing free of controls. The toolbar provides default range entry in metres and a full-fog reset; clicking the drawing places the point of view. Agent instructions remain available.
+- Keep the player-facing drawing free of controls. The toolbar provides a full-fog reset; clicking the drawing places the point of view. Agent instructions remain available.
 - Currently visible areas are white. Previously explored areas retain fully readable geometry under a very light tint. Unseen areas remain opaque fog with the grid visible.
 - Each placement reveals from its destination only; do not infer or reveal an intervening movement path.
 - Sight is circular and 360° within the specified range, blocked by opaque walls and closed doors. Furniture and other drawing details do not block sight unless explicitly designated. Lighting and eye height are deferred.
@@ -172,7 +172,7 @@ Referee feedback on the first unfog prototype:
 - Open doors retain a thin dashed, unfilled panel outline in the doorway, identifying the door without implying that it is closed or blocks sight. This symbol obeys current visibility and last-seen memory like the rest of the plan.
 - Door leaves in the current building are 0.06 m thick, inset within their thicker walls. Closed-door sight blockers use that same thickness so fog exposes the recess rather than treating the doorway as a flush wall face.
 - The stair platform has only top and left border strokes; its bottom and right boundaries are supplied by the walls/door, avoiding a false line across the opened doorway.
-- The GM can temporarily view the full plan with the POV marker to orient and place the party. Shift-V or the toolbar's Toggle fog button toggles this view (plain F fits the plan) without revealing any additional exploration. POV placement and door toggling still work in GM view; observations retain normal range/occlusion. Reset returns to fog view. Fog print/export remains fogged even while the GM is viewing the full plan.
+- The GM can temporarily view the full plan with the POV marker to orient and place the party. Shift-F or the toolbar's Toggle fog button (blue while fog is on) toggles this view (plain F fits the plan) without revealing any additional exploration. POV placement and door toggling still work in GM view; observations retain normal range/occlusion. Reset returns to fog view. Fog print/export remains fogged even while the GM is viewing the full plan.
 - Reset erases explored knowledge and closes all doors on the displayed level. It preserves POV position and range, and reveals nothing until the next POV placement or movement. Closing doors takes precedence over the earlier proposal to preserve their states: accidental disclosure is difficult to undo.
 - Persist compact observation records: visited POV positions, sight ranges, and the door/opening states needed to reconstruct what was visible at each observation. Do not persist fog polygons as authoritative exploration history.
 - Visibility polygons are derived data. Recompute them from observations; a bounded disposable cache (for example LRU) may be added if measured latency warrants it.
@@ -203,7 +203,7 @@ Agreed behavior:
 - Named PC/NPC markers are added with the toolbar's Add PC/Add NPC and moved by dragging in the drawing. Initial movement is immediate, without combat rules or movement limits.
 - Moving the POV PC reveals from its destination only, not an inferred path.
 - NPC markers appear in the player-facing view only when currently visible. Previously seen NPCs leave no remembered markers. The GM full-plan view shows everyone.
-- Each PC has a saved sight range. New PCs inherit the current range; the GM can change it per PC. Selecting a PC uses its saved range.
+- Each PC has a required saved sight range, entered when it is created and editable in its popup. NPCs have none. There is no default range. Selecting a PC uses its saved range.
 - All PC markers remain visible in the player-facing view, including outside current visibility. Only the selected PC reveals areas; NPC markers remain subject to visibility.
 - Fog reset preserves characters, positions, selected POV and ranges; it closes all doors, clears exploration and reveals nothing until the GM moves or selects a POV PC again.
 - Characters belong to play state, with names, positions, levels and ranges persisted between visits. Show markers on their current level. Initially, the GM explicitly transfers a character to another level and places it there; automatic stair/lift travel is deferred.

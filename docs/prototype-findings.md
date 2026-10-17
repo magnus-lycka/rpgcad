@@ -583,7 +583,7 @@ at desktop and narrow widths as well as the overflow menu.
 ## Referee commands, ticket #35
 
 The Referee inventory now shares command dispatch, availability and discovery.
-Only Shift-V toggles full-plan view; bare V and Shift-F deliberately do nothing.
+Only Shift-V toggles full-plan view; bare V and Shift-F deliberately do nothing. Superseded on 2026-10-17 at the Referee's request: Shift-F now toggles fog and Shift-V does nothing.
 Character mutations retain authoritative save feedback. Door keyboard targeting
 uses the existing 0.6 m opening target radius around the Observer, avoiding
 focusable hidden door geometry; Shift-click supplies the pointer target instead.

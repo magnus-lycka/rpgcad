@@ -29,8 +29,8 @@
 - Keyboard shortcuts — Edit+Play — help — ?
 - Close topmost control — Edit+Play — — — Esc
 - Toggle nearby door — Play — — — ⇧O
-- Add PC — Play — — — A
-- Add NPC — Play — — — N
+- Add PC — Play — user--follow — A
+- Add NPC — Play — user--simulation — N
 - Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu) — Play — — — ⌘-click marker, ⌘/Ctrl+Enter on a focused marker
 - Move Observer left — Play — — — ←
 - Move Observer right — Play — — — →
@@ -38,10 +38,8 @@
 - Move Observer down — Play — — — ↓
 - Decrease Observer range — Play — — — [
 - Increase Observer range — Play — — — ]
-- Decrease default range — Play — light — <
-- Increase default range — Play — light--filled — >
 - Reset fog / close all doors — Play — — — ⇧R
-- Toggle Fog — Play — — — ⇧V
+- Toggle fog — Play — fog — ⇧F
 
 ## Menu
 
@@ -81,9 +79,7 @@ Only one button, but switching based on mode.
 
 ### Play section
 
-- Toggle Fog — Play — — — ⇧V
+- Toggle fog — Play — fog — ⇧F
 - Reset fog / close all doors — Play — — — ⇧R
-- Decrease default range — Play — light — <
-- Increase default range — Play — light--filled — >
-- Add PC - Play - A
-- Add NPC - Play - N
+- Add PC — Play — user--follow — A (opens the creation popup)
+- Add NPC — Play — user--simulation — N (opens the creation popup)
