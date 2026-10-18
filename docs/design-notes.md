@@ -197,7 +197,7 @@ Requested direction; interaction and visibility decisions are under discussion:
 - Place several PCs and NPCs on a level and move them during play.
 - The Referee expects the POV to belong to a PC rather than an unrelated location marker.
 - Coordination with `ceres.rounds` for combat is a later concern, outside this first step.
-Agreed behavior:
+  Agreed behavior:
 
 - One selected PC supplies the active POV and sight range. Switching the selected PC retains shared exploration history; visibility is not the union of all PCs' views.
 - Named PC/NPC markers are added with the toolbar's Add PC/Add NPC and moved by dragging in the drawing. Initial movement is immediate, without combat rules or movement limits.
@@ -272,7 +272,6 @@ Failed saves still preserve the character and report the error visibly. This sup
   and removal recovery. Update them to reflect fixed Referee-menu controls and
   direct character removal, so future work does not reintroduce rejected behavior.
 
-
 Runtime files are ignored but remain alongside the prototype. This does not provide
 backups or move all mutable shipped example models out of tracked source files;
 separating shipped examples from live authored models remains a follow-up.
@@ -292,10 +291,21 @@ change print scale.
 Intended design (the norm in mathematics and CAD, which this is a CAD tool):
 
 - One unbounded, right-handed Cartesian frame in metres, shared by every level of
-  a plan: X grows right, Y grows up, Z grows up. Angles run counter-clockwise from
-  +X. Y is negated only at the moment of drawing, because SVG and screens put Y
+  a plan: X east, Y north, Z up. A plan view looks straight down, so on the page X
+  is to the right, Y is toward the top and Z points out of the page at the viewer.
+  In the world Y points away from someone facing north and Z is up; Y and Z are
+  perpendicular. Angles run counter-clockwise from +X. Y is negated only at the moment of drawing, because SVG and screens put Y
   down. No stored file, API field, agent-facing number or label should ever carry
   that negation.
+- Vocabulary, because "up" means toward the top of the page in a plan and higher
+  elevation in the world, and conversation with the agent cannot be forced into
+  a rigid language: directions in the plan are compass words (north is +Y, the top
+  of the page; east is +X; south is -Y; west is -X), while up, down, above, below,
+  higher, lower, floor and ceiling always mean Z. The agent should resolve a bare
+  "up" from context ("up on the page" is north, "up from the floor" is Z) and ask
+  only when context does not decide. The Levels list and PageUp/PageDown already
+  follow this: they move in Z. The drawing should label the red axes E and N at
+  their positive ends.
 - The red reference origin is not part of the frame. It is an offset the Referee
   moves to reason about a convenient place, and it is a single value for the whole
   plan (stored on the plan record, applied to every level). Moving it changes no
