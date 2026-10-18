@@ -284,4 +284,44 @@ not an internal camera constant. Applying calibration at 1:75 establishes
 "100% at 1:75". Fit, wheel zoom and zoom buttons preserve that reference; direct
 percentage entry supports values such as 100 and 10 in Edit and Play. Before
 measurement the nominal estimate is explicitly labelled uncalibrated. Screen
-calibration remains temporary page state and does not change print scale.
+calibration is remembered per display in the browser (localStorage) and does not
+change print scale.
+
+## Coordinates, origin and levels, 2026-10-18
+
+Intended design (the norm in mathematics and CAD, which this is a CAD tool):
+
+- One unbounded, right-handed Cartesian frame in metres, shared by every level of
+  a plan: X grows right, Y grows up, Z grows up. Angles run counter-clockwise from
+  +X. Y is negated only at the moment of drawing, because SVG and screens put Y
+  down. No stored file, API field, agent-facing number or label should ever carry
+  that negation.
+- The red reference origin is not part of the frame. It is an offset the Referee
+  moves to reason about a convenient place, and it is a single value for the whole
+  plan (stored on the plan record, applied to every level). Moving it changes no
+  stored coordinate.
+- Each level has an elevation Z in metres from the plan's datum: the first level
+  created in a new plan has its floor at Z = 0 and the others are relative to it.
+  Z is needed later for side views, half-floors and split levels, which an integer
+  floor `order` cannot express.
+- The grid has two jobs. It is the shared vocabulary between the Referee and the
+  agent (with the axis ticks), and it divides the drawing into printed pages. Print
+  should therefore show every page boundary, not only the two origin axes, so a
+  printed sheet can be located in the drawing. Pages are anchored at the reference
+  origin.
+
+Current deviations, to be corrected in the planned restructuring of the data files:
+
+- Stored Y grows downward (SVG convention). Only the axis tick numbers are Y-up, so
+  a stored y equals the origin's y minus the Y label. This is the likeliest source
+  of agent mistakes until fixed. The fix is one flip at the drawing layer plus a
+  one-off conversion of every stored y (models, characters, exploration, marks).
+- Levels have no Z. They have only an integer `order` (ground 0, below -1) used to
+  sort the Levels list; heights appear only in free-text names such as "Maintenance
+  Level -10m", which nothing reads.
+- Nothing enforces that levels are aligned; the shared frame is an authoring
+  convention.
+- Print draws only the origin axes, not page boundaries, and the axis ticks are
+  shown only in Edit, not in print or SVG export.
+- `gridOrigin` is still stored per level (always `[0, 0]`), and older exploration
+  snapshots and sketches embed a copy of the model with its former origin.
