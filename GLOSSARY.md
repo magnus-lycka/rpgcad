@@ -63,3 +63,11 @@ The representation of a PC or NPC at its current location on a plan.
 
 **POV character**:
 The selected PC whose position and sight range determine the current visible area.
+
+**Elevation**:
+The height of a level's floor, or of a feature, in metres above the plan's datum, which is the floor of the first level created. Z is elevation.
+_Avoid_: height (ambiguous with a feature's own size), depth, up/down for Z
+
+**Reference origin**:
+A single position per plan, shown as the red cross in Edit, that the Designer moves to a convenient place to describe other positions. It labels positions and anchors print tiles; it does not move the drawing.
+_Avoid_: origo, zero point

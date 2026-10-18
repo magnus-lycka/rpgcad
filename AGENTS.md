@@ -1,6 +1,6 @@
 Before code changes or tests, read `docs/agents/development.md` for the required TDD loop and local/CI checks.
 
-Read `CONTEXT.md` before continuing design or implementation. When changing a drawing or its renderer, also read `docs/prototype-findings.md` for observed corrections and verification rules.
+Read `CONTEXT.md` before continuing design or implementation. Read `docs/agents/designer-conversation.md` when handling a Designer instruction, drawing marks, coordinates or directions. When changing a drawing or its renderer, also read `docs/prototype-findings.md` for observed corrections and verification rules.
 
 ## Agent skills
 
