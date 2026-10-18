@@ -256,6 +256,8 @@ class PlanLibrary:
             revisions = data.setdefault("modelRevisions", {})
             changed = False
             for plan in data["plans"]:
+                changed |= self._move_origin_to_plan(plan, revisions)
+            for plan in data["plans"]:
                 for level in plan["levels"]:
                     key = json.dumps([plan["id"], level["id"]])
                     try:
@@ -275,6 +277,33 @@ class PlanLibrary:
             if changed:
                 self.write(data)
             return data
+
+    def _move_origin_to_plan(self, plan, revisions):
+        """Move older per-level origins to the plan, keeping the first level's."""
+        paths = [self.root / level["model"] for level in plan["levels"]]
+        try:
+            models = [json.loads(path.read_text()) for path in paths]
+        except (OSError, ValueError):
+            return False
+        if not any("origin" in model for model in models):
+            return False
+        if "origin" not in plan:
+            first = next((m["origin"] for m in models if "origin" in m), None)
+            if first is not None:
+                plan["origin"] = first
+        for level, path, model in zip(plan["levels"], paths, models, strict=True):
+            if "origin" not in model:
+                continue
+            del model["origin"]
+            temporary = path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(model, indent=2, allow_nan=False) + "\n")
+            temporary.replace(path)
+            key = json.dumps([plan["id"], level["id"]])
+            if key in revisions:
+                revisions[key] = model_fingerprint(
+                    path, plan.get("componentDefinitions", {})
+                )
+        return True
 
     def write(self, data):
         temporary = self.path.with_suffix(".tmp")
@@ -381,7 +410,7 @@ class PlanLibrary:
             self.write(data)
 
     def set_origin(self, plan_id, origin):
-        """Move the reference origin on every level, so positions agree plan-wide."""
+        """Store the reference origin once on the plan; it is not a drawing edit."""
         if (
             not isinstance(origin, list)
             or len(origin) != 2
@@ -396,32 +425,9 @@ class PlanLibrary:
         with self.lock:
             data = self.read()
             plan = next(p for p in data["plans"] if p["id"] == plan_id)
-            updates = []
-            for level in plan["levels"]:
-                path = self.root / level["model"]
-                model = json.loads(path.read_text())
-                if model.get("origin") != origin:
-                    model["origin"] = origin
-                    updates.append((level, path, model))
-            if not updates:
-                return
-            encoded = [
-                json.dumps(model, indent=2, allow_nan=False) + "\n"
-                for _, _, model in updates
-            ]
-            for (_, path, _), text in zip(updates, encoded, strict=True):
-                temporary = path.with_suffix(".tmp")
-                temporary.write_text(text)
-                temporary.replace(path)
-            now = self.clock().isoformat()
-            plan["editedAt"] = now
-            for level, path, _ in updates:
-                level["editedAt"] = now
-                key = json.dumps([plan_id, level["id"]])
-                data["modelRevisions"][key] = model_fingerprint(
-                    path, plan.get("componentDefinitions", {})
-                )
-            self.write(data)
+            if plan.get("origin") != origin:
+                plan["origin"] = origin
+                self.write(data)
 
     def duplicate(self, plan_id):
         """Publish new authored files before their independent library record."""
@@ -430,6 +436,8 @@ class PlanLibrary:
             source = next(p for p in data["plans"] if p["id"] == plan_id)
             now = self.clock().isoformat()
             plan = _duplicate_authored_record(source, now)
+            if "origin" in source:
+                plan["origin"] = copy.deepcopy(source["origin"])
             plan.update(
                 name=source["name"] + " copy",
                 levels=[],

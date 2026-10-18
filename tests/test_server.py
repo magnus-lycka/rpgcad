@@ -1160,7 +1160,7 @@ def test_duplicate_character_names_preserve_roster_and_dates(dated_play, duplica
     assert read_state(dated_play, "/library")[0] == dates
 
 
-def test_moving_the_origin_applies_to_every_level_of_the_plan(bridge):
+def test_moving_the_origin_is_seen_on_every_level_of_the_plan(bridge):
     bridge.request("PUT", "/origin", json.dumps({"origin": [4.5, 3]}))
     response = bridge.getresponse()
     assert response.status == 204
@@ -1184,3 +1184,43 @@ def test_invalid_origin_is_rejected_without_changing_any_level(bridge, body):
     bridge.request("GET", "/model")
     response = bridge.getresponse()
     assert "origin" not in json.loads(response.read())
+
+
+def test_origin_is_stored_once_on_the_plan_and_level_files_are_untouched(
+    bridge, tmp_path
+):
+    before = {
+        n: (tmp_path / n).read_bytes() for n in ("model.PROTOTYPE.json", "below.json")
+    }
+    bridge.request("GET", "/library")
+    response = bridge.getresponse()
+    dates = json.loads(response.read())["plans"][0]
+    bridge.request("PUT", "/origin", json.dumps({"origin": [1.5, 3]}))
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    assert {n: (tmp_path / n).read_bytes() for n in before} == before
+    saved = json.loads((tmp_path / "library.PROTOTYPE.json").read_text())
+    assert saved["plans"][0]["origin"] == [1.5, 3]
+    bridge.request("GET", "/library")
+    response = bridge.getresponse()
+    after = json.loads(response.read())["plans"][0]
+    assert after["editedAt"] == dates["editedAt"]
+    assert [level["editedAt"] for level in after["levels"]] == [
+        level["editedAt"] for level in dates["levels"]
+    ]
+
+
+def test_levels_with_their_own_origins_are_migrated_to_the_first_levels(
+    bridge, tmp_path
+):
+    (tmp_path / "model.PROTOTYPE.json").write_text(
+        '{"name":"test plan","origin":[9,4.5]}'
+    )
+    (tmp_path / "below.json").write_text('{"name":"lower level","origin":[0,9]}')
+    for route in ("/model", "/model?level=below"):
+        bridge.request("GET", route)
+        response = bridge.getresponse()
+        assert json.loads(response.read())["origin"] == [9, 4.5]
+    for name in ("model.PROTOTYPE.json", "below.json"):
+        assert "origin" not in json.loads((tmp_path / name).read_text())

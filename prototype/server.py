@@ -56,6 +56,8 @@ def main(*, clock=utc_now):
         model = json.loads(path.read_bytes())
         if plan.get("componentDefinitions"):
             model["componentDefinitions"] = plan["componentDefinitions"]
+        if "origin" in plan:
+            model["origin"] = plan["origin"]
         return model
 
     def character_path(plan):
@@ -258,6 +260,7 @@ def main(*, clock=utc_now):
                 authored = json.loads(self.rfile.read(size))
                 if not isinstance(authored, dict):
                     raise ValueError("Expected authored model object")
+                authored.pop("origin", None)
                 definitions = authored.pop(
                     "componentDefinitions", plan.get("componentDefinitions", {})
                 )
