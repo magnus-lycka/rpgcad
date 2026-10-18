@@ -141,7 +141,7 @@ const MODE_ICONS = {
 };
 let placingOrigin = false;
 let originError = "";
-/** Move the reference origin to the grid crossing nearest a model point and save it with the level.
+/** Move the reference origin to the grid crossing nearest a model point and save it on every level of the plan.
  * @param {number[]} at */
 async function moveOrigin(at) {
   placingOrigin = false;
@@ -152,10 +152,10 @@ async function moveOrigin(at) {
   const origin = [snap(at[0], gx), snap(at[1], gy)];
   originError = "";
   try {
-    const response = await fetch(`/model${levelQuery}`, {
+    const response = await fetch(`/origin${planQuery}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...model, origin }),
+      body: JSON.stringify({ origin }),
     });
     if (!response.ok) throw Error(`Origin not saved (${response.status})`);
     model = { ...model, origin };

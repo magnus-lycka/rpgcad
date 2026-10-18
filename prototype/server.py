@@ -271,6 +271,31 @@ def main(*, clock=utc_now):
             self.send_response(204)
             self.end_headers()
 
+        def save_origin(self):
+            origin = self.headers.get("Origin")
+            if origin and origin != f"http://{self.headers.get('Host')}":
+                self.send_error(403)
+                return
+            plan = self.selected_plan()
+            if plan is None:
+                return
+            try:
+                size = int(self.headers.get("Content-Length", 0))
+                if not 0 < size <= 10_000:
+                    raise ValueError("Invalid origin size")
+                body = json.loads(self.rfile.read(size))
+                if not isinstance(body, dict):
+                    raise ValueError("Expected an origin object")
+                store.set_origin(plan["id"], body.get("origin"))
+            except (ValueError, TypeError) as error:
+                self.send_error(400, str(error))
+                return
+            except OSError as error:
+                self.send_error(503, str(error))
+                return
+            self.send_response(204)
+            self.end_headers()
+
         def do_POST(self):
             if urlsplit(self.path).path != "/duplicate":
                 self.send_error(404)
@@ -297,6 +322,9 @@ def main(*, clock=utc_now):
         def do_PUT(self):
             if urlsplit(self.path).path == "/model":
                 self.save_model()
+                return
+            if urlsplit(self.path).path == "/origin":
+                self.save_origin()
                 return
             if urlsplit(self.path).path == "/characters":
                 self.save_characters()

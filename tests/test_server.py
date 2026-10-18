@@ -1158,3 +1158,29 @@ def test_duplicate_character_names_preserve_roster_and_dates(dated_play, duplica
     assert put_state(dated_play, "/characters", state, etag)[0] == 400
     assert read_state(dated_play, "/characters") == (saved, etag)
     assert read_state(dated_play, "/library")[0] == dates
+
+
+def test_moving_the_origin_applies_to_every_level_of_the_plan(bridge):
+    bridge.request("PUT", "/origin", json.dumps({"origin": [4.5, 3]}))
+    response = bridge.getresponse()
+    assert response.status == 204
+    response.read()
+    for route in ("/model", "/model?level=below"):
+        bridge.request("GET", route)
+        response = bridge.getresponse()
+        model = json.loads(response.read())
+        assert model["origin"] == [4.5, 3]
+    assert model["name"] == "lower level"
+
+
+@pytest.mark.parametrize(
+    "body", [{"origin": [1]}, {"origin": ["a", 2]}, {"origin": [1, None]}, {}, []]
+)
+def test_invalid_origin_is_rejected_without_changing_any_level(bridge, body):
+    bridge.request("PUT", "/origin", json.dumps(body))
+    response = bridge.getresponse()
+    assert response.status == 400
+    response.read()
+    bridge.request("GET", "/model")
+    response = bridge.getresponse()
+    assert "origin" not in json.loads(response.read())

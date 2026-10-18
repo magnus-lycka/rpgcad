@@ -380,6 +380,49 @@ class PlanLibrary:
                     )
             self.write(data)
 
+    def set_origin(self, plan_id, origin):
+        """Move the reference origin on every level, so positions agree plan-wide."""
+        if (
+            not isinstance(origin, list)
+            or len(origin) != 2
+            or any(
+                isinstance(v, bool)
+                or not isinstance(v, (int, float))
+                or not math.isfinite(v)
+                for v in origin
+            )
+        ):
+            raise ValueError("Origin must be an [x, y] position in metres")
+        with self.lock:
+            data = self.read()
+            plan = next(p for p in data["plans"] if p["id"] == plan_id)
+            updates = []
+            for level in plan["levels"]:
+                path = self.root / level["model"]
+                model = json.loads(path.read_text())
+                if model.get("origin") != origin:
+                    model["origin"] = origin
+                    updates.append((level, path, model))
+            if not updates:
+                return
+            encoded = [
+                json.dumps(model, indent=2, allow_nan=False) + "\n"
+                for _, _, model in updates
+            ]
+            for (_, path, _), text in zip(updates, encoded, strict=True):
+                temporary = path.with_suffix(".tmp")
+                temporary.write_text(text)
+                temporary.replace(path)
+            now = self.clock().isoformat()
+            plan["editedAt"] = now
+            for level, path, _ in updates:
+                level["editedAt"] = now
+                key = json.dumps([plan_id, level["id"]])
+                data["modelRevisions"][key] = model_fingerprint(
+                    path, plan.get("componentDefinitions", {})
+                )
+            self.write(data)
+
     def duplicate(self, plan_id):
         """Publish new authored files before their independent library record."""
         with self.lock:

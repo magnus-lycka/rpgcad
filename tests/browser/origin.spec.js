@@ -62,6 +62,9 @@ test("Move origin arms a crosshair, a click snaps the red cross to the nearest g
   await expect
     .poll(async () => (await (await request.get("/model")).json()).origin)
     .toEqual([4.5, 3]);
+  expect(
+    (await (await request.get("/model?level=below")).json()).origin,
+  ).toEqual([4.5, 3]);
   const labels = await page.locator("[data-axis-tick]").allTextContents();
   expect(labels).toEqual(expect.arrayContaining(["3", "-3"]));
 });
