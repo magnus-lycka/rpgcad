@@ -44,7 +44,7 @@ The drawing view has no permanent controls, diagnostics, tooltips, or walkthroug
 
 All positions, dimensions, and thicknesses are in metres. IDs are unique across objects.
 
-- `origin`: optional `[x,y]` reference position on a grid intersection. Its X and Y axes are red, and print tiles align to it. Moving this reference does not move the grid or geometry. Coordinates described relative to the origin are converted to stored model positions by the agent.
+- `origin`: optional `[x,y]` reference position on a grid intersection. Its X and Y axes are red, and print tiles align to it. Moving this reference does not move the grid or geometry. In Edit, tick marks with metre numbers appear every 3 m along both axes (X grows right and Y grows up, so a stored position has y = origin y minus the Y number), and the Move origin icon (or O) arms a crosshair: the next click moves the red cross to the nearest grid crossing and saves `origin` in the level. Coordinates described relative to the origin are converted to stored model positions by the agent.
 - `gridOrigin`: optional `[x,y]` grid alignment, default `[0,0]`. This is independent of the movable reference origin.
 - `wallThickness`: positive default thickness.
 - `walls`: `{id, a: [x,y], b: [x,y], thickness?}`. Endpoints describe the centre line.
@@ -147,7 +147,13 @@ catalogue entries to `componentDefinitions` (keys such as `bed@1`), and place
 `components` in the level model:
 
 ```json
-{"id":"bunk-room-bed","definition":"bed@1","at":[1.13,2.27],"rotation":90,"settings":{"width":1.2,"length":2.2}}
+{
+  "id": "bunk-room-bed",
+  "definition": "bed@1",
+  "at": [1.13, 2.27],
+  "rotation": 90,
+  "settings": { "width": 1.2, "length": 2.2 }
+}
 ```
 
 Positions and settings use metres, rotation uses clockwise degrees in stored
@@ -226,7 +232,6 @@ or `up-down` (default `up`); state is independently `open` or `closed` (default
 state is authored data, with no new play toggle, planar sight blocker, automatic
 level travel or movement enforcement. Historical observations retain the exact
 saved definitions and wall-door state seen at that time.
-
 
 ### Configurable equipment (ticket #11)
 

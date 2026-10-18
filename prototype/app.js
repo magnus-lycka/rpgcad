@@ -139,6 +139,32 @@ const MODE_ICONS = {
   play: '<svg viewBox="0 0 32 32" fill="currentColor"><path d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Zm7.4473,14.8945-12,6A1,1,0,0,1,10,22V10a1,1,0,0,1,1.4473-.8945l12,6a1,1,0,0,1,0,1.789Z"/></svg>',
   stop: '<svg viewBox="0 0 32 32" fill="currentColor"><path d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Zm6,18a2,2,0,0,1-2,2H12a2,2,0,0,1-2-2V12a2,2,0,0,1,2-2h8a2,2,0,0,1,2,2Z"/></svg>',
 };
+let placingOrigin = false;
+let originError = "";
+/** Move the reference origin to the grid crossing nearest a model point and save it with the level.
+ * @param {number[]} at */
+async function moveOrigin(at) {
+  placingOrigin = false;
+  updateEditTools();
+  const [gx, gy] = model.gridOrigin ?? [0, 0];
+  const snap = (/** @type {number} */ v, /** @type {number} */ g) =>
+    Math.round((Math.round((v - g) / 1.5) * 1.5 + g) * 1000) / 1000;
+  const origin = [snap(at[0], gx), snap(at[1], gy)];
+  originError = "";
+  try {
+    const response = await fetch(`/model${levelQuery}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...model, origin }),
+    });
+    if (!response.ok) throw Error(`Origin not saved (${response.status})`);
+    model = { ...model, origin };
+    draw();
+  } catch (error) {
+    originError = String(error);
+  }
+  updateBusyControls();
+}
 function updateEditTools() {
   const modeToggle = element("mode-toggle");
   modeToggle.setAttribute("aria-label", editing ? "Play" : "Stop");
@@ -151,8 +177,11 @@ function updateEditTools() {
   document.body.dataset.tool = temporaryPan
     ? "pan"
     : editing
-      ? sketchTool
+      ? placingOrigin
+        ? "origin"
+        : sketchTool
       : "play";
+  element("origin-tool").setAttribute("aria-pressed", String(placingOrigin));
   element("pen-tool").setAttribute(
     "aria-pressed",
     String(sketchTool === "pen"),
@@ -183,6 +212,7 @@ function sketchDrawing() {
     .join("");
 }
 function selectSketchTool(tool) {
+  placingOrigin = false;
   sketchTool = tool;
   updateEditTools();
 }
@@ -262,6 +292,7 @@ window.addEventListener("message", (event) => {
 
 function switchMode(edit) {
   cancelTemporaryPan();
+  placingOrigin = false;
   editing = edit;
   closeComponents();
   fogEnabled = !edit;
@@ -818,6 +849,7 @@ function updateBusyControls() {
     rosterError ||
     characterSaveError ||
     explorationSaveError ||
+    originError ||
     commandProblem;
   for (const id of [
     "character-range",
@@ -1250,6 +1282,7 @@ function draw() {
   const options = {
     gridStroke: camera.mpp * 0.8,
     showAxes: editing,
+    showTicks: editing,
     ...(editing ? { background: "#f1f5fa" } : {}),
   };
   if (fogEnabled && gmView) {
@@ -1389,6 +1422,11 @@ viewport.addEventListener("pointerdown", (event) => {
       viewport.setPointerCapture(event.pointerId);
       return;
     }
+  }
+  if (!temporaryPan && editing && placingOrigin && event.button === 0) {
+    event.preventDefault();
+    moveOrigin(penPoint(event));
+    return;
   }
   if (!temporaryPan && editing && sketchTool === "pen" && event.button === 0) {
     penStroke = [penPoint(event)];
@@ -1665,6 +1703,10 @@ function exportSvg() {
 }
 function dismissControl() {
   if (temporaryPan) return cancelTemporaryPan();
+  if (placingOrigin) {
+    placingOrigin = false;
+    return updateEditTools();
+  }
   if (popupCharacter || newKind) return closeCharacterPopup();
   if (selection.size) return clearSelection();
   if (!componentPanel.hidden) return closeComponents();
@@ -1823,6 +1865,19 @@ const commandUi = installCommands(
             ? true
             : "No drawing marks to clear",
       run: clearMarks,
+    },
+    {
+      id: "move-origin",
+      label: "Move origin",
+      keys: ["O"],
+      scope: "edit",
+      repeat: false,
+      announce: false,
+      enabled: () => loaded || "Plan is loading",
+      run: () => {
+        placingOrigin = !placingOrigin;
+        updateEditTools();
+      },
     },
     {
       id: "pen",
@@ -2048,6 +2103,7 @@ for (const id of ["add-pc", "add-npc"]) commandUi.bind(`#${id}`, id);
 commandUi.bind("#gm-view", "gm-view");
 commandUi.bind("#reset-fog", "reset-fog");
 commandUi.bind("#undo-stroke", "undo-marks");
+commandUi.bind("#origin-tool", "move-origin");
 commandUi.bind("#clear-sketch", "clear-marks");
 commandUi.bind("#export-svg", "export");
 commandUi.bind("#export-pdf", "export-pdf");

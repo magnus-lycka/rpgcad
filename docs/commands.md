@@ -1,5 +1,6 @@
 ## All commands
 
+- Move origin (arms a crosshair; the next click puts the red cross on the nearest grid crossing and saves it with the level; Esc cancels) — Edit — add — O
 - Pen — Edit — Edit — P
 - Pan (tool) — Edit — move — H
 - Components — Edit — apps — C

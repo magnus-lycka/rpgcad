@@ -18,7 +18,7 @@
  * @typedef {{version: number, observers: Observer[], observations: Observation[], revisions: Record<string, Model>, doors: Doors, visibilityPaused?: boolean}} Exploration
  * @typedef {{polygon: Point[], edges: Point[][]}} Region
  * @typedef {{x: number, y: number, w: number, h: number}} Bounds
- * @typedef {{id?: string, gridStroke?: number, background?: string, showAxes?: boolean, doorStates?: Doors, render?: (m: Model, b: Bounds, options?: SceneOptions) => string}} SceneOptions
+ * @typedef {{id?: string, gridStroke?: number, background?: string, showAxes?: boolean, showTicks?: boolean, doorStates?: Doors, render?: (m: Model, b: Bounds, options?: SceneOptions) => string}} SceneOptions
  */
 
 // Portable pure model/geometry functions. No DOM or network dependencies.
@@ -439,6 +439,44 @@ const Geometry = (() => {
       h: Math.max(...ys) - Math.min(...ys),
     };
   }
+  /** Tick marks and metre numbers every 3 m along the reference axes, so positions can be quoted to the agent. X grows right and Y grows up, so a tick above the origin is positive although model y grows downward.
+   * @param {Bounds} b @param {number} ox @param {number} oy @param {number} gridStroke */
+  function axisTicks(b, ox, oy, gridStroke) {
+    let step = 3;
+    while (Math.max(b.w, b.h) / step > 40) step *= 2;
+    const size = Math.max(0.3, step / 10),
+      stroke = gridStroke * 1.5,
+      text = (/** @type {string} */ attrs, /** @type {number} */ value) =>
+        `<text data-axis-tick ${attrs} font-family="sans-serif" font-size="${size}" fill="#d62929" stroke="white" stroke-width="${size / 5}" paint-order="stroke">${value}</text>`;
+    let s = `<g data-axis-ticks stroke="#d62929" stroke-width="${stroke}">`;
+    for (
+      let k = Math.ceil((b.x - ox) / step);
+      ox + k * step <= b.x + b.w;
+      k++
+    ) {
+      if (!k) continue;
+      const x = ox + k * step;
+      s += `<path d="M ${x} ${oy - size / 2} V ${oy + size / 2}"/>`;
+      s += text(
+        `x="${x}" y="${oy + size * 1.7}" text-anchor="middle"`,
+        k * step,
+      );
+    }
+    for (
+      let k = Math.ceil((b.y - oy) / step);
+      oy + k * step <= b.y + b.h;
+      k++
+    ) {
+      if (!k) continue;
+      const y = oy + k * step;
+      s += `<path d="M ${ox - size / 2} ${y} H ${ox + size / 2}"/>`;
+      s += text(
+        `x="${ox - size * 0.8}" y="${y + size / 3}" text-anchor="end"`,
+        -k * step,
+      );
+    }
+    return s + "</g>";
+  }
   /** @param {Model} m @param {Bounds} b @param {SceneOptions} [options] */
   function scene(
     m,
@@ -448,6 +486,7 @@ const Geometry = (() => {
       gridStroke = 0.018,
       background = "white",
       showAxes = true,
+      showTicks = false,
       doorStates = {},
     } = {},
   ) {
@@ -457,6 +496,8 @@ const Geometry = (() => {
     s += `<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(${gx} ${gy})"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="#9aa79f" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
     if (m.origin && showAxes)
       s += `<path d="M ${b.x} ${oy} H ${b.x + b.w} M ${ox} ${b.y} V ${b.y + b.h}" fill="none" stroke="#d62929" stroke-width="${gridStroke * 1.5}"/>`;
+    if (m.origin && showAxes && showTicks)
+      s += axisTicks(b, ox, oy, gridStroke);
     for (const w of m.walls)
       for (const p of wallPolygons(m, w))
         s += `<polygon data-wall="${esc(w.id)}" points="${p.map((p) => p.join(",")).join(" ")}" fill="#27332e"/>`;
