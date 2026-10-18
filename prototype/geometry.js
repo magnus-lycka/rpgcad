@@ -477,6 +477,16 @@ const Geometry = (() => {
     }
     return s + "</g>";
   }
+  /** Dashed A4 page borders (21 m by 15 m, the printed sheet at the 1.5 m grid) repeating the origin cross; the axes themselves are the borders at zero and are drawn solid.
+   * @param {Bounds} b @param {number} ox @param {number} oy @param {number} gridStroke */
+  function pageBorders(b, ox, oy, gridStroke) {
+    let d = "";
+    for (let k = Math.ceil((b.x - ox) / 21); ox + k * 21 <= b.x + b.w; k++)
+      if (k) d += `M ${ox + k * 21} ${b.y} V ${b.y + b.h} `;
+    for (let k = Math.ceil((b.y - oy) / 15); oy + k * 15 <= b.y + b.h; k++)
+      if (k) d += `M ${b.x} ${oy + k * 15} H ${b.x + b.w} `;
+    return `<path data-page-borders d="${d.trim()}" fill="none" stroke="#d62929" stroke-opacity=".6" stroke-width="${gridStroke * 1.5}" stroke-dasharray="${gridStroke * 12} ${gridStroke * 8}"/>`;
+  }
   /** @param {Model} m @param {Bounds} b @param {SceneOptions} [options] */
   function scene(
     m,
@@ -494,6 +504,7 @@ const Geometry = (() => {
       [gx, gy] = m.gridOrigin ?? [0, 0];
     let s = `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${background}"/>`;
     s += `<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(${gx} ${gy})"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="#9aa79f" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
+    if (m.origin && showAxes) s += pageBorders(b, ox, oy, gridStroke);
     if (m.origin && showAxes)
       s += `<path d="M ${b.x} ${oy} H ${b.x + b.w} M ${ox} ${b.y} V ${b.y + b.h}" fill="none" stroke="#d62929" stroke-width="${gridStroke * 1.5}"/>`;
     if (m.origin && showAxes && showTicks)

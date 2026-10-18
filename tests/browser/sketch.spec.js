@@ -59,7 +59,9 @@ test("play mode hides the edit palette, strokes and reference axes while preserv
   page,
 }) => {
   await page.goto("/?mode=edit");
-  await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(1);
+  await expect(
+    page.locator('#viewport path[stroke="#d62929"]:not([data-page-borders])'),
+  ).toHaveCount(1);
   await page.getByRole("button", { name: "Pen", exact: true }).click();
   await page.mouse.move(450, 350);
   await page.mouse.down();
@@ -70,11 +72,15 @@ test("play mode hides the edit palette, strokes and reference axes while preserv
   await expect(page.locator("#edit-palette")).toBeHidden();
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(0);
   await page.keyboard.press("Shift+F");
-  await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(0);
+  await expect(
+    page.locator('#viewport path[stroke="#d62929"]:not([data-page-borders])'),
+  ).toHaveCount(0);
   await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
   await page.keyboard.press("Shift+E");
   await expect(page.locator("[data-sketch-stroke]")).toHaveCount(1);
-  await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(1);
+  await expect(
+    page.locator('#viewport path[stroke="#d62929"]:not([data-page-borders])'),
+  ).toHaveCount(1);
 });
 
 test("the agent consuming marks for a chat instruction clears them from the drawing", async ({
@@ -82,7 +88,9 @@ test("the agent consuming marks for a chat instruction clears them from the draw
   request,
 }) => {
   await page.goto("/?mode=edit");
-  await expect(page.locator('#viewport path[stroke="#d62929"]')).toHaveCount(1);
+  await expect(
+    page.locator('#viewport path[stroke="#d62929"]:not([data-page-borders])'),
+  ).toHaveCount(1);
   await page.getByRole("button", { name: "Pen", exact: true }).click();
   await page.mouse.move(480, 300);
   await page.mouse.down();

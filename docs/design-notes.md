@@ -321,9 +321,9 @@ Intended design (the norm in mathematics and CAD, which this is a CAD tool):
   floor `order` cannot express.
 - The grid has two jobs. It is the shared vocabulary between the Referee and the
   agent (with the axis ticks), and it divides the drawing into printed pages. Print
-  should therefore show every page boundary, not only the two origin axes, so a
-  printed sheet can be located in the drawing. Pages are anchored at the reference
-  origin.
+  therefore shows every A4 page boundary (21 m by 15 m, dashed, unlike the solid
+  origin axes), so a printed sheet can be located in the drawing. Pages are
+  anchored at the reference origin.
 
 Current deviations, to be corrected in the planned restructuring of the data files:
 
@@ -336,7 +336,9 @@ Current deviations, to be corrected in the planned restructuring of the data fil
   Level -10m", which nothing reads.
 - Nothing enforces that levels are aligned; the shared frame is an authoring
   convention.
-- Print draws only the origin axes, not page boundaries, and the axis ticks are
-  shown only in Edit, not in print or SVG export.
+- Page boundaries are drawn (dashed red lines every 21 m by 15 m from the origin,
+  the solid axes being the boundaries at zero) in Edit and print, but the pages are
+  not yet numbered or labelled. Axis ticks are shown only in Edit, not in print or
+  SVG export.
 - `gridOrigin` is still stored per level (always `[0, 0]`), and older exploration
   snapshots and sketches embed a copy of the model with its former origin.
