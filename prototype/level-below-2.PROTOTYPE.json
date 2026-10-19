@@ -2467,5 +2467,8 @@
       "stroke": 0.018
     }
   ],
-  "stepIrons": []
+  "stepIrons": [],
+  "terrain": {
+    "default": "solid"
+  }
 }

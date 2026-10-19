@@ -46,14 +46,136 @@ const Geometry = (() => {
     typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 6;
   const finite = (n) => typeof n === "number" && Number.isFinite(n);
   const TERRAIN_KINDS = ["floor", "solid", "drop"];
-  /** What the ground is at a position: the last area containing it, else the level default, else floor.
+  /** @type {WeakMap<object, Point[][]>} */
+  const enclosedCache = new WeakMap();
+  /** The spaces enclosed by walls, as polygons along wall centre lines. Openings are ignored: a door or gap is still part of its wall line. Walls are split at every junction and crossing, the faces of the resulting graph are traced, and each bounded face is an enclosed space; what remains is the unbounded outside. Islands inside a space (a lift shaft) are bounded faces themselves and so are enclosed too.
+   * @param {Model} m @returns {Point[][]} */
+  function enclosedSpaces(m) {
+    const cached = enclosedCache.get(m);
+    if (cached) return cached;
+    const eps = 1e-7,
+      key = (/** @type {Point} */ p) =>
+        `${Math.round(p[0] / eps)},${Math.round(p[1] / eps)}`;
+    const cross = (/** @type {Point} */ a, /** @type {Point} */ b) =>
+      a[0] * b[1] - a[1] * b[0];
+    /** @param {Point} a @param {Point} b @param {Point} c @param {Point} d @returns {Point|null} */
+    const meeting = (a, b, c, d) => {
+      const r = [b[0] - a[0], b[1] - a[1]],
+        s = [d[0] - c[0], d[1] - c[1]],
+        denom = cross(r, s);
+      if (Math.abs(denom) < eps) return null;
+      const t = cross([c[0] - a[0], c[1] - a[1]], s) / denom,
+        u = cross([c[0] - a[0], c[1] - a[1]], r) / denom;
+      return t > -eps && t < 1 + eps && u > -eps && u < 1 + eps
+        ? [a[0] + t * r[0], a[1] + t * r[1]]
+        : null;
+    };
+    // Cut points on each wall: other walls' ends lying on it, and crossings.
+    /** @type {[Point, Point][]} */
+    const walls = m.walls.map((w) => [w.a, w.b]);
+    /** @type {Map<string, Point>} */
+    const vertices = new Map();
+    /** @type {Set<string>} */
+    const edges = new Set();
+    for (const [a, b] of walls) {
+      const cuts = [a, b];
+      for (const [c, d] of walls) {
+        if (c === a) continue;
+        for (const end of [c, d]) {
+          const along =
+            ((end[0] - a[0]) * (b[0] - a[0]) +
+              (end[1] - a[1]) * (b[1] - a[1])) /
+            ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2);
+          const foot = [
+            a[0] + along * (b[0] - a[0]),
+            a[1] + along * (b[1] - a[1]),
+          ];
+          if (
+            along > eps &&
+            along < 1 - eps &&
+            Math.hypot(foot[0] - end[0], foot[1] - end[1]) < 1e-6
+          )
+            cuts.push(end);
+        }
+        const x = meeting(a, b, c, d);
+        if (x) cuts.push(x);
+      }
+      const along = (/** @type {Point} */ p) =>
+        (p[0] - a[0]) * (b[0] - a[0]) + (p[1] - a[1]) * (b[1] - a[1]);
+      cuts.sort((p, q) => along(p) - along(q));
+      for (let i = 1; i < cuts.length; i++) {
+        // eslint-disable-next-line security/detect-object-injection -- Numeric indices into a local array.
+        const [p, q] = [cuts[i - 1], cuts[i]];
+        if (key(p) === key(q)) continue;
+        vertices.set(key(p), p);
+        vertices.set(key(q), q);
+        edges.add([key(p), key(q)].sort().join("|"));
+      }
+    }
+    /** @type {Map<string, string[]>} */
+    const around = new Map();
+    for (const edge of edges) {
+      const [p, q] = edge.split("|");
+      around.set(p, [...(around.get(p) ?? []), q]);
+      around.set(q, [...(around.get(q) ?? []), p]);
+    }
+    const vertex = (/** @type {string} */ k) => {
+      const p = vertices.get(k);
+      if (!p) throw Error(`Unknown vertex ${k}`);
+      return p;
+    };
+    const neighbours = (/** @type {string} */ k) => {
+      const list = around.get(k);
+      if (!list) throw Error(`Unknown vertex ${k}`);
+      return list;
+    };
+    const angle = (/** @type {string} */ from, /** @type {string} */ to) => {
+      const a = vertex(from),
+        b = vertex(to);
+      return Math.atan2(b[1] - a[1], b[0] - a[0]);
+    };
+    for (const [v, list] of around)
+      list.sort((p, q) => angle(v, p) - angle(v, q));
+    // Walk each directed edge keeping the face on its left; bounded faces come out counter-clockwise.
+    const seen = new Set(),
+      spaces = [];
+    for (const [u, list] of around)
+      for (const v of list) {
+        if (seen.has(`${u}>${v}`)) continue;
+        /** @type {Point[]} */
+        const face = [];
+        let from = u,
+          to = v;
+        while (!seen.has(`${from}>${to}`)) {
+          seen.add(`${from}>${to}`);
+          face.push(vertex(from));
+          const next = neighbours(to);
+          const back = next.indexOf(from);
+          [from, to] = [to, next[(back - 1 + next.length) % next.length]];
+        }
+        let area = 0;
+        for (let i = 0; i < face.length; i++) {
+          // eslint-disable-next-line security/detect-object-injection -- Numeric indices into a local array.
+          const [p, q] = [face[i], face[(i + 1) % face.length]];
+          area += cross(p, q) / 2;
+        }
+        if (area > 1e-9) spaces.push(face);
+      }
+    enclosedCache.set(m, spaces);
+    return spaces;
+  }
+  /** What the ground is at a position: the last explicit area containing it; else floor inside a space enclosed by walls; else the level default (floor unless stated), which is what lies outside every enclosed space.
    * @param {Model} m @param {Point} at @returns {TerrainKind} */
   function terrainAt(m, at) {
     const areas = m.terrain?.areas ?? [];
     for (let i = areas.length - 1; i >= 0; i--)
       // eslint-disable-next-line security/detect-object-injection -- Numeric index into the model's area list.
       if (inside(at, areas[i].points)) return areas[i].kind;
-    return m.terrain?.default ?? "floor";
+    const base = m.terrain?.default ?? "floor";
+    return base === "floor" ||
+      enclosedSpaces(m).some((space) => inside(at, space))
+      ? "floor"
+      : base;
   }
   /** Even-odd point-in-polygon test.
    * @param {Point} point @param {Point[]} polygon */
@@ -591,6 +713,9 @@ const Geometry = (() => {
     let s = `<defs>${kinds.has("solid") ? patterns.solid : ""}${kinds.has("drop") ? patterns.drop : ""}</defs>`;
     if (base !== "floor")
       s += `<rect data-terrain="${base}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id}-${base})"/>`;
+    if (base !== "floor")
+      for (const space of enclosedSpaces(m))
+        s += `<polygon points="${space.map((p) => p.join(",")).join(" ")}" fill="${sheet}"/>`;
     for (const a of areas) {
       const points = a.points.map((p) => p.join(",")).join(" ");
       if (a.kind === "floor")

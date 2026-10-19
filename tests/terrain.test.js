@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Fog, Geometry } from "../prototype/geometry.js";
@@ -257,3 +258,192 @@ test("solid ground is hatched in many separate sections at differing angles, and
   // The tile is 6 m by 6 m; under 4 m of line per square metre is sparse.
   assert.ok(ink < 4 * 36, `${ink.toFixed(1)} m of ink`);
 });
+
+/** @param {Record<string, any>} [parts] @param {string} [base] */
+const walled = (parts = {}, base = "solid") =>
+  Geometry.validate({
+    wallThickness: 0.15,
+    openings: [],
+    labels: [],
+    walls: [],
+    terrain: { default: base, ...(parts.terrain ?? {}) },
+    ...parts,
+  });
+/** Four wall segments around a rectangle, id-prefixed.
+ * @param {string} id @param {number} x0 @param {number} y0 @param {number} x1 @param {number} y1 */
+const room = (id, x0, y0, x1, y1) => [
+  { id: `${id}-n`, a: [x0, y0], b: [x1, y0] },
+  { id: `${id}-e`, a: [x1, y0], b: [x1, y1] },
+  { id: `${id}-s`, a: [x1, y1], b: [x0, y1] },
+  { id: `${id}-w`, a: [x0, y1], b: [x0, y0] },
+];
+
+test("a space enclosed by walls is floor and the default applies outside, with no stored areas", () => {
+  const m = walled({ walls: room("hall", 0, 0, 6, 4) });
+  assert.equal(Geometry.terrainAt(m, [3, 2]), "floor");
+  assert.equal(Geometry.terrainAt(m, [8, 2]), "solid");
+  assert.equal(Geometry.terrainAt(m, [3, -2]), "solid");
+});
+
+test("a door or open gap in a wall does not make its room solid", () => {
+  const m = walled({
+    walls: room("hall", 0, 0, 6, 4),
+    openings: [
+      { id: "d", wall: "hall-n", offset: 1, width: 2, type: "single-closed" },
+      { id: "gap", wall: "hall-e", offset: 1, width: 1.5 },
+    ],
+  });
+  assert.equal(Geometry.terrainAt(m, [3, 2]), "floor");
+  assert.equal(Geometry.terrainAt(m, [8, 2]), "solid");
+});
+
+test("a space that is not closed on every side is outside, so close it with a wall", () => {
+  const m = walled({ walls: room("hall", 0, 0, 6, 4).slice(0, 3) });
+  assert.equal(Geometry.terrainAt(m, [3, 2]), "solid");
+});
+
+test("a corridor joined to a room mid-wall (a T junction) is floor too", () => {
+  const m = walled({
+    walls: [
+      ...room("hall", 0, 0, 6, 4),
+      { id: "c-top", a: [6, 1], b: [12, 1] },
+      { id: "c-bottom", a: [6, 2.5], b: [12, 2.5] },
+      { id: "c-end", a: [12, 1], b: [12, 2.5] },
+    ],
+  });
+  assert.equal(Geometry.terrainAt(m, [9, 1.75]), "floor");
+  assert.equal(Geometry.terrainAt(m, [9, 3.5]), "solid");
+  assert.equal(Geometry.terrainAt(m, [3, 2]), "floor");
+});
+
+test("collinear and duplicated walls, dangling walls and inner walls change nothing", () => {
+  const m = walled({
+    walls: [
+      ...room("hall", 0, 0, 6, 4),
+      { id: "dup", a: [0, 0], b: [6, 0] },
+      { id: "part", a: [2, 4], b: [4, 4] },
+      { id: "dangling", a: [3, 2], b: [3, 3] },
+      { id: "divider", a: [3, 0], b: [3, 4] },
+    ],
+  });
+  for (const at of [
+    [1, 2],
+    [5, 2],
+    [4.5, 3.5],
+  ])
+    assert.equal(Geometry.terrainAt(m, at), "floor", `${at}`);
+  assert.equal(Geometry.terrainAt(m, [3, 5]), "solid");
+});
+
+test("walls enclosing an island inside a room leave the island floor", () => {
+  const m = walled({
+    walls: [...room("hall", 0, 0, 10, 8), ...room("lift", 4, 3, 6, 5)],
+  });
+  assert.equal(Geometry.terrainAt(m, [5, 4]), "floor");
+  assert.equal(Geometry.terrainAt(m, [2, 2]), "floor");
+});
+
+test("explicit areas still override the derived floor, in either direction", () => {
+  const m = walled({
+    walls: room("hall", 0, 0, 10, 8),
+    terrain: {
+      areas: [
+        { id: "pit", kind: "drop", points: square(2, 2, 2) },
+        { id: "pillar", kind: "solid", points: square(6, 3, 1) },
+        { id: "annex", kind: "floor", points: square(12, 0, 3) },
+      ],
+    },
+  });
+  assert.equal(Geometry.terrainAt(m, [3, 3]), "drop");
+  assert.equal(Geometry.terrainAt(m, [6.5, 3.5]), "solid");
+  assert.equal(Geometry.terrainAt(m, [13, 1]), "floor");
+  assert.equal(Geometry.terrainAt(m, [8, 6]), "floor");
+});
+
+test("with floor as the default, walls change nothing", () => {
+  const m = walled({ walls: room("hall", 0, 0, 6, 4) }, "floor");
+  assert.equal(Geometry.terrainAt(m, [8, 2]), "floor");
+});
+
+test("enclosed spaces are drawn by clearing the rock to the sheet, not by stored areas", () => {
+  const svg = Geometry.scene(
+    walled({ walls: room("hall", 0, 0, 6, 4) }),
+    bounds,
+  );
+  const rock = svg.indexOf('data-terrain="solid"'),
+    clear = svg.indexOf("<polygon points=", rock),
+    wall = svg.indexOf("data-wall");
+  assert.ok(
+    rock >= 0 && clear > rock && clear < svg.indexOf('fill="url(#grid)"'),
+  );
+  assert.ok(wall > clear, "walls are drawn over the cleared floor");
+  assert.ok(!svg.includes("data-terrain-area"));
+});
+
+/** @param {string} name */
+const levelFile = (name) =>
+  Geometry.validate(
+    JSON.parse(
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- Fixed prototype model names listed below.
+      readFileSync(new URL(`../prototype/${name}`, import.meta.url), "utf8"),
+    ),
+  );
+
+// Expected kinds come from reading the drawn walls, not from the stored areas.
+/** @type {{name: string, floor: number[][], solid: number[][]}[]} */
+const structures = [
+  {
+    name: "level-below.PROTOTYPE.json",
+    floor: [
+      [5, 5],
+      [12, 5],
+      [-12, 2],
+      [-4, 2.2],
+      [1.5, 13],
+      [15.75, -5],
+      [1.5, 19],
+    ],
+    solid: [
+      [5, 15],
+      [-5, 10],
+      [10, 12],
+      [-12, 8],
+      [20, 5],
+      [0.2, 12],
+    ],
+  },
+  {
+    name: "level-below-2.PROTOTYPE.json",
+    floor: [
+      [5, 5],
+      [12, 5],
+      [6, 20],
+      [2, 20],
+      [10, 20],
+      [15, 7],
+      [6, 11],
+    ],
+    solid: [
+      [10, 10.5],
+      [-2, 5],
+      [14, 20],
+      [6, 32],
+      [20, 5],
+      [2, 6],
+    ],
+  },
+];
+for (const { name, floor, solid } of structures) {
+  test(`${name}: the structure is floor inside its walls and solid outside them`, () => {
+    const model = levelFile(name);
+    assert.deepEqual(
+      model.terrain,
+      { default: "solid" },
+      "derived, not stored",
+    );
+    for (const at of floor)
+      assert.equal(Geometry.terrainAt(model, at), "floor", `${at}`);
+    for (const at of solid)
+      assert.equal(Geometry.terrainAt(model, at), "solid", `${at}`);
+  });
+}

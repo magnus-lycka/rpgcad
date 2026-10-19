@@ -65,7 +65,7 @@ The representation of a PC or NPC at its current location on a plan.
 The selected PC whose position and sight range determine the current visible area.
 
 **Terrain**:
-What the ground is at a position on a level: **floor** (the default), **solid** (rock or soil, with no floor, and nothing can be seen from inside it) or **drop** (an open fall such as a shaft or pit; it is still seen across). A level has a default terrain and ordered areas that override it; the Designer does not care what a solid is made of. Pattern-filled in Edit and Play, and independent of walls.
+What the ground is at a position on a level: **floor** (the default), **solid** (rock or soil, with no floor, and nothing can be seen from inside it) or **drop** (an open fall such as a shaft or pit; it is still seen across). A space enclosed by walls is floor, derived from the walls and never stored; a level's default terrain says what lies outside every enclosed space, so a level that is a structure inside rock needs only `"default": "solid"`. Explicit areas (polygons) are for the exceptions: a drop, a solid pillar, floor with no walls. Pattern-filled in Edit and Play. A space with a gap in its walls is not enclosed; a door or opening in a wall does not open it.
 _Avoid_: ground type, tile, void (for a drop)
 
 **Elevation**:
