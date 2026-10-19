@@ -113,3 +113,31 @@ test("the fog view never shows label text, even on what is currently visible or 
   assert.ok(!svg.includes("AMMO HOIST"));
   assert.ok(!svg.includes("<text"));
 });
+
+test("a long walk is redrawn from remembered visibility, however many steps it has", () => {
+  const model = Geometry.validate({
+    wallThickness: 0.2,
+    walls: [{ id: "wall", a: [3, -3], b: [3, 3] }],
+    openings: [],
+    labels: [],
+  });
+  const state = Fog.validate({
+    version: 2,
+    observers: [],
+    observations: Array.from({ length: 300 }, (_, i) => ({
+      at: [i * 0.01, 0],
+      range: 6,
+      doors: {},
+      revision: "r",
+    })),
+    revisions: { r: model },
+    doors: {},
+  });
+  const first = state.observations[0];
+  const remembered = Fog.region(first, model);
+  const bounds = { x: -8, y: -8, w: 20, h: 16 };
+  Fog.render(model, bounds, state, []);
+  Fog.render(model, bounds, state, []);
+  // The same computed region still being held proves the replay did not recompute it.
+  assert.equal(Fog.region(first, model), remembered);
+});

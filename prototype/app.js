@@ -675,6 +675,23 @@ function goToCharacter(id) {
     `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level: c.level, mode: "play", character: id, focus: id })}`,
   );
 }
+/** Characters just sent here reveal what their POV sees, as if nudged; the URL flag is spent once handled. */
+async function applyArrival() {
+  if (!settings.has("arrive")) return;
+  if (!loaded || !viewSettled || !exploration || !characterEtag) return;
+  if (savingExploration || savingCharacters) return;
+  settings.delete("arrive");
+  history.replaceState(null, "", `?${settings}`);
+  const pov = characterState.characters.find(
+    (c) => c.id === characterState.pov && c.level === currentLevel,
+  );
+  if (!pov) return;
+  exploration.visibilityPaused = false;
+  recordObservation();
+  updateVisibility();
+  draw();
+  await saveExploration();
+}
 function applyFocus() {
   if (!focusCharacter || !loaded || !viewSettled) return;
   const c = characterState.characters.find(
@@ -717,13 +734,21 @@ async function transferGroup() {
   await settled();
   const level = /** @type {HTMLSelectElement} */ (element("character-level"))
     .value;
-  const members = characterState.characters.filter((c) => selection.has(c.id));
+  await sendToLevel(
+    characterState.characters.filter((c) => selection.has(c.id)),
+    level,
+  );
+}
+/** Moves characters to a level, keeping their coordinates, and opens that level with them selected. The arrival reveals what the POV sees there.
+ * @param {Character[]} members @param {string} level */
+async function sendToLevel(members, level) {
   if (!level || !members.length || members.every((c) => c.level === level))
     return;
+  const ids = new Set(members.map((c) => c.id));
   const proposed = {
     ...characterState,
     characters: characterState.characters.map((c) =>
-      selection.has(c.id) ? { ...c, level } : c,
+      ids.has(c.id) ? { ...c, level } : c,
     ),
   };
   if (!(await commitCharacters(proposed))) return;
@@ -732,7 +757,7 @@ async function transferGroup() {
   draw();
   if (members.some((c) => c.id === characterState.pov)) await saveExploration();
   location.assign(
-    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: members[0].id, selected: members.map((c) => c.id).join(",") })}`,
+    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: members[0].id, selected: members.map((c) => c.id).join(","), arrive: "1" })}`,
   );
 }
 async function applyGroupRange() {
@@ -744,10 +769,15 @@ async function applyGroupRange() {
     refreshCharacterControls();
     return;
   }
+  await changeGroupRanges(() => range);
+}
+/** The selected PCs change range together; NPCs have none.
+ * @param {(c: Character) => number} rangeOf */
+async function changeGroupRanges(rangeOf) {
   const proposed = {
     ...characterState,
     characters: characterState.characters.map((c) =>
-      selection.has(c.id) && c.kind === "pc" ? { ...c, range } : c,
+      selection.has(c.id) && c.kind === "pc" ? { ...c, range: rangeOf(c) } : c,
     ),
   };
   if (!(await commitCharacters(proposed))) {
@@ -766,6 +796,26 @@ async function applyGroupRange() {
   draw();
   if (pov) await saveExploration();
 }
+/** The selection on the shown level, or the POV character when nothing is selected.
+ * @returns {Character[]} */
+function partyToMove() {
+  const here = characterState.characters.filter(
+    (c) => c.level === currentLevel,
+  );
+  const chosen = here.filter((c) => selection.has(c.id));
+  return chosen.length
+    ? chosen
+    : here.filter((c) => c.id === characterState.pov);
+}
+/** The characters the keyboard moves and resizes together: a selection of several, on the shown level.
+ * @returns {Character[]} */
+function selectedParty() {
+  return selection.size > 1
+    ? characterState.characters.filter(
+        (c) => selection.has(c.id) && c.level === currentLevel,
+      )
+    : [];
+}
 async function transferCharacter() {
   if (newKind) return;
   if (popupGroup) return transferGroup();
@@ -773,21 +823,7 @@ async function transferCharacter() {
   const c = characterState.characters.find((c) => c.id === selectedCharacter);
   const level = /** @type {HTMLSelectElement} */ (element("character-level"))
     .value;
-  if (!c || !level || c.level === level) return;
-  const proposed = {
-    ...characterState,
-    characters: characterState.characters.map((character) =>
-      character.id === c.id ? { ...character, level } : character,
-    ),
-  };
-  if (!(await commitCharacters(proposed))) return;
-  syncPov();
-  updateVisibility();
-  draw();
-  if (c.id === characterState.pov) await saveExploration();
-  location.assign(
-    `?${new URLSearchParams({ ...(settings.get("plan") ? { plan: settings.get("plan") || "" } : {}), level, mode: "play", character: c.id })}`,
-  );
+  if (c) await sendToLevel([c], level);
 }
 await loadLevels();
 /** @param {Character} c */
@@ -1368,6 +1404,7 @@ async function poll() {
     if (loaded) await pollSketchReply();
     if (loaded) await pollCharacters();
     applyFocus();
+    await applyArrival();
   } catch (error) {
     console.error("Keeping the last valid drawing:", String(error));
   } finally {
@@ -1804,6 +1841,16 @@ const commandUi = installCommands(
       announce: false,
       enabled: observerAvailable,
       run: () => {
+        const party = selectedParty();
+        if (party.length)
+          return moveCharacters(
+            new Map(
+              party.map((c) => [
+                c.id,
+                [c.at[0] + delta[0], c.at[1] + delta[1]],
+              ]),
+            ),
+          );
         const at = exploration?.observers[0]?.at;
         if (!at) return;
         return placeObserver([at[0] + delta[0], at[1] + delta[1]]);
@@ -1820,13 +1867,20 @@ const commandUi = installCommands(
       analogy: "size",
       announce: false,
       enabled: observerAvailable,
-      run: () =>
-        setRange(
+      run: async () => {
+        if (selectedParty().some((c) => c.kind === "pc")) {
+          await settled();
+          return changeGroupRanges((c) =>
+            Math.max(0.1, (c.range ?? 6) + Number(delta)),
+          );
+        }
+        return setRange(
           Math.max(
             0.1,
             (exploration?.observers[0]?.range ?? 6) + Number(delta),
           ),
-        ),
+        );
+      },
     })),
     {
       id: "reset-fog",
@@ -2037,6 +2091,33 @@ const commandUi = installCommands(
                 Number(step)
             ].id,
           ),
+        ),
+    })),
+    ...[
+      ["up", "Shift+PageUp", 1],
+      ["down", "Shift+PageDown", -1],
+    ].map(([direction, key, step]) => ({
+      id: `party-level-${direction}`,
+      label: `Take characters ${direction} a level`,
+      keys: [String(key)],
+      scope: /** @type {const} */ ("play"),
+      announce: false,
+      repeat: false,
+      enabled: () => {
+        const reason = levelStep(Number(step));
+        return reason !== true
+          ? reason
+          : playAvailable() !== true
+            ? playAvailable()
+            : partyToMove().length > 0 || "Select characters first";
+      },
+      run: () =>
+        sendToLevel(
+          partyToMove(),
+          planLevels[
+            planLevels.findIndex((entry) => entry.id === currentLevel) -
+              Number(step)
+          ].id,
         ),
     })),
     {

@@ -1259,9 +1259,9 @@ const Fog = (() => {
     s.doors = {};
     s.visibilityPaused = true;
   }
-  // Derived visibility only, bounded independently of stored observation history.
-  const cache = new Map(),
-    cacheLimit = 128;
+  // Derived visibility only. Every redraw replays all observations in order, so the cache must hold at least that many regions: a smaller least-recently-used cache is emptied by each replay and recomputes every region on every draw.
+  const cache = new Map();
+  let cacheLimit = 128;
   /** @param {Observation} o @param {Model} m */
   function region(o, m) {
     const key = JSON.stringify(o);
@@ -1287,6 +1287,7 @@ const Fog = (() => {
     current,
     { gridStroke = 0.018, id = "fog", showAxes = true } = {},
   ) {
+    cacheLimit = Math.max(cacheLimit, s.observations.length + 16);
     const polygon = (r) =>
       `<polygon points="${r.polygon.map((p) => p.join(",")).join(" ")}"/>`;
     const strokeEdges = (regions) =>

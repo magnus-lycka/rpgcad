@@ -35,17 +35,18 @@
 - Add NPC — Play — user--follow — N
 - Levels (list of the plan's levels, top first, current marked; choosing one switches to it) — Edit+Play — arrows--vertical — L
 - Level up / Level down (step one level; refused with a message at the top or bottom) — Edit+Play — — — PageUp / PageDown
+- Take characters up / down a level (the selected characters on the shown level, or the POV character when none is selected, keep their coordinates and the view follows them; they reveal their surroundings on arrival) — Play — — — Shift+PageUp / Shift+PageDown
 - Characters (list of all characters in the plan with name and level; choosing one goes to its level with it selected and centred) — Play — user--multiple — M
 - Open character popup (name, visual range, move to level, remove — all direct fields/buttons, no submenu; with several selected, a group popup with range and level only) — Play — — — double-click marker, Enter on a focused marker
 - Select character — Play — — — click marker, Space on a focused marker
 - Extend selection — Play — — — ⌘/Ctrl-click marker, ⌘/Ctrl+Space on a focused marker
 - Clear selection — Play — — — Esc, click on empty plan
-- Move Observer left — Play — — — ←
-- Move Observer right — Play — — — →
-- Move Observer up — Play — — — ↑
-- Move Observer down — Play — — — ↓
-- Decrease Observer range — Play — — — [
-- Increase Observer range — Play — — — ]
+- Move Observer left (with several characters selected, moves them all) — Play — — — ←
+- Move Observer right (with several characters selected, moves them all) — Play — — — →
+- Move Observer up (with several characters selected, moves them all) — Play — — — ↑
+- Move Observer down (with several characters selected, moves them all) — Play — — — ↓
+- Decrease Observer range (with several characters selected, changes every selected PC) — Play — — — [
+- Increase Observer range (with several characters selected, changes every selected PC) — Play — — — ]
 - Reset fog / close all doors — Play — — — ⇧R
 - Toggle fog — Play — fog — ⇧F
 

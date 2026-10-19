@@ -630,3 +630,7 @@ The zoom menu and Referee View controls accept numeric percentages with Enter; Z
 focuses the active field. Fields retain normal arrow-key editing. Browser
 regressions first reproduced the wrong calibration label and missing direct
 entry, then verified 100%, 125%, 10% and Play entry against rendered view extents.
+
+## Sluggish after a long walk (2026-10-19)
+
+Each step records an observation and every redraw replays all of them. The 128-entry visibility cache was emptied by each replay once a plan had more than 128 observations, so every region was recomputed on every redraw: measured with the Referee's 146 observations, building the fog drawing took about 760 ms instead of 26 ms (1.3 s at 250). The cache now grows to the observation count. The drawing is still one full scene per observation (about 0.15 MB each), so cost still grows linearly with the walk: about 35 ms to build and 120 ms to insert at 146 observations. Merging consecutive layers that share a model revision and doors is the next step if that becomes noticeable.

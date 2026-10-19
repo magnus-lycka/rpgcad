@@ -1,0 +1,363 @@
+{
+  "wallThickness": 0.15,
+  "gridOrigin": [
+    0,
+    0
+  ],
+  "walls": [
+    {
+      "id": "top-left-top",
+      "a": [
+        -0.3,
+        -0.3
+      ],
+      "b": [
+        1.2,
+        -0.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "top-left-right",
+      "a": [
+        1.2,
+        -0.3
+      ],
+      "b": [
+        1.2,
+        1.2
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "top-left-bottom",
+      "a": [
+        1.2,
+        1.2
+      ],
+      "b": [
+        -0.3,
+        1.2
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "top-left-left",
+      "a": [
+        -0.3,
+        1.2
+      ],
+      "b": [
+        -0.3,
+        -0.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "top-right-top",
+      "a": [
+        16.05,
+        -0.3
+      ],
+      "b": [
+        17.55,
+        -0.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "top-right-right",
+      "a": [
+        17.55,
+        -0.3
+      ],
+      "b": [
+        17.55,
+        1.2
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "top-right-bottom",
+      "a": [
+        17.55,
+        1.2
+      ],
+      "b": [
+        16.05,
+        1.2
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "top-right-left",
+      "a": [
+        16.05,
+        1.2
+      ],
+      "b": [
+        16.05,
+        -0.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-left-top",
+      "a": [
+        -0.3,
+        7.8
+      ],
+      "b": [
+        1.2,
+        7.8
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-left-right",
+      "a": [
+        1.2,
+        7.8
+      ],
+      "b": [
+        1.2,
+        9.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-left-bottom",
+      "a": [
+        1.2,
+        9.3
+      ],
+      "b": [
+        -0.3,
+        9.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-left-left",
+      "a": [
+        -0.3,
+        9.3
+      ],
+      "b": [
+        -0.3,
+        7.8
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-right-top",
+      "a": [
+        16.05,
+        7.8
+      ],
+      "b": [
+        17.55,
+        7.8
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-right-right",
+      "a": [
+        17.55,
+        7.8
+      ],
+      "b": [
+        17.55,
+        9.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-right-bottom",
+      "a": [
+        17.55,
+        9.3
+      ],
+      "b": [
+        16.05,
+        9.3
+      ],
+      "blocksSight": false
+    },
+    {
+      "id": "bottom-right-left",
+      "a": [
+        16.05,
+        9.3
+      ],
+      "b": [
+        16.05,
+        7.8
+      ],
+      "blocksSight": false
+    }
+  ],
+  "openings": [],
+  "labels": [],
+  "outlines": [
+    {
+      "id": "rack-barrel-1",
+      "at": [
+        7.125,
+        4.0
+      ],
+      "width": 3.0,
+      "height": 0.4,
+      "stroke": 0.025,
+      "sides": [
+        "top",
+        "right",
+        "bottom"
+      ]
+    },
+    {
+      "id": "rack-barrel-2",
+      "at": [
+        7.125,
+        4.6
+      ],
+      "width": 3.0,
+      "height": 0.4,
+      "stroke": 0.025,
+      "sides": [
+        "top",
+        "right",
+        "bottom"
+      ]
+    },
+    {
+      "id": "rack-cradle",
+      "at": [
+        8.325,
+        3.85
+      ],
+      "width": 0.6,
+      "height": 1.3,
+      "stroke": 0.025
+    }
+  ],
+  "circles": [],
+  "lines": [
+    {
+      "id": "roof-edge-top",
+      "a": [
+        1.2,
+        0
+      ],
+      "b": [
+        16.05,
+        0
+      ],
+      "stroke": 0.05
+    },
+    {
+      "id": "roof-edge-right",
+      "a": [
+        17.25,
+        1.2
+      ],
+      "b": [
+        17.25,
+        7.8
+      ],
+      "stroke": 0.05
+    },
+    {
+      "id": "roof-edge-bottom",
+      "a": [
+        16.05,
+        9
+      ],
+      "b": [
+        1.2,
+        9
+      ],
+      "stroke": 0.05
+    },
+    {
+      "id": "roof-edge-left",
+      "a": [
+        0,
+        7.8
+      ],
+      "b": [
+        0,
+        1.2
+      ],
+      "stroke": 0.05
+    }
+  ],
+  "stepIrons": [],
+  "spiralStairs": [],
+  "terrain": {
+    "default": "drop",
+    "areas": [
+      {
+        "id": "roof-deck",
+        "kind": "floor",
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            17.25,
+            0
+          ],
+          [
+            17.25,
+            9
+          ],
+          [
+            0,
+            9
+          ]
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "top-left-iris-valve",
+      "definition": "iris-valve-down@1",
+      "at": [
+        -0.05,
+        -0.05
+      ],
+      "rotation": 0
+    },
+    {
+      "id": "top-right-iris-valve",
+      "definition": "iris-valve-down@1",
+      "at": [
+        16.3,
+        -0.05
+      ],
+      "rotation": 0
+    },
+    {
+      "id": "bottom-left-iris-valve",
+      "definition": "iris-valve-down@1",
+      "at": [
+        -0.05,
+        8.05
+      ],
+      "rotation": 0
+    },
+    {
+      "id": "bottom-right-iris-valve",
+      "definition": "iris-valve-down@1",
+      "at": [
+        16.3,
+        8.05
+      ],
+      "rotation": 0
+    }
+  ]
+}

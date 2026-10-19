@@ -273,3 +273,139 @@ test("a group level change moves every selected character", async ({
     page.getByRole("dialog", { name: "2 characters" }).getByRole("heading"),
   ).toHaveText("2 characters selected");
 });
+
+test("an arrow key moves the whole selected party 1.5 m, not just the POV", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await start(page);
+  await circle(page, "ada").click();
+  await circle(page, "guard").click({ modifiers: ["Meta"] });
+  await page.keyboard.press("ArrowRight");
+  await expect
+    .poll(async () => (await saved(request)).find((c) => c.id === "ada").at)
+    .toEqual([1.5, 0]);
+  const after = await saved(request);
+  expect(after.find((c) => c.id === "guard").at).toEqual([1.5, 3]);
+  expect(after.find((c) => c.id === "ben").at).toEqual([3, 0]);
+});
+
+/** Presses a key, waits for the characters save it causes, then for the page to be idle: commands are refused while a save is in progress.
+ * @param {import('@playwright/test').Page} page @param {string} key */
+async function pressSaved(page, key) {
+  await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.url().includes("/characters") &&
+        r.request().method() === "PUT" &&
+        r.ok(),
+    ),
+    page.keyboard.press(key),
+  ]);
+  await expect(page.locator("#character-popup")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
+}
+
+test("[ and ] change the range of every selected PC and leave NPCs and others alone", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await start(page);
+  await circle(page, "ada").click();
+  await circle(page, "guard").click({ modifiers: ["Meta"] });
+  await circle(page, "ben").click({ modifiers: ["Meta"] });
+  await pressSaved(page, "]");
+  let after = await saved(request);
+  expect(after.find((c) => c.id === "ada").range).toBe(7.5);
+  expect(after.find((c) => c.id === "ben").range).toBe(4.5);
+  expect(after.find((c) => c.id === "guard").range).toBeNull();
+  await pressSaved(page, "[");
+  await pressSaved(page, "[");
+  after = await saved(request);
+  expect(after.find((c) => c.id === "ada").range).toBe(4.5);
+  expect(after.find((c) => c.id === "ben").range).toBe(1.5);
+});
+
+/** Waits for the arrival's reveal to be saved, so it cannot land after the fixture is restored.
+ * @param {import('@playwright/test').APIRequestContext} request */
+const revealSaved = (request) =>
+  expect
+    .poll(
+      async () =>
+        (await (await request.get("/exploration?level=below")).json())
+          .observations.length,
+    )
+    .toBe(1);
+
+test("Shift+PageDown takes the selected characters one level down, Shift+PageUp brings them back", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await start(page);
+  await circle(page, "ada").click();
+  await circle(page, "guard").click({ modifiers: ["Meta"] });
+  await page.keyboard.press("Shift+PageDown");
+  await expect(page).toHaveURL(/level=below/);
+  await revealSaved(request);
+  expect((await saved(request)).map(({ id, level }) => [id, level])).toEqual([
+    ["ada", "below"],
+    ["ben", "original"],
+    ["guard", "below"],
+  ]);
+  await expect(selected(page)).toHaveCount(2);
+  await page.keyboard.press("Shift+PageUp");
+  await expect(page).toHaveURL(/level=original/);
+  expect((await saved(request)).map(({ level }) => level)).toEqual([
+    "original",
+    "original",
+    "original",
+  ]);
+});
+
+test("arriving on a level reveals the POV's surroundings without a nudge", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await start(page);
+  await circle(page, "ada").click();
+  await circle(page, "guard").click({ modifiers: ["Meta"] });
+  await page.keyboard.press("Shift+PageDown");
+  await expect(page).toHaveURL(/level=below/);
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    "1",
+  );
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("/exploration?level=below")).json())
+          .observations.length,
+    )
+    .toBe(1);
+  await expect(page).not.toHaveURL(/arrive/);
+});
+
+test("Move to level in the popup reveals the arrival level too", async ({
+  page,
+  request,
+}) => {
+  await seed(request);
+  await start(page);
+  await circle(page, "ada").dblclick();
+  await page
+    .getByRole("dialog", { name: /Ada/ })
+    .getByLabel("Move to level")
+    .selectOption("below");
+  await expect(page).toHaveURL(/level=below/);
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    "1",
+  );
+  await revealSaved(request);
+});

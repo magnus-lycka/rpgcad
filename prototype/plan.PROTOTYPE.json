@@ -2,6 +2,12 @@
   "id": "referee-building",
   "levels": [
     {
+      "id": "roof",
+      "name": "Roof level",
+      "order": 1,
+      "model": "level-roof.PROTOTYPE.json"
+    },
+    {
       "id": "original",
       "name": "Original level",
       "order": 0,
