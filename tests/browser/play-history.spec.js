@@ -28,7 +28,6 @@ test("play browsing, polling and temporary GM view leave play dates unchanged", 
     if (req.method() === "PUT") saves.push(req.url());
   });
   await page.goto("/?plan=depot&mode=play");
-  await expect(page.locator("#viewport")).toContainText("DEPOT");
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observers",
     /party/,
@@ -45,6 +44,7 @@ test("play browsing, polling and temporary GM view leave play dates unchanged", 
     "data-gm-view",
     "true",
   );
+  await expect(page.locator("#viewport")).toContainText("DEPOT");
   await page.keyboard.press("Shift+F");
   await page.keyboard.press("Shift+E");
   await expect(page.locator("body")).toHaveAttribute("data-mode", "edit");

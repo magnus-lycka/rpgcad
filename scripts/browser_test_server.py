@@ -48,10 +48,21 @@ def main():
                         "default": "solid",
                         "areas": [
                             {
+                                "id": "undecided",
+                                "kind": "unknown",
+                                "outside": True,
+                                "points": [
+                                    [-1000, 6],
+                                    [1000, 6],
+                                    [1000, 1000],
+                                    [-1000, 1000],
+                                ],
+                            },
+                            {
                                 "id": "chamber",
                                 "kind": "floor",
                                 "points": [[-4, -4], [4, -4], [4, 4], [-4, 4]],
-                            }
+                            },
                         ],
                     },
                 }

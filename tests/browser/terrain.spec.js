@@ -94,3 +94,27 @@ test("a character standing on solid ground beside the chamber reveals nothing", 
   expect(await colour(viewport, [1, 0.7])).toEqual([203, 210, 206]);
   expect(await colour(viewport, [5, 0.7])).toEqual([203, 210, 206]);
 });
+
+test("undecided ground shows question marks in Edit and in the GM view, but the players' fog view shows plain rock", async ({
+  page,
+}) => {
+  const marks = page.locator("#viewport pattern text", { hasText: "?" });
+  await page.goto("/?mode=edit&level=below");
+  await expect(marks).toHaveCount(1);
+  await expect(page.locator('[data-terrain-kind="unknown"]')).toHaveCount(1);
+
+  await page.goto("/?fog=1&level=below");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    /^\d+$/,
+  );
+  await expect(marks).toHaveCount(0);
+  await expect(page.locator('[data-terrain-kind="unknown"]')).toHaveCount(0);
+
+  await page.keyboard.press("Shift+F");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-gm-view",
+    "true",
+  );
+  await expect(marks).toHaveCount(1);
+});

@@ -308,6 +308,182 @@
         13.5,
         9
       ]
+    },
+    {
+      "id": "upper-turret-outer-top",
+      "a": [
+        14.25,
+        -11.25
+      ],
+      "b": [
+        17.25,
+        -11.25
+      ]
+    },
+    {
+      "id": "upper-turret-outer-right",
+      "a": [
+        17.25,
+        -11.25
+      ],
+      "b": [
+        17.25,
+        -8.25
+      ]
+    },
+    {
+      "id": "upper-turret-outer-bottom",
+      "a": [
+        17.25,
+        -8.25
+      ],
+      "b": [
+        14.25,
+        -8.25
+      ]
+    },
+    {
+      "id": "upper-turret-outer-left",
+      "a": [
+        14.25,
+        -8.25
+      ],
+      "b": [
+        14.25,
+        -11.25
+      ]
+    },
+    {
+      "id": "upper-turret-shaft-top",
+      "a": [
+        15.0,
+        -10.5
+      ],
+      "b": [
+        16.5,
+        -10.5
+      ]
+    },
+    {
+      "id": "upper-turret-shaft-right",
+      "a": [
+        16.5,
+        -10.5
+      ],
+      "b": [
+        16.5,
+        -9.0
+      ]
+    },
+    {
+      "id": "upper-turret-shaft-bottom",
+      "a": [
+        16.5,
+        -9.0
+      ],
+      "b": [
+        15.0,
+        -9.0
+      ]
+    },
+    {
+      "id": "upper-turret-shaft-left",
+      "a": [
+        15.0,
+        -9.0
+      ],
+      "b": [
+        15.0,
+        -10.5
+      ]
+    },
+    {
+      "id": "lower-turret-outer-top",
+      "a": [
+        0.0,
+        17.25
+      ],
+      "b": [
+        3.0,
+        17.25
+      ]
+    },
+    {
+      "id": "lower-turret-outer-right",
+      "a": [
+        3.0,
+        17.25
+      ],
+      "b": [
+        3.0,
+        20.25
+      ]
+    },
+    {
+      "id": "lower-turret-outer-bottom",
+      "a": [
+        3.0,
+        20.25
+      ],
+      "b": [
+        0.0,
+        20.25
+      ]
+    },
+    {
+      "id": "lower-turret-outer-left",
+      "a": [
+        0.0,
+        20.25
+      ],
+      "b": [
+        0.0,
+        17.25
+      ]
+    },
+    {
+      "id": "lower-turret-shaft-top",
+      "a": [
+        0.75,
+        18.0
+      ],
+      "b": [
+        2.25,
+        18.0
+      ]
+    },
+    {
+      "id": "lower-turret-shaft-right",
+      "a": [
+        2.25,
+        18.0
+      ],
+      "b": [
+        2.25,
+        19.5
+      ]
+    },
+    {
+      "id": "lower-turret-shaft-bottom",
+      "a": [
+        2.25,
+        19.5
+      ],
+      "b": [
+        0.75,
+        19.5
+      ]
+    },
+    {
+      "id": "lower-turret-shaft-left",
+      "a": [
+        0.75,
+        19.5
+      ],
+      "b": [
+        0.75,
+        18.0
+      ]
     }
   ],
   "openings": [
@@ -523,5 +699,41 @@
       "startAngle": 90,
       "sweep": 270
     }
-  ]
+  ],
+  "terrain": {
+    "areas": [
+      {
+        "id": "upper-turret-rock",
+        "kind": "solid",
+        "space": [
+          14.625,
+          -9.75
+        ]
+      },
+      {
+        "id": "upper-turret-shaft",
+        "kind": "drop",
+        "space": [
+          15.75,
+          -9.75
+        ]
+      },
+      {
+        "id": "lower-turret-rock",
+        "kind": "solid",
+        "space": [
+          0.375,
+          18.75
+        ]
+      },
+      {
+        "id": "lower-turret-shaft",
+        "kind": "drop",
+        "space": [
+          1.5,
+          18.75
+        ]
+      }
+    ]
+  }
 }

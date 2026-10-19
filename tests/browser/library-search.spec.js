@@ -125,7 +125,10 @@ test("saved play activity becomes visible in last-played filters and ordering wi
     "No plans match these filters.",
   );
   await page.goto("/?plan=ancient&level=original&mode=play");
-  await expect(page.locator("#viewport")).toContainText("DEPOT");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    /^\d+$/,
+  );
   await addCharacter(page, "npc", "Wreck sentinel");
   await expect
     .poll(

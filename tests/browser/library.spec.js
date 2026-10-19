@@ -99,7 +99,10 @@ test("characters added to another plan stay there on reload and library navigati
   await page.goto("/library.html");
   await page.getByRole("button", { name: "Depot", exact: true }).click();
   await page.getByRole("link", { name: "Play", exact: true }).click();
-  await expect(page.locator("#viewport")).toContainText("DEPOT");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    /^\d+$/,
+  );
   await addCharacter(page, "npc", "Depot guard");
   await expect
     .poll(
@@ -109,8 +112,13 @@ test("characters added to another plan stay there on reload and library navigati
     )
     .toBe(1);
   await page.reload();
-  await expect(page.locator("#viewport")).toContainText("DEPOT");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    /^\d+$/,
+  );
+  // Labels show only in the GM view, which also confirms which plan this is.
   await page.getByRole("button", { name: "Toggle fog", exact: true }).click();
+  await expect(page.locator("#viewport")).toContainText("DEPOT");
   await expect(page.locator("#viewport")).toContainText("Depot guard");
   const original = await (await request.get("/characters")).json();
   expect(original.characters.some((c) => c.name === "Depot guard")).toBe(false);
@@ -243,7 +251,10 @@ test("plan-only play keeps a new marker on the selected plan's first level", asy
   expect(response.status()).toBe(201);
   const copy = await response.json();
   await page.goto(`/?plan=${copy.id}&mode=play`);
-  await expect(page.locator("#viewport")).toContainText("SECRET");
+  await expect(page.locator("#viewport")).toHaveAttribute(
+    "data-observations",
+    /^\d+$/,
+  );
   await addCharacter(page, "pc", "Copy scout");
   await expect(page.locator("#viewport [data-character]")).toHaveCount(1);
   await expect

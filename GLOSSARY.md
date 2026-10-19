@@ -65,8 +65,11 @@ The representation of a PC or NPC at its current location on a plan.
 The selected PC whose position and sight range determine the current visible area.
 
 **Terrain**:
-What the ground is at a position on a level: **floor** (the default), **solid** (rock or soil, with no floor, and nothing can be seen from inside it) or **drop** (an open fall such as a shaft or pit; it is still seen across). A space enclosed by walls is floor, derived from the walls and never stored; a level's default terrain says what lies outside every enclosed space, so a level that is a structure inside rock needs only `"default": "solid"`. Explicit areas (polygons) are for the exceptions: a drop, a solid pillar, floor with no walls. Pattern-filled in Edit and Play. A space with a gap in its walls is not enclosed; a door or opening in a wall does not open it.
+What the ground is at a position on a level: **floor** (the default), **solid** (rock or soil, with no floor, and nothing can be seen from inside it) **drop** (an open fall such as a shaft or pit; it is still seen across) or **unknown** (undecided: not designed yet). Unknown behaves exactly like solid in Play, and the players' view even draws it as rock; the Designer and the Referee see a question mark in every grid square instead. A space enclosed by walls is floor, derived from the walls and never stored; a level's default terrain says what lies outside every enclosed space, so a level that is a structure inside rock needs only `"default": "solid"`. Explicit areas are for the exceptions: a drop, a solid pillar, floor with no walls. An area is either a polygon or names an enclosed space by a point inside it (`space`), which stays correct when the walls move and repeats no coordinates. A drop is air with no floor, drawn as sparse irregular dots. An area flagged `outside` refines only what lies outside the enclosed spaces, so it can cover everything beyond a line without turning a room or corridor into that kind. Pattern-filled in Edit and Play. A space with a gap in its walls is not enclosed; a door or opening in a wall does not open it.
 _Avoid_: ground type, tile, void (for a drop)
+
+**Turret tower**:
+A 3 × 3 m tower on the ground level directly above a ceiling shaft of the level below. Its outer walls stand 0.75 m outside the 1.5 × 1.5 m shaft walls, the rock between them is solid and the shaft itself is a drop: air, no floor.
 
 **Elevation**:
 The height of a level's floor, or of a feature, in metres above the plan's datum, which is the floor of the first level created. Z is elevation.

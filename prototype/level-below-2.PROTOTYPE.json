@@ -2469,6 +2469,31 @@
   ],
   "stepIrons": [],
   "terrain": {
-    "default": "solid"
+    "default": "solid",
+    "areas": [
+      {
+        "id": "beyond-corridor-end",
+        "kind": "unknown",
+        "outside": true,
+        "points": [
+          [
+            -10000,
+            27
+          ],
+          [
+            10000,
+            27
+          ],
+          [
+            10000,
+            10000
+          ],
+          [
+            -10000,
+            10000
+          ]
+        ]
+      }
+    ]
   }
 }

@@ -72,3 +72,44 @@ test("observations retain what was seen without storing fog polygons or repeatin
   assert.equal(state.revisions.first.wallThickness, 0.2);
   assert.deepEqual(Object.keys(state.revisions), ["first"]);
 });
+
+const labelled = Geometry.validate({
+  wallThickness: 0.2,
+  walls: [{ id: "divider", a: [3, -3], b: [3, 3] }],
+  openings: [],
+  labels: [{ id: "secret", at: [1.5, 0], text: "AMMO HOIST" }],
+});
+const view = { x: -4, y: -4, w: 12, h: 8 };
+
+test("a scene shows its labels unless asked not to", () => {
+  assert.ok(Geometry.scene(labelled, view).includes("AMMO HOIST"));
+  assert.ok(
+    !Geometry.scene(labelled, view, { showLabels: false }).includes("<text"),
+  );
+});
+
+test("the fog view never shows label text, even on what is currently visible or remembered", () => {
+  const observation = {
+    at: [0, 0],
+    range: 6,
+    doors: {},
+    revision: "r1",
+  };
+  const state = Fog.validate({
+    version: 2,
+    observers: [{ id: "party", at: [0, 0], range: 6 }],
+    doors: {},
+    observations: [observation],
+    revisions: { r1: labelled },
+  });
+  const current = [Fog.region({ ...observation, doors: {} }, labelled)];
+  assert.equal(
+    Fog.inside([1.5, 0], current[0].polygon),
+    true,
+    "label spot is in view",
+  );
+  const svg = Fog.render(labelled, view, state, current);
+  assert.ok(svg.includes("data-wall"), "the visible structure is drawn");
+  assert.ok(!svg.includes("AMMO HOIST"));
+  assert.ok(!svg.includes("<text"));
+});

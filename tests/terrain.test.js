@@ -210,7 +210,11 @@ test("terrain patterns are linework only, with no fill colour, so they print bla
     assert.match(pattern, /fill="none"/);
     assert.match(pattern, /stroke="#808080"/, `${kind} is mid grey`);
     const width = Number(pattern.match(/stroke-width="([\d.]+)"/)?.[1]);
-    assert.ok(width <= 0.02, `${kind} strokes are thin (${width} m)`);
+    // Solid is hairline hatching; a drop is dots, drawn as round-capped points.
+    assert.ok(
+      kind === "solid" ? width <= 0.02 : width <= 0.08,
+      `${kind} strokes are thin (${width} m)`,
+    );
   }
   const hatch = svg.match(/<rect data-terrain="solid"[^>]*>/)?.[0] ?? "";
   assert.ok(!/#cbd2ce/.test(svg), "never the fog colour");
@@ -266,8 +270,8 @@ const walled = (parts = {}, base = "solid") =>
     openings: [],
     labels: [],
     walls: [],
-    terrain: { default: base, ...(parts.terrain ?? {}) },
     ...parts,
+    terrain: { default: base, ...(parts.terrain ?? {}) },
   });
 /** Four wall segments around a rectangle, id-prefixed.
  * @param {string} id @param {number} x0 @param {number} y0 @param {number} x1 @param {number} y1 */
@@ -380,6 +384,226 @@ test("enclosed spaces are drawn by clearing the rock to the sheet, not by stored
   assert.ok(!svg.includes("data-terrain-area"));
 });
 
+/** A turret: a 3 m outer wall square around a 1.5 m shaft wall square, both centred on [cx, cy]. */
+const turret = (cx, cy, outer = 3, inner = 1.5) => [
+  ...room(
+    "outer",
+    cx - outer / 2,
+    cy - outer / 2,
+    cx + outer / 2,
+    cy + outer / 2,
+  ),
+  ...room(
+    "inner",
+    cx - inner / 2,
+    cy - inner / 2,
+    cx + inner / 2,
+    cy + inner / 2,
+  ),
+];
+
+test("an area can name an enclosed space by a point inside it, so it follows the walls", () => {
+  const model = (/** @type {number} */ size) =>
+    walled(
+      {
+        walls: turret(5, 5, size),
+        terrain: {
+          areas: [
+            { id: "ring", kind: "solid", space: [3.6, 5] },
+            { id: "shaft", kind: "drop", space: [5, 5] },
+          ],
+        },
+      },
+      "floor",
+    );
+  const m = model(3);
+  assert.equal(Geometry.terrainAt(m, [5, 5]), "drop");
+  assert.equal(Geometry.terrainAt(m, [3.8, 5]), "solid");
+  assert.equal(Geometry.terrainAt(m, [6.4, 3.7]), "solid");
+  assert.equal(Geometry.terrainAt(m, [8.5, 5]), "floor", "outside the turret");
+  const wider = model(3.6);
+  assert.equal(Geometry.terrainAt(wider, [3.3, 5]), "solid");
+  assert.equal(Geometry.terrainAt(wider, [5, 5]), "drop");
+});
+
+test("a space area must name an enclosed space and exclusively so", () => {
+  const walls = room("hall", 0, 0, 6, 4);
+  const bad = [
+    { id: "a", kind: "solid", space: [20, 20] },
+    { id: "a", kind: "solid", space: "hall" },
+    { id: "a", kind: "solid", space: [1, 1], points: square(0, 0, 1) },
+    { id: "a", kind: "solid" },
+  ];
+  for (const area of bad)
+    assert.throws(
+      () => walled({ walls, terrain: { areas: [area] } }, "floor"),
+      Error,
+      JSON.stringify(area),
+    );
+  assert.doesNotThrow(() =>
+    walled(
+      { walls, terrain: { areas: [{ id: "a", kind: "drop", space: [1, 1] }] } },
+      "floor",
+    ),
+  );
+});
+
+test("a space area is drawn as its space: cleared to the sheet, then patterned", () => {
+  const m = walled(
+    {
+      walls: turret(5, 5),
+      terrain: { areas: [{ id: "ring", kind: "solid", space: [3.6, 5] }] },
+    },
+    "floor",
+  );
+  const svg = Geometry.scene(m, bounds);
+  const area = svg
+    .split("<")
+    .find((part) => part.startsWith('polygon data-terrain-area="ring"'));
+  assert.ok(area);
+  assert.match(area, /data-terrain-kind="solid"/);
+  assert.match(area, /points="3.5,3.5 6.5,3.5 6.5,6.5 3.5,6.5"/);
+  assert.match(area, /fill="url\(#grid-solid\)"/);
+});
+
+test("a character standing in the solid ring of a turret reveals nothing", () => {
+  const m = walled(
+    {
+      walls: turret(5, 5),
+      terrain: { areas: [{ id: "ring", kind: "solid", space: [3.6, 5] }] },
+    },
+    "floor",
+  );
+  const from = (/** @type {number[]} */ at, /** @type {string} */ revision) =>
+    Fog.region({ at, range: 6, doors: {}, revision }, m);
+  assert.deepEqual(from([3.8, 5], "ring").polygon, []);
+  assert.ok(from([9, 5], "outside").polygon.length > 0);
+});
+
+const beyond = [
+  [-1000, 10],
+  [1000, 10],
+  [1000, 1000],
+  [-1000, 1000],
+];
+/** A walled hall with an unknown region beyond y = 10 that refines only the outside. */
+const withUnknown = (/** @type {Record<string, unknown>} */ extra = {}) =>
+  walled({
+    walls: room("hall", 0, 0, 6, 12),
+    terrain: {
+      areas: [
+        {
+          id: "undecided",
+          kind: "unknown",
+          points: beyond,
+          outside: true,
+          ...extra,
+        },
+      ],
+    },
+  });
+
+test("unknown is undecided ground that refines the outside: it never turns a room into unknown", () => {
+  const m = withUnknown();
+  assert.equal(Geometry.terrainAt(m, [20, 15]), "unknown");
+  assert.equal(
+    Geometry.terrainAt(m, [3, 11]),
+    "floor",
+    "inside the hall, past y = 10",
+  );
+  assert.equal(
+    Geometry.terrainAt(m, [20, 5]),
+    "solid",
+    "outside but before the region",
+  );
+});
+
+test("without the outside flag an area overrides everything, rooms included", () => {
+  const m = withUnknown({ outside: undefined });
+  assert.equal(Geometry.terrainAt(m, [3, 11]), "unknown");
+});
+
+test("the outside flag must be a boolean", () => {
+  assert.throws(() => withUnknown({ outside: "yes" }), Error);
+  assert.doesNotThrow(() => withUnknown({ outside: false }));
+});
+
+test("an observer standing on unknown ground reveals nothing, like solid", () => {
+  const m = withUnknown();
+  const seen = (/** @type {number[]} */ at, /** @type {string} */ revision) =>
+    Fog.region({ at, range: 6, doors: {}, revision }, m);
+  assert.deepEqual(seen([20, 15], "unknown").polygon, []);
+  assert.ok(seen([3, 6], "hall").polygon.length > 0);
+});
+
+test("unknown shows as a question mark in every grid square for the Designer and the Referee", () => {
+  const svg = Geometry.scene(withUnknown(), bounds);
+  const pattern = patternOf(svg, "unknown");
+  assert.match(pattern, /width="1.5" height="1.5"/);
+  assert.equal(
+    pattern.match(/<text[^>]*>\?<\/text>/g)?.length,
+    1,
+    "one mark per 1.5 m square",
+  );
+  assert.match(pattern, /fill="#808080"/);
+  assert.match(
+    svg,
+    /data-terrain-area="undecided"[^>]*data-terrain-kind="unknown"/,
+  );
+});
+
+test("the question marks sit in the grid's squares, whatever the grid origin", () => {
+  const m = Geometry.validate({
+    wallThickness: 0.15,
+    walls: [],
+    openings: [],
+    labels: [],
+    gridOrigin: [0.5, 0.25],
+    terrain: { default: "unknown" },
+  });
+  assert.match(
+    patternOf(Geometry.scene(m, bounds), "unknown"),
+    /patternTransform="translate\(0.5 0.25\)"/,
+  );
+});
+
+test("the players' fog view draws unknown as plain solid rock, with no question marks", () => {
+  const m = withUnknown();
+  const state = Fog.validate({
+    version: 2,
+    observers: [{ id: "p", at: [3, 6], range: 6 }],
+    doors: {},
+    observations: [{ at: [3, 6], range: 6, doors: {}, revision: "r" }],
+    revisions: { r: m },
+  });
+  const svg = Fog.render(m, { x: -10, y: -10, w: 40, h: 40 }, state, [
+    Fog.region({ at: [3, 6], range: 6, doors: {}, revision: "r" }, m),
+  ]);
+  assert.ok(
+    !svg.includes("unknown"),
+    "players never see the word, the kind or the pattern",
+  );
+  assert.ok(!svg.includes("<text"), "and no question marks");
+  assert.ok(
+    svg.includes('data-terrain-kind="solid"') || svg.includes("-solid"),
+  );
+});
+
+test("outside areas are drawn before the enclosed spaces are cleared, so rooms stay clear", () => {
+  const svg = Geometry.scene(withUnknown(), { x: -10, y: -10, w: 40, h: 40 });
+  const unknown = svg.indexOf('data-terrain-area="undecided"'),
+    hall = svg.indexOf('<polygon points="0,0 6,0 6,12 0,12"');
+  assert.ok(
+    unknown >= 0 && hall > unknown,
+    "the hall is cleared after the unknown region",
+  );
+});
+
+test("undecided and solid regions are background: they do not stretch the drawing's extent", () => {
+  const b = Geometry.bounds(withUnknown());
+  assert.ok(b.w < 20 && b.h < 20, JSON.stringify(b));
+});
+
 /** @param {string} name */
 const levelFile = (name) =>
   Geometry.validate(
@@ -427,7 +651,7 @@ const structures = [
       [10, 10.5],
       [-2, 5],
       [14, 20],
-      [6, 32],
+      [-2, 20],
       [20, 5],
       [2, 6],
     ],
@@ -436,10 +660,10 @@ const structures = [
 for (const { name, floor, solid } of structures) {
   test(`${name}: the structure is floor inside its walls and solid outside them`, () => {
     const model = levelFile(name);
-    assert.deepEqual(
-      model.terrain,
-      { default: "solid" },
-      "derived, not stored",
+    assert.equal(model.terrain?.default, "solid");
+    assert.ok(
+      (model.terrain?.areas ?? []).every((area) => area.kind !== "floor"),
+      "floor is derived from the walls, never stored",
     );
     for (const at of floor)
       assert.equal(Geometry.terrainAt(model, at), "floor", `${at}`);
@@ -447,3 +671,132 @@ for (const { name, floor, solid } of structures) {
       assert.equal(Geometry.terrainAt(model, at), "solid", `${at}`);
   });
 }
+
+test("a drop is air: sparse, irregularly placed dots, not lines", () => {
+  const pattern = patternOf(Geometry.scene(level, bounds), "drop");
+  assert.match(pattern, /stroke-linecap="round"/);
+  const tile = Number(pattern.match(/width="([\d.]+)"/)?.[1]);
+  const dots = [...pattern.matchAll(/M ([-\d.]+) ([-\d.]+) l/g)].map(
+    ([, x, y]) => [Number(x), Number(y)],
+  );
+  const density = dots.length / (tile * tile);
+  assert.ok(density >= 3 && density <= 6, `${density.toFixed(1)} dots per m2`);
+  // Irregular: no lattice, and no two dots crowd each other (the tile wraps).
+  assert.ok(
+    new Set(dots.map(([x]) => Math.round(x / 0.05))).size >= dots.length * 0.6,
+  );
+  const wrap = (/** @type {number} */ d) =>
+    Math.abs(((((d + tile / 2) % tile) + tile) % tile) - tile / 2);
+  for (const [i, a] of dots.entries())
+    for (const b of dots.slice(i + 1))
+      assert.ok(
+        Math.hypot(wrap(a[0] - b[0]), wrap(a[1] - b[1])) >= 0.3,
+        `${a} ${b}`,
+      );
+  // Evenly spread: each quarter of the tile holds a fair share.
+  for (const [qx, qy] of [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [1, 1],
+  ])
+    assert.ok(
+      dots.filter(
+        ([x, y]) =>
+          Math.floor((x / tile) * 2) === qx &&
+          Math.floor((y / tile) * 2) === qy,
+      ).length >=
+        dots.length / 8,
+      `quarter ${qx},${qy}`,
+    );
+});
+
+test("each ceiling shaft on the level below has a turret above it on the ground level: air in the shaft, solid around it, floor outside", () => {
+  const ground = levelFile("model.PROTOTYPE.json"),
+    below = levelFile("level-below.PROTOTYPE.json");
+  const shafts = (below.outlines ?? []).filter((o) =>
+    o.id.endsWith("-ceiling-shaft"),
+  );
+  assert.equal(shafts.length, 2);
+  for (const shaft of shafts) {
+    const [cx, cy] = [
+      shaft.at[0] + shaft.width / 2,
+      shaft.at[1] + shaft.height / 2,
+    ];
+    const kind = (/** @type {number} */ dx, /** @type {number} */ dy) =>
+      Geometry.terrainAt(ground, [cx + dx, cy + dy]);
+    for (const [dx, dy] of [
+      [0, 0],
+      [0.6, 0.6],
+      [-0.6, 0.6],
+      [0.6, -0.6],
+      [-0.6, -0.6],
+    ])
+      assert.equal(kind(dx, dy), "drop", `${shaft.id} shaft ${dx},${dy}`);
+    for (const [dx, dy] of [
+      [1.1, 0],
+      [-1.1, 0],
+      [0, 1.1],
+      [0, -1.1],
+      [1.3, 1.3],
+      [-1.3, -1.3],
+    ])
+      assert.equal(kind(dx, dy), "solid", `${shaft.id} ring ${dx},${dy}`);
+    for (const [dx, dy] of [
+      [1.7, 0],
+      [-1.7, 0],
+      [0, 1.7],
+      [0, -1.7],
+    ])
+      assert.equal(kind(dx, dy), "floor", `${shaft.id} outside ${dx},${dy}`);
+    // The turret is 3 m square around the shaft: 0.75 m of wall-to-wall rock on every side.
+    const walls = ground.walls.filter(
+      (w) =>
+        Math.abs(w.a[0] - w.b[0]) < 1e-9 &&
+        Math.abs(w.a[0] - (cx + 1.5)) < 1e-9 &&
+        Math.abs((w.a[1] + w.b[1]) / 2 - cy) < 1e-9,
+    );
+    assert.equal(
+      walls.length,
+      1,
+      `${shaft.id} has an outer wall 1.5 m to the right of the shaft centre`,
+    );
+  }
+});
+
+test("turret terrain names its spaces by a point instead of copying wall coordinates", () => {
+  const areas = levelFile("model.PROTOTYPE.json").terrain?.areas ?? [];
+  assert.equal(areas.length, 4);
+  for (const area of areas) {
+    assert.ok(area.space && !area.points, area.id);
+    assert.ok(["solid", "drop"].includes(area.kind), area.id);
+  }
+});
+
+test("level below-2: the surroundings beyond the corridor end are undecided, not solid", () => {
+  const model = levelFile("level-below-2.PROTOTYPE.json");
+  // The reference origin is [-1.5, 13.5]; Y on the red axes is 13.5 minus the stored y, so Y < -13.5 is stored y > 27.
+  for (const at of [
+    [6, 33],
+    [-5, 33],
+    [2, 28],
+    [14, 40],
+    [20, 30],
+  ])
+    assert.equal(Geometry.terrainAt(model, at), "unknown", `${at}`);
+  for (const at of [
+    [6, 28],
+    [6, 29.5],
+    [2, 20],
+    [10, 20],
+    [5, 5],
+  ])
+    assert.equal(Geometry.terrainAt(model, at), "floor", `${at}`);
+  for (const at of [
+    [14, 20],
+    [-2, 20],
+    [20, 5],
+    [10, 10.5],
+  ])
+    assert.equal(Geometry.terrainAt(model, at), "solid", `${at}`);
+});
