@@ -116,6 +116,8 @@ The Referee requested a 9 m long, 1.5 m wide corridor with its lower wall at ref
 
 The Referee corrected the reference Y convention: positive Y is upward from the red horizontal axis. The west corridor and room were moved up two grid lines (3 m). The corridor now spans stored y=1.5..3, so its lower wall is reference y=+1.5 m; the centred room spans stored y=0..4.5. Convert reference coordinates using x=storedX−originX and y=originY−storedY. The earlier interpretation used screen-down Y and was wrong.
 
+The lower level is a structure inside solid ground. Its model now has a default terrain of solid and eight floor areas matching the interior of its walls (west room and corridor, left area, core with right space, both tower corridors, both hoist rooms), so everything outside reads as hatched rock (an earlier grey-tinted fill was rejected: it must print as thin strokes on white, with no background colour and not the fog colour, and look like a classic dungeon map) and a character placed there reveals nothing. The areas were read from the wall centre lines, not designed with the Referee; the AMMO HOIST rooms are floor for now although a hoist could be a drop. The `LAKE` intake line runs out over solid ground.
+
 The Referee subsequently removed both tower footprint outlines from the lower-level drawing. Their access corridors remain unchanged.
 
 ## Cannon ammunition handling rooms, 2026-10-10

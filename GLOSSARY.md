@@ -64,6 +64,10 @@ The representation of a PC or NPC at its current location on a plan.
 **POV character**:
 The selected PC whose position and sight range determine the current visible area.
 
+**Terrain**:
+What the ground is at a position on a level: **floor** (the default), **solid** (rock or soil, with no floor, and nothing can be seen from inside it) or **drop** (an open fall such as a shaft or pit; it is still seen across). A level has a default terrain and ordered areas that override it; the Designer does not care what a solid is made of. Pattern-filled in Edit and Play, and independent of walls.
+_Avoid_: ground type, tile, void (for a drop)
+
 **Elevation**:
 The height of a level's floor, or of a feature, in metres above the plan's datum, which is the floor of the first level created. Z is elevation.
 _Avoid_: height (ambiguous with a feature's own size), depth, up/down for Z

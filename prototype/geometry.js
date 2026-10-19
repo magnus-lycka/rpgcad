@@ -11,7 +11,10 @@
  * @typedef {{blocksPassage?:boolean,frontClearance?:number}} ComponentAccess
  * @typedef {{id:string, version:number, name:string, family:string, defaults:{width:number,length:number,seatCount?:number,direction?:string}, details:{headDepth?:number,leafThickness?:number,profile?:string,desk?:boolean}, blocksSight:boolean,access?:ComponentAccess}} ComponentDefinition
  * @typedef {{id:string, definition:string, at?:Point, rotation?:number, opening?:string, blocksSight?:boolean, access?:ComponentAccess, settings?:{width?:number,length?:number,direction?:string,state?:string,seatCount?:number}}} ComponentInstance
- * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], origin?: Point, gridOrigin?: Point, components?:ComponentInstance[], componentDefinitions?:Record<string, ComponentDefinition>}} Model
+ * @typedef {{wallThickness: number, walls: Wall[], openings: Opening[], labels: Label[], outlines?: Outline[], circles?: Circle[], lines?: Line[], stepIrons?: StepIron[], spiralStairs?: Stair[], terrain?: Terrain, origin?: Point, gridOrigin?: Point, components?:ComponentInstance[], componentDefinitions?:Record<string, ComponentDefinition>}} Model
+ * @typedef {'floor'|'solid'|'drop'} TerrainKind
+ * @typedef {{id: string, kind: TerrainKind, points: Point[]}} TerrainArea
+ * @typedef {{default?: TerrainKind, areas?: TerrainArea[]}} Terrain
  * @typedef {Record<string, 'open'|'closed'>} Doors
  * @typedef {{id?: string, at: Point, range: number}} Observer
  * @typedef {{at: Point, range: number, doors: Doors, revision: string}} Observation
@@ -42,6 +45,33 @@ const Geometry = (() => {
   const seatCount = (n) =>
     typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 6;
   const finite = (n) => typeof n === "number" && Number.isFinite(n);
+  const TERRAIN_KINDS = ["floor", "solid", "drop"];
+  /** What the ground is at a position: the last area containing it, else the level default, else floor.
+   * @param {Model} m @param {Point} at @returns {TerrainKind} */
+  function terrainAt(m, at) {
+    const areas = m.terrain?.areas ?? [];
+    for (let i = areas.length - 1; i >= 0; i--)
+      // eslint-disable-next-line security/detect-object-injection -- Numeric index into the model's area list.
+      if (inside(at, areas[i].points)) return areas[i].kind;
+    return m.terrain?.default ?? "floor";
+  }
+  /** Even-odd point-in-polygon test.
+   * @param {Point} point @param {Point[]} polygon */
+  function inside(point, polygon) {
+    let result = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      // eslint-disable-next-line security/detect-object-injection -- Numeric indices into a local polygon array.
+      const a = polygon[i],
+        // eslint-disable-next-line security/detect-object-injection -- Numeric indices into a local polygon array.
+        b = polygon[j];
+      if (
+        a[1] > point[1] !== b[1] > point[1] &&
+        point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]
+      )
+        result = !result;
+    }
+    return result;
+  }
   /** @param {Model} m */
   function validate(m) {
     const fail = (s) => {
@@ -83,6 +113,7 @@ const Geometry = (() => {
       ...(m.stepIrons ?? []),
       ...(m.spiralStairs ?? []),
       ...(m.components ?? []),
+      ...(Array.isArray(m.terrain?.areas) ? m.terrain.areas : []),
     ]) {
       if (!o || typeof o.id !== "string" || !o.id || ids.has(o.id))
         fail("Every object needs a unique id.");
@@ -191,6 +222,26 @@ const Geometry = (() => {
           !seatCount(definition.defaults.seatCount))
       )
         fail("Invalid component definition");
+    }
+    if (m.terrain !== undefined) {
+      const kind = (k) => TERRAIN_KINDS.includes(k),
+        t = m.terrain;
+      if (
+        t === null ||
+        typeof t !== "object" ||
+        Array.isArray(t) ||
+        (t.default !== undefined && !kind(t.default)) ||
+        (t.areas !== undefined && !Array.isArray(t.areas))
+      )
+        fail("Invalid terrain.");
+      for (const a of t.areas ?? [])
+        if (
+          !kind(a.kind) ||
+          !Array.isArray(a.points) ||
+          a.points.length < 3 ||
+          !a.points.every(point)
+        )
+          fail(`Invalid terrain area ${a.id}`);
     }
     for (const instance of m.components ?? []) {
       const definition = m.componentDefinitions?.[instance.definition];
@@ -429,6 +480,7 @@ const Geometry = (() => {
     }
     for (const instance of m.components ?? [])
       pts.push(...componentPoints(m, instance, 0.0125));
+    for (const area of m.terrain?.areas ?? []) pts.push(...area.points);
     if (!pts.length) return { x: 0, y: 0, w: 21, h: 15 };
     const xs = pts.map((p) => p[0]),
       ys = pts.map((p) => p[1]);
@@ -440,7 +492,7 @@ const Geometry = (() => {
     };
   }
   /** Colours of the drawing. `sheet` is the paper, also used to knock out linework behind labels. Blueprint is white linework on a cyanotype sheet; its axes are salmon rather than red so they stay legible on blue.
-   * @typedef {{sheet: string, grid: string, ink: string, inkSoft: string, doorFill: string, label: string, axis: string, armStroke: string}} Palette */
+   * @typedef {{sheet: string, grid: string, ink: string, inkSoft: string, doorFill: string, label: string, axis: string, armStroke: string, rock: string}} Palette */
   /** @type {Record<string, Palette>} */
   const THEMES = {
     light: {
@@ -452,6 +504,7 @@ const Geometry = (() => {
       label: "#263c30",
       axis: "#d62929",
       armStroke: "black",
+      rock: "#808080",
     },
     blueprint: {
       sheet: "#1c4f8f",
@@ -462,6 +515,7 @@ const Geometry = (() => {
       label: "#eef4ff",
       axis: "#ff9a8a",
       armStroke: "#eef4ff",
+      rock: "#7fa3d6",
     },
   };
   /** @param {string} theme */
@@ -519,6 +573,33 @@ const Geometry = (() => {
       if (k) d += `M ${b.x} ${oy + k * 15} H ${b.x + b.w} `;
     return `<path data-page-borders d="${d.trim()}" fill="none" stroke="${c.axis}" stroke-opacity=".6" stroke-width="${gridStroke * 1.5}" stroke-dasharray="${gridStroke * 12} ${gridStroke * 8}"/>`;
   }
+  // Solid ground in the manner of classic dungeon maps: one 6 m tile of 16 irregular sections, each hatched with parallel strokes at its own angle (neighbours differ by at least 40 degrees, and none lies within 20 degrees of horizontal or vertical, which would read as a grid), small gaps between sections, strokes trimmed short. Generated once from a periodic Voronoi division with a fixed seed, so the tile repeats without seams; only strokes, never a fill, so it prints cleanly on white. Drawn in a mid grey (the palette's `rock`) to stay discreet beside the black walls.
+  const ROCK_TILE = 6;
+  const ROCK_STROKES =
+    "M 0.813 0.035 L 1.097 0.138 M 0.556 0.175 L 1.243 0.426 M 0.369 0.341 L 1.343 0.696 M 0.174 0.504 L 1.455 0.971 M 0.081 0.705 L 1.544 1.237 M 0.084 0.94 L 1.466 1.443 M 0.022 1.152 L 1.263 1.604 M 0.153 1.433 L 0.398 1.523 M 1.4 2.694 L 0.455 3.135 M 1.367 2.467 L 0.274 2.976 M 1.333 2.24 L 0.203 2.767 M 1.334 1.997 L 0.191 2.529 M 1.27 1.784 L 0.233 2.267 M 0.927 1.701 L 0.219 2.031 M 0.504 1.655 L 0.237 1.78 M 0.901 3.304 L 1.121 3.686 M 0.655 3.319 L 1.369 4.555 M 0.39 3.3 L 1.099 4.528 M 0.272 3.535 L 0.848 4.532 M 0.168 3.796 L 0.546 4.45 M 0.039 4.011 L 0.288 4.442 M 1.111 5.648 L 0.604 5.884 M 1.136 5.393 L 0.482 5.698 M 1.216 5.113 L 0.373 5.506 M 1.305 4.829 L 0.245 5.323 M 1.043 4.709 L 0.113 5.142 M 0.67 4.64 L 0.028 4.939 M 0.245 4.595 L 0.059 4.682 M 2.726 0.985 L 2.053 1.23 M 2.702 0.76 L 1.765 1.101 M 2.699 0.527 L 1.639 0.913 M 2.633 0.317 L 1.572 0.703 M 2.608 0.092 L 1.445 0.515 M 2.168 0.018 L 1.399 0.298 M 1.503 0.026 L 1.284 0.105 M 2.513 1.376 L 2.739 1.861 M 2.255 1.344 L 2.697 2.292 M 2.045 1.414 L 2.635 2.68 M 1.787 1.381 L 2.449 2.801 M 1.62 1.543 L 2.188 2.761 M 1.46 1.72 L 1.911 2.689 M 1.523 2.377 L 1.675 2.702 M 1.804 2.857 L 2.802 3.22 M 1.465 2.968 L 2.74 3.431 M 1.258 3.126 L 2.706 3.653 M 1.066 3.291 L 2.627 3.859 M 1.222 3.582 L 2.617 4.089 M 1.329 3.854 L 2.591 4.314 M 1.516 4.157 L 2.13 4.38 M 2.942 4.874 L 2.586 5.85 M 2.782 4.671 L 2.371 5.799 M 2.623 4.464 L 2.131 5.816 M 2.384 4.477 L 1.909 5.783 M 2.138 4.508 L 1.661 5.819 M 1.888 4.552 L 1.441 5.782 M 1.642 4.587 L 1.214 5.761 M 4.129 0.046 L 4.275 0.168 M 3.75 0.015 L 4.21 0.401 M 3.452 0.052 L 4.108 0.602 M 3.064 0.014 L 4.009 0.807 M 2.821 0.096 L 3.952 1.045 M 2.853 0.41 L 3.834 1.234 M 2.887 0.726 L 3.478 1.222 M 2.895 1.02 L 3.151 1.236 M 3.299 5.636 L 3.706 5.978 M 2.998 5.671 L 3.335 5.954 M 4.434 2.638 L 3.975 3.023 M 4.392 2.386 L 3.609 3.044 M 4.373 2.115 L 3.213 3.089 M 4.318 1.874 L 2.926 3.042 M 4.118 1.755 L 2.801 2.86 M 3.974 1.589 L 2.772 2.597 M 3.857 1.399 L 2.849 2.245 M 3.491 1.42 L 2.919 1.899 M 3.149 1.419 L 2.993 1.55 M 4.248 3.161 L 4.392 3.471 M 4.012 3.174 L 4.498 4.219 M 3.795 3.231 L 4.296 4.306 M 3.557 3.24 L 4.085 4.374 M 3.32 3.253 L 3.863 4.417 M 3.089 3.279 L 3.65 4.481 M 2.923 3.444 L 3.441 4.553 M 2.858 3.825 L 3.245 4.654 M 2.774 4.164 L 3.015 4.681 M 4.615 5.847 L 4.414 5.963 M 4.694 5.547 L 4.134 5.871 M 4.739 5.268 L 3.925 5.737 M 4.844 4.953 L 3.692 5.618 M 4.878 4.679 L 3.45 5.504 M 4.709 4.523 L 3.179 5.406 M 4.383 4.457 L 3.118 5.187 M 3.425 4.756 L 3.161 4.908 M 5.805 0.69 L 5.44 1.321 M 5.625 0.562 L 5.061 1.537 M 5.413 0.488 L 4.699 1.724 M 5.243 0.344 L 4.449 1.718 M 5.025 0.28 L 4.272 1.585 M 4.844 0.154 L 4.113 1.419 M 4.64 0.068 L 4.09 1.02 M 5.817 1.318 L 5.987 1.682 M 5.64 1.459 L 5.966 2.158 M 5.456 1.584 L 5.98 2.707 M 5.249 1.661 L 5.759 2.754 M 5.049 1.752 L 5.523 2.768 M 4.843 1.832 L 5.274 2.756 M 4.658 1.955 L 5.038 2.771 M 4.565 2.276 L 4.779 2.734 M 0.271 3.247 L 0.015 3.796 M 0.115 3.06 L 0.021 3.263 M 5.975 3.361 L 5.448 4.492 M 5.909 2.982 L 5.204 4.493 M 5.684 2.944 L 4.974 4.467 M 5.44 2.947 L 4.802 4.315 M 5.187 2.969 L 4.659 4.1 M 4.946 2.966 L 4.588 3.732 M 4.74 2.886 L 4.503 3.394 M 0.071 5.713 L 0.377 5.825 M 5.593 0.008 L 5.91 0.123 M 5.004 0.027 L 5.946 0.37 M 5.175 4.685 L 5.752 4.895 M 5.065 4.879 L 5.958 5.204 M 4.985 5.084 L 5.972 5.443 M 4.98 5.316 L 5.942 5.666 M 4.923 5.53 L 5.915 5.891 M 4.818 5.726 L 5.511 5.978";
+  /** Ground that is not plain floor, drawn without any fill colour: one rectangle for the level default, then per area in order a polygon that clears what lies beneath and, for solid and drop, one carrying the pattern. Drawn under the grid.
+   * @param {Model} m @param {Bounds} b @param {string} id @param {string} sheet @param {Palette} c */
+  function terrainLayer(m, b, id, sheet, c) {
+    const base = m.terrain?.default ?? "floor",
+      areas = m.terrain?.areas ?? [];
+    if (base === "floor" && !areas.length) return "";
+    const kinds = new Set([base, ...areas.map((a) => a.kind)]);
+    const patterns = {
+      solid: `<pattern id="${id}-solid" width="${ROCK_TILE}" height="${ROCK_TILE}" patternUnits="userSpaceOnUse"><path d="${ROCK_STROKES}" fill="none" stroke="${c.rock}" stroke-width=".018" stroke-linecap="round"/></pattern>`,
+      drop: `<pattern id="${id}-drop" width=".3" height=".3" patternUnits="userSpaceOnUse"><path d="M -.1 .1 L .1 -.1 M 0 .3 L .3 0 M .2 .4 L .4 .2 M -.1 .4 L .4 -.1" fill="none" stroke="${c.rock}" stroke-width=".015"/></pattern>`,
+    };
+    let s = `<defs>${kinds.has("solid") ? patterns.solid : ""}${kinds.has("drop") ? patterns.drop : ""}</defs>`;
+    if (base !== "floor")
+      s += `<rect data-terrain="${base}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id}-${base})"/>`;
+    for (const a of areas) {
+      const points = a.points.map((p) => p.join(",")).join(" ");
+      if (a.kind === "floor")
+        s += `<polygon data-terrain-area="${esc(a.id)}" data-terrain-kind="floor" points="${points}" fill="${sheet}"/>`;
+      else
+        s += `<polygon points="${points}" fill="${sheet}"/><polygon data-terrain-area="${esc(a.id)}" data-terrain-kind="${a.kind}" points="${points}" fill="url(#${id}-${a.kind})"/>`;
+    }
+    return s;
+  }
   /** @param {Model} m @param {Bounds} b @param {SceneOptions} [options] */
   function scene(
     m,
@@ -537,6 +618,7 @@ const Geometry = (() => {
       [ox, oy] = m.origin ?? [0, 0],
       [gx, gy] = m.gridOrigin ?? [0, 0];
     let s = `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${background}"/>`;
+    s += terrainLayer(m, b, id, background, c);
     s += `<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(${gx} ${gy})"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="${c.grid}" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
     if (m.origin && showAxes) s += pageBorders(b, ox, oy, gridStroke, c);
     if (m.origin && showAxes)
@@ -798,6 +880,8 @@ const Geometry = (() => {
     length,
     doorThickness,
     accessOpening,
+    inside,
+    terrainAt,
     validate,
     bounds,
     scene,
@@ -876,21 +960,7 @@ const Fog = (() => {
       if (l.blocksSight === true) edges.push([l.a, l.b]);
     return { polygons, edges };
   }
-  function inside(point, polygon) {
-    let result = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      // eslint-disable-next-line security/detect-object-injection -- Numeric indices into a local polygon array.
-      const a = polygon[i],
-        // eslint-disable-next-line security/detect-object-injection -- Numeric indices into a local polygon array.
-        b = polygon[j];
-      if (
-        a[1] > point[1] !== b[1] > point[1] &&
-        point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]
-      )
-        result = !result;
-    }
-    return result;
-  }
+  const { inside } = Geometry;
   function distance(point, [a, b]) {
     const dx = b[0] - a[0],
       dy = b[1] - a[1],
@@ -1015,7 +1085,11 @@ const Fog = (() => {
       cache.set(key, r);
       return r;
     }
-    const r = visible(o, blockers(m, o.doors));
+    // Nothing is seen from inside solid ground, whatever walls surround it.
+    const r =
+      Geometry.terrainAt(m, o.at) === "solid"
+        ? { polygon: [], edges: [] }
+        : visible(o, blockers(m, o.doors));
     cache.set(key, r);
     if (cache.size > cacheLimit) cache.delete(cache.keys().next().value);
     return r;

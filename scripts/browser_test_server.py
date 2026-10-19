@@ -44,6 +44,16 @@ def main():
                     "labels": [
                         {"id": "lower-label", "at": [0, 0], "text": "LOWER LEVEL"}
                     ],
+                    "terrain": {
+                        "default": "solid",
+                        "areas": [
+                            {
+                                "id": "chamber",
+                                "kind": "floor",
+                                "points": [[-4, -4], [4, -4], [4, 4], [-4, 4]],
+                            }
+                        ],
+                    },
                 }
             )
         )
