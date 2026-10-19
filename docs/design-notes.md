@@ -80,6 +80,8 @@ Proposed handling of revisions, still to validate:
 
 ## Themes and styling
 
+Implemented: Edit has a light theme (the default) and a Blueprint theme (white linework, salmon axes and yellow drawing marks on a cyanotype-blue sheet), switched with the Blueprint toolbar button or B. The choice is one browser preference shared by all plans. It changes only colours: the grid, axes, geometry and door states are unaffected. Play, export and print always use the light drawing.
+
 Requested direction, not implemented:
 
 - Apply different themes/styles to the same model without changing its layout or physical meaning.

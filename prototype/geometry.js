@@ -18,7 +18,7 @@
  * @typedef {{version: number, observers: Observer[], observations: Observation[], revisions: Record<string, Model>, doors: Doors, visibilityPaused?: boolean}} Exploration
  * @typedef {{polygon: Point[], edges: Point[][]}} Region
  * @typedef {{x: number, y: number, w: number, h: number}} Bounds
- * @typedef {{id?: string, gridStroke?: number, background?: string, showAxes?: boolean, showTicks?: boolean, doorStates?: Doors, render?: (m: Model, b: Bounds, options?: SceneOptions) => string}} SceneOptions
+ * @typedef {{id?: string, gridStroke?: number, theme?: string, background?: string, showAxes?: boolean, showTicks?: boolean, doorStates?: Doors, render?: (m: Model, b: Bounds, options?: SceneOptions) => string}} SceneOptions
  */
 
 // Portable pure model/geometry functions. No DOM or network dependencies.
@@ -439,16 +439,48 @@ const Geometry = (() => {
       h: Math.max(...ys) - Math.min(...ys),
     };
   }
+  /** Colours of the drawing. `sheet` is the paper, also used to knock out linework behind labels. Blueprint is white linework on a cyanotype sheet; its axes are salmon rather than red so they stay legible on blue.
+   * @typedef {{sheet: string, grid: string, ink: string, inkSoft: string, doorFill: string, label: string, axis: string, armStroke: string}} Palette */
+  /** @type {Record<string, Palette>} */
+  const THEMES = {
+    light: {
+      sheet: "white",
+      grid: "#9aa79f",
+      ink: "#27332e",
+      inkSoft: "#536158",
+      doorFill: "#eef1ef",
+      label: "#263c30",
+      axis: "#d62929",
+      armStroke: "black",
+    },
+    blueprint: {
+      sheet: "#1c4f8f",
+      grid: "#6f9bd6",
+      ink: "#eef4ff",
+      inkSoft: "#b7cdee",
+      doorFill: "#1c4f8f",
+      label: "#eef4ff",
+      axis: "#ff9a8a",
+      armStroke: "#eef4ff",
+    },
+  };
+  /** @param {string} theme */
+  function palette(theme) {
+    // eslint-disable-next-line security/detect-object-injection -- Theme names are validated against the declared table.
+    const c = Object.hasOwn(THEMES, theme) ? THEMES[theme] : undefined;
+    if (!c) throw Error(`Unknown theme ${theme}`);
+    return c;
+  }
   /** Tick marks and metre numbers every 3 m along the reference axes, so positions can be quoted to the agent. X grows right and Y grows up, so a tick above the origin is positive although model y grows downward.
-   * @param {Bounds} b @param {number} ox @param {number} oy @param {number} gridStroke */
-  function axisTicks(b, ox, oy, gridStroke) {
+   * @param {Bounds} b @param {number} ox @param {number} oy @param {number} gridStroke @param {Palette} c */
+  function axisTicks(b, ox, oy, gridStroke, c) {
     let step = 3;
     while (Math.max(b.w, b.h) / step > 40) step *= 2;
     const size = Math.max(0.3, step / 10),
       stroke = gridStroke * 1.5,
       text = (/** @type {string} */ attrs, /** @type {number} */ value) =>
-        `<text data-axis-tick ${attrs} font-family="sans-serif" font-size="${size}" fill="#d62929" stroke="white" stroke-width="${size / 5}" paint-order="stroke">${value}</text>`;
-    let s = `<g data-axis-ticks stroke="#d62929" stroke-width="${stroke}">`;
+        `<text data-axis-tick ${attrs} font-family="sans-serif" font-size="${size}" fill="${c.axis}" stroke="${c.sheet}" stroke-width="${size / 5}" paint-order="stroke">${value}</text>`;
+    let s = `<g data-axis-ticks stroke="${c.axis}" stroke-width="${stroke}">`;
     for (
       let k = Math.ceil((b.x - ox) / step);
       ox + k * step <= b.x + b.w;
@@ -478,14 +510,14 @@ const Geometry = (() => {
     return s + "</g>";
   }
   /** Dashed A4 page borders (21 m by 15 m, the printed sheet at the 1.5 m grid) repeating the origin cross; the axes themselves are the borders at zero and are drawn solid.
-   * @param {Bounds} b @param {number} ox @param {number} oy @param {number} gridStroke */
-  function pageBorders(b, ox, oy, gridStroke) {
+   * @param {Bounds} b @param {number} ox @param {number} oy @param {number} gridStroke @param {Palette} c */
+  function pageBorders(b, ox, oy, gridStroke, c) {
     let d = "";
     for (let k = Math.ceil((b.x - ox) / 21); ox + k * 21 <= b.x + b.w; k++)
       if (k) d += `M ${ox + k * 21} ${b.y} V ${b.y + b.h} `;
     for (let k = Math.ceil((b.y - oy) / 15); oy + k * 15 <= b.y + b.h; k++)
       if (k) d += `M ${b.x} ${oy + k * 15} H ${b.x + b.w} `;
-    return `<path data-page-borders d="${d.trim()}" fill="none" stroke="#d62929" stroke-opacity=".6" stroke-width="${gridStroke * 1.5}" stroke-dasharray="${gridStroke * 12} ${gridStroke * 8}"/>`;
+    return `<path data-page-borders d="${d.trim()}" fill="none" stroke="${c.axis}" stroke-opacity=".6" stroke-width="${gridStroke * 1.5}" stroke-dasharray="${gridStroke * 12} ${gridStroke * 8}"/>`;
   }
   /** @param {Model} m @param {Bounds} b @param {SceneOptions} [options] */
   function scene(
@@ -494,24 +526,26 @@ const Geometry = (() => {
     {
       id = "grid",
       gridStroke = 0.018,
-      background = "white",
+      theme = "light",
+      background = palette(theme).sheet,
       showAxes = true,
       showTicks = false,
       doorStates = {},
     } = {},
   ) {
-    const [ox, oy] = m.origin ?? [0, 0],
+    const c = palette(theme),
+      [ox, oy] = m.origin ?? [0, 0],
       [gx, gy] = m.gridOrigin ?? [0, 0];
     let s = `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${background}"/>`;
-    s += `<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(${gx} ${gy})"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="#9aa79f" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
-    if (m.origin && showAxes) s += pageBorders(b, ox, oy, gridStroke);
+    s += `<defs><pattern id="${id}" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(${gx} ${gy})"><path d="M 1.5 0 H 0 V 1.5" fill="none" stroke="${c.grid}" stroke-width="${gridStroke}"/></pattern></defs><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="url(#${id})"/>`;
+    if (m.origin && showAxes) s += pageBorders(b, ox, oy, gridStroke, c);
     if (m.origin && showAxes)
-      s += `<path d="M ${b.x} ${oy} H ${b.x + b.w} M ${ox} ${b.y} V ${b.y + b.h}" fill="none" stroke="#d62929" stroke-width="${gridStroke * 1.5}"/>`;
+      s += `<path d="M ${b.x} ${oy} H ${b.x + b.w} M ${ox} ${b.y} V ${b.y + b.h}" fill="none" stroke="${c.axis}" stroke-width="${gridStroke * 1.5}"/>`;
     if (m.origin && showAxes && showTicks)
-      s += axisTicks(b, ox, oy, gridStroke);
+      s += axisTicks(b, ox, oy, gridStroke, c);
     for (const w of m.walls)
       for (const p of wallPolygons(m, w))
-        s += `<polygon data-wall="${esc(w.id)}" points="${p.map((p) => p.join(",")).join(" ")}" fill="#27332e"/>`;
+        s += `<polygon data-wall="${esc(w.id)}" points="${p.map((p) => p.join(",")).join(" ")}" fill="${c.ink}"/>`;
     for (const r of m.outlines ?? []) {
       if (r.sides) {
         const [x, y] = r.at,
@@ -540,9 +574,9 @@ const Geometry = (() => {
             return `M ${a.join(" ")} L ${b.join(" ")}`;
           })
           .join(" ");
-        s += `<path data-outline="${esc(r.id)}" d="${d}" fill="none" stroke="#27332e" stroke-width="${r.stroke ?? 0.025}"${r.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
+        s += `<path data-outline="${esc(r.id)}" d="${d}" fill="none" stroke="${c.ink}" stroke-width="${r.stroke ?? 0.025}"${r.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
       } else
-        s += `<rect data-outline="${esc(r.id)}" x="${r.at[0]}" y="${r.at[1]}" width="${r.width}" height="${r.height}" fill="none" stroke="#27332e" stroke-width="${r.stroke ?? 0.025}"${r.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
+        s += `<rect data-outline="${esc(r.id)}" x="${r.at[0]}" y="${r.at[1]}" width="${r.width}" height="${r.height}" fill="none" stroke="${c.ink}" stroke-width="${r.stroke ?? 0.025}"${r.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
     }
     for (const o of m.openings
       .map((o) => accessOpening(m, o))
@@ -572,7 +606,7 @@ const Geometry = (() => {
           [b, -half],
           [a, -half],
         ].map(([d, n]) => [w.a[0] + ux * d - uy * n, w.a[1] + uy * d + ux * n]);
-        s += `<polygon data-door="${esc(o.id)}" data-door-state="${open ? "open" : "closed"}" points="${points.map((p) => p.join(",")).join(" ")}" fill="${open ? "none" : "#eef1ef"}" stroke="${open ? "#536158" : "#27332e"}" stroke-width=".025"${open ? ' stroke-dasharray=".08 .06"' : ""}/>`;
+        s += `<polygon data-door="${esc(o.id)}" data-door-state="${open ? "open" : "closed"}" points="${points.map((p) => p.join(",")).join(" ")}" fill="${open ? "none" : c.doorFill}" stroke="${open ? c.inkSoft : c.ink}" stroke-width=".025"${open ? ' stroke-dasharray=".08 .06"' : ""}/>`;
       }
       if (instance) s += "</g>";
     }
@@ -597,20 +631,20 @@ const Geometry = (() => {
         b[0] - ux * r * Math.cos(angle) + nx * r * Math.sin(angle),
         b[1] - uy * r * Math.cos(angle) + ny * r * Math.sin(angle),
       ];
-      s += `<path data-door="${esc(o.id)}" d="M ${a.join(" ")} L ${ae.join(" ")} M ${b.join(" ")} L ${be.join(" ")}" fill="none" stroke="#27332e" stroke-width=".045"/>`;
-      s += `<path d="M ${ae.join(" ")} A ${r} ${r} 0 0 0 ${mid.join(" ")} M ${be.join(" ")} A ${r} ${r} 0 0 1 ${mid.join(" ")}" fill="none" stroke="#536158" stroke-width=".025"/>`;
+      s += `<path data-door="${esc(o.id)}" d="M ${a.join(" ")} L ${ae.join(" ")} M ${b.join(" ")} L ${be.join(" ")}" fill="none" stroke="${c.ink}" stroke-width=".045"/>`;
+      s += `<path d="M ${ae.join(" ")} A ${r} ${r} 0 0 0 ${mid.join(" ")} M ${be.join(" ")} A ${r} ${r} 0 0 1 ${mid.join(" ")}" fill="none" stroke="${c.inkSoft}" stroke-width=".025"/>`;
     }
-    for (const c of m.circles ?? [])
-      s += `<circle data-symbol="${esc(c.id)}" cx="${c.at[0]}" cy="${c.at[1]}" r="${c.radius}" fill="none" stroke="#27332e" stroke-width="${c.stroke ?? 0.025}"${c.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
+    for (const circle of m.circles ?? [])
+      s += `<circle data-symbol="${esc(circle.id)}" cx="${circle.at[0]}" cy="${circle.at[1]}" r="${circle.radius}" fill="none" stroke="${c.ink}" stroke-width="${circle.stroke ?? 0.025}"${circle.dashed ? ' stroke-dasharray=".1 .07"' : ""}/>`;
     for (const l of m.lines ?? [])
-      s += `<path data-symbol="${esc(l.id)}" d="M ${l.a.join(" ")} L ${l.b.join(" ")}" fill="none" stroke="#27332e" stroke-width="${l.stroke ?? 0.025}"/>`;
+      s += `<path data-symbol="${esc(l.id)}" d="M ${l.a.join(" ")} L ${l.b.join(" ")}" fill="none" stroke="${c.ink}" stroke-width="${l.stroke ?? 0.025}"/>`;
     for (const iron of m.stepIrons ?? []) {
       const [x, y] = iron.at,
         w = iron.width / 2,
         d = iron.projection,
         r = iron.radius,
         dir = iron.direction ?? 1;
-      s += `<path data-symbol="${esc(iron.id)}" transform="translate(${x} ${y}) scale(${dir} 1)" d="M 0 ${-w} H ${d - r} Q ${d} ${-w} ${d} ${-w + r} V ${w - r} Q ${d} ${w} ${d - r} ${w} H 0" fill="none" stroke="#27332e" stroke-width="${iron.stroke ?? 0.035}" stroke-linecap="round"/>`;
+      s += `<path data-symbol="${esc(iron.id)}" transform="translate(${x} ${y}) scale(${dir} 1)" d="M 0 ${-w} H ${d - r} Q ${d} ${-w} ${d} ${-w + r} V ${w - r} Q ${d} ${w} ${d - r} ${w} H 0" fill="none" stroke="${c.ink}" stroke-width="${iron.stroke ?? 0.035}" stroke-linecap="round"/>`;
     }
     for (const stair of m.spiralStairs ?? []) {
       const [cx, cy] = stair.at,
@@ -623,14 +657,14 @@ const Geometry = (() => {
       };
       const start = point(r, startAngle),
         end = point(r, startAngle + sweep);
-      s += `<g data-symbol="${esc(stair.id)}" stroke="#27332e" fill="none"><path d="M ${start.join(" ")} A ${r} ${r} 0 1 1 ${end.join(" ")}" stroke-width=".035"/>`;
+      s += `<g data-symbol="${esc(stair.id)}" stroke="${c.ink}" fill="none"><path d="M ${start.join(" ")} A ${r} ${r} 0 1 1 ${end.join(" ")}" stroke-width=".035"/>`;
       for (let i = 0; i <= stair.treads; i++) {
         const angle = startAngle + (sweep * i) / stair.treads,
           a = point(0.12, angle),
           b = point(r, angle);
         s += `<path d="M ${a.join(" ")} L ${b.join(" ")}" stroke-width=".025"/>`;
       }
-      s += `<circle cx="${cx}" cy="${cy}" r=".1" fill="#27332e" stroke="none"/>`;
+      s += `<circle cx="${cx}" cy="${cy}" r=".1" fill="${c.ink}" stroke="none"/>`;
       const ar = r * 0.6,
         a = point(ar, startAngle + 25),
         b = point(ar, startAngle + sweep - 30),
@@ -638,8 +672,8 @@ const Geometry = (() => {
       const tip = b,
         back = [b[0] + 0.18 * Math.sin(angle), b[1] - 0.18 * Math.cos(angle)],
         normal = [Math.cos(angle) * 0.075, Math.sin(angle) * 0.075];
-      s += `<path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke="white" stroke-width=".1"/><path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke-width=".035"/><polygon points="${tip.join(",")} ${[back[0] + normal[0], back[1] + normal[1]].join(",")} ${[back[0] - normal[0], back[1] - normal[1]].join(",")}" fill="#27332e" stroke="none"/>`;
-      s += `<rect x="${cx - 1.05}" y="${cy + 0.3}" width=".86" height=".26" fill="white" stroke="none"/><text x="${cx - 0.62}" y="${cy + 0.49}" text-anchor="middle" font-family="sans-serif" font-size=".2" fill="#27332e" stroke="none">${stair.direction === "up" ? "UP" : "DOWN"}</text></g>`;
+      s += `<path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke="${c.sheet}" stroke-width=".1"/><path d="M ${a.join(" ")} A ${ar} ${ar} 0 1 1 ${b.join(" ")}" stroke-width=".035"/><polygon points="${tip.join(",")} ${[back[0] + normal[0], back[1] + normal[1]].join(",")} ${[back[0] - normal[0], back[1] - normal[1]].join(",")}" fill="${c.ink}" stroke="none"/>`;
+      s += `<rect x="${cx - 1.05}" y="${cy + 0.3}" width=".86" height=".26" fill="${c.sheet}" stroke="none"/><text x="${cx - 0.62}" y="${cy + 0.49}" text-anchor="middle" font-family="sans-serif" font-size=".2" fill="${c.ink}" stroke="none">${stair.direction === "up" ? "UP" : "DOWN"}</text></g>`;
     }
     for (const instance of m.components ?? []) {
       if (instance.opening) continue;
@@ -661,9 +695,9 @@ const Geometry = (() => {
           family === "iris-valve" ||
           definition.details.profile === "referee-2026-10-11"
         )
-          s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025">${verticalAccessSymbol(family, width, length, direction)}</g>`;
+          s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="${c.ink}" stroke-width=".025">${verticalAccessSymbol(family, width, length, direction)}</g>`;
         else {
-          s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})"><circle cx="${width / 2}" cy="${length / 2}" r="${Math.min(width, length) / 2}" fill="none" stroke="#27332e" stroke-width=".025" stroke-dasharray=".1 .07"/><text x="${width / 2}" y="${length / 2}" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size=".16" fill="#27332e">${direction.toUpperCase()}</text></g>`;
+          s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" data-access-direction="${direction}" data-access-state="${state}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})"><circle cx="${width / 2}" cy="${length / 2}" r="${Math.min(width, length) / 2}" fill="none" stroke="${c.ink}" stroke-width=".025" stroke-dasharray=".1 .07"/><text x="${width / 2}" y="${length / 2}" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size=".16" fill="${c.ink}">${direction.toUpperCase()}</text></g>`;
         }
         continue;
       }
@@ -672,10 +706,10 @@ const Geometry = (() => {
         m.componentDefinitions?.[instance.definition].details.profile ===
           "referee-2026-10-11"
       ) {
-        s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025">${family === "chair" ? chairSymbol(width, length) : family === "bed" ? bedSymbol(width, length, headDepth) : consoleSymbol(width, length, seatCount, m.componentDefinitions[instance.definition].details.desk === true)}</g>`;
+        s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="${c.ink}" stroke-width=".025">${family === "chair" ? chairSymbol(width, length, c) : family === "bed" ? bedSymbol(width, length, headDepth) : consoleSymbol(width, length, seatCount, m.componentDefinitions[instance.definition].details.desk === true, c)}</g>`;
         continue;
       }
-      s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="#27332e" stroke-width=".025"><rect width="${width}" height="${length}"/>`;
+      s += `<g data-component="${esc(instance.id)}" data-definition="${esc(instance.definition)}" transform="translate(${instance.at.join(" ")}) rotate(${instance.rotation})" fill="none" stroke="${c.ink}" stroke-width=".025"><rect width="${width}" height="${length}"/>`;
       if (family === "bed")
         s += `<rect x="${width * 0.12}" y="${Math.min(0.06, length * 0.05)}" width="${width * 0.76}" height="${Math.min(headDepth, length * 0.3)}" rx=".04"/><path d="M 0 ${length * 0.4} H ${width}"/>`;
       else if (family === "console") {
@@ -694,17 +728,17 @@ const Geometry = (() => {
       s += `</g>`;
     }
     for (const l of m.labels)
-      s += `<text x="${l.at[0]}" y="${l.at[1]}" font-family="sans-serif" font-size="${l.size ?? 0.4}" text-anchor="middle" dominant-baseline="central" fill="#263c30">${esc(l.text)}</text>`;
+      s += `<text x="${l.at[0]}" y="${l.at[1]}" font-family="sans-serif" font-size="${l.size ?? 0.4}" text-anchor="middle" dominant-baseline="central" fill="${c.label}">${esc(l.text)}</text>`;
     return s;
   }
-  function consoleSymbol(width, length, seatCount, desk) {
+  function consoleSymbol(width, length, seatCount, desk, c) {
     const depth = Math.min(0.55, length * 0.42);
     let symbol = desk
       ? `<path data-console-desk="" d="M .06 0 H ${width - 0.06} Q ${width} 0 ${width} .06 V ${depth - 0.06} Q ${width / 2} ${depth + 0.04} 0 ${depth - 0.06} V .06 Q 0 0 .06 0 Z"/>`
       : "";
     for (let i = 0; i < seatCount; i++) {
       const x = ((i + 0.5) * width) / seatCount;
-      symbol += `<g data-console-station="${i + 1}"><path data-console-display="${i + 1}" d="M ${x - 0.38} .24 Q ${x} -.06 ${x + 0.38} .24"/><path data-console-support="${i + 1}" d="M ${x - 0.07} .1 L ${x - 0.06} .2 M ${x + 0.07} .1 L ${x + 0.06} .2"/><rect data-console-keyboard="${i + 1}" x="${x - 0.25}" y=".2" width=".5" height=".15" rx=".05"/><g data-console-seat="${i + 1}" transform="translate(${x - 0.3} ${length - 0.8})">${chairSymbol(0.6, 0.75)}</g></g>`;
+      symbol += `<g data-console-station="${i + 1}"><path data-console-display="${i + 1}" d="M ${x - 0.38} .24 Q ${x} -.06 ${x + 0.38} .24"/><path data-console-support="${i + 1}" d="M ${x - 0.07} .1 L ${x - 0.06} .2 M ${x + 0.07} .1 L ${x + 0.06} .2"/><rect data-console-keyboard="${i + 1}" x="${x - 0.25}" y=".2" width=".5" height=".15" rx=".05"/><g data-console-seat="${i + 1}" transform="translate(${x - 0.3} ${length - 0.8})">${chairSymbol(0.6, 0.75, c)}</g></g>`;
     }
     return symbol;
   }
@@ -715,10 +749,10 @@ const Geometry = (() => {
     return `<rect data-bed-frame="" width="${width}" height="${length}" rx="${radius}"/><rect data-bed-pillow="" x="${width * 0.08}" y=".04" width="${width * 0.84}" height="${pillowHeight}" rx="${radius}"/><path data-bed-blanket="" d="M 0 ${blanketTop} H ${width}"/>`;
   }
   // Local front is toward negative Y; backrest stays behind the seated occupant.
-  function chairSymbol(width, length) {
+  function chairSymbol(width, length, c) {
     const point = (x, y) => `${x * width} ${y * length}`;
     const armAngle = (Math.atan2(width * 0.12, length * 0.43) * 180) / Math.PI;
-    return `<path data-chair-seat="" d="M ${point(0.17, 0.12)} Q ${point(0.08, 0.12)} ${point(0.08, 0.22)} L ${point(0.2, 0.65)} Q ${point(0.5, 0.75)} ${point(0.8, 0.65)} L ${point(0.92, 0.22)} Q ${point(0.92, 0.12)} ${point(0.83, 0.12)} Z"/><path data-chair-back="" d="M ${point(0.15, 0.7)} Q ${point(0.5, 0.84)} ${point(0.85, 0.7)} Q ${point(0.94, 0.76)} ${point(0.85, 0.83)} Q ${point(0.5, 0.97)} ${point(0.15, 0.83)} Q ${point(0.06, 0.76)} ${point(0.15, 0.7)} Z"/><g data-chair-arm="left" transform="translate(0 ${length * 0.26}) rotate(${-armAngle})" fill="white" stroke="black"><rect width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/></g><g data-chair-arm="right" transform="translate(${width * 0.87} ${length * 0.26}) rotate(${armAngle})" fill="white" stroke="black"><rect width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/></g>`;
+    return `<path data-chair-seat="" d="M ${point(0.17, 0.12)} Q ${point(0.08, 0.12)} ${point(0.08, 0.22)} L ${point(0.2, 0.65)} Q ${point(0.5, 0.75)} ${point(0.8, 0.65)} L ${point(0.92, 0.22)} Q ${point(0.92, 0.12)} ${point(0.83, 0.12)} Z"/><path data-chair-back="" d="M ${point(0.15, 0.7)} Q ${point(0.5, 0.84)} ${point(0.85, 0.7)} Q ${point(0.94, 0.76)} ${point(0.85, 0.83)} Q ${point(0.5, 0.97)} ${point(0.15, 0.83)} Q ${point(0.06, 0.76)} ${point(0.15, 0.7)} Z"/><g data-chair-arm="left" transform="translate(0 ${length * 0.26}) rotate(${-armAngle})" fill="${c.sheet}" stroke="${c.armStroke}"><rect width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/></g><g data-chair-arm="right" transform="translate(${width * 0.87} ${length * 0.26}) rotate(${armAngle})" fill="${c.sheet}" stroke="${c.armStroke}"><rect width="${width * 0.13}" height="${length * 0.36}" rx="${width * 0.065}"/></g>`;
   }
   const papers = {
     a4: { w: 297, h: 210, tw: 21, th: 15, name: "A4 landscape" },

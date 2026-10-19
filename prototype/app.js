@@ -50,6 +50,9 @@ function writeStored(key, value) {
 function positive(n) {
   return typeof n === "number" && Number.isFinite(n) && n > 0;
 }
+// One preference for every plan: how Edit looks, not part of any layout.
+const themeKey = "rpgcad.editTheme";
+let blueprint = readStored(themeKey) === "blueprint";
 const storedCalibration = readStored(calibrationKey);
 if (storedCalibration !== null) {
   if (
@@ -182,6 +185,7 @@ function updateEditTools() {
         : sketchTool
       : "play";
   element("origin-tool").setAttribute("aria-pressed", String(placingOrigin));
+  element("theme-tool").setAttribute("aria-pressed", String(blueprint));
   element("pen-tool").setAttribute(
     "aria-pressed",
     String(sketchTool === "pen"),
@@ -200,14 +204,15 @@ function penPoint(event) {
   ];
 }
 function sketchDrawing() {
+  const mark = blueprint ? "#ffd24a" : "#216bc6";
   return [...strokes, ...(penStroke ? [penStroke] : [])]
     .map((stroke) => {
       if (stroke.length === 1)
-        return `<circle data-sketch-stroke cx="${stroke[0][0]}" cy="${stroke[0][1]}" r="${camera.mpp * 3}" fill="#216bc6"/>`;
+        return `<circle data-sketch-stroke cx="${stroke[0][0]}" cy="${stroke[0][1]}" r="${camera.mpp * 3}" fill="${mark}"/>`;
       const path = stroke
         .map((point, i) => `${i ? "L" : "M"} ${point.join(" ")}`)
         .join(" ");
-      return `<path data-sketch-stroke d="${path}" fill="none" stroke="#216bc6" stroke-width="${camera.mpp * 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      return `<path data-sketch-stroke d="${path}" fill="none" stroke="${mark}" stroke-width="${camera.mpp * 2.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
     })
     .join("");
 }
@@ -1283,7 +1288,11 @@ function draw() {
     gridStroke: camera.mpp * 0.8,
     showAxes: editing,
     showTicks: editing,
-    ...(editing ? { background: "#f1f5fa" } : {}),
+    ...(editing
+      ? blueprint
+        ? { theme: "blueprint" }
+        : { background: "#f1f5fa" }
+      : {}),
   };
   if (fogEnabled && gmView) {
     viewport.innerHTML = Geometry.scene(model, b, {
@@ -1931,6 +1940,20 @@ const commandUi = installCommands(
       run: () => selectSketchTool("pan"),
     },
     {
+      id: "blueprint",
+      label: "Blueprint",
+      keys: ["B"],
+      scope: "edit",
+      repeat: false,
+      announce: false,
+      run: () => {
+        blueprint = !blueprint;
+        writeStored(themeKey, blueprint ? "blueprint" : "light");
+        updateEditTools();
+        draw();
+      },
+    },
+    {
       id: "components",
       label: "Components",
       keys: ["C"],
@@ -2110,6 +2133,7 @@ commandUi.bind("#export-pdf", "export-pdf");
 commandUi.bind("#pen-tool", "pen");
 commandUi.bind("#pan-tool", "pan");
 commandUi.bind("#components-tool", "components");
+commandUi.bind("#theme-tool", "blueprint");
 commandUi.bind("#close-components", "dismiss");
 commandUi.bind('[data-zoom="in"]', "zoom-in");
 commandUi.bind('[data-zoom="out"]', "zoom-out");

@@ -3,6 +3,7 @@
 - Move origin (arms a crosshair; the next click puts the red cross on the nearest grid crossing and saves it once on the plan, for all levels; Esc cancels) — Edit — add — O
 - Pen — Edit — Edit — P
 - Pan (tool) — Edit — move — H
+- Blueprint (toggle the Edit sheet between the light drawing and white linework on blue; remembered across sessions; screen only, so print and export stay light) — Edit — contrast — B
 - Components — Edit — apps — C
 - Undo drawing marks — Edit — undo — ⌘Z
 - Clear marks — Edit — erase — ⇧⌫
@@ -72,6 +73,7 @@ Only one button, but switching based on mode.
 - Pan (tool) — Edit — move — H
 - Pen — Edit — Edit — P
 - Components — Edit — apps — C
+- Blueprint — Edit — contrast — B
 - Undo drawing marks — Edit — undo — ⌘Z
 - Clear marks — Edit — erase — ⇧⌫
 
