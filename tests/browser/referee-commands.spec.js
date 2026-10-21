@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 test("Toggle fog requires Shift-F and is discoverable without stealing tab navigation", async ({
   page,
@@ -9,7 +9,7 @@ test("Toggle fog requires Shift-F and is discoverable without stealing tab navig
     /./,
   );
   const viewport = page.locator("#viewport");
-  const fog = page.locator("#gm-view");
+  const fog = page.locator("#toggle-fog");
   const before = await viewport.getAttribute("viewBox");
   await page.keyboard.press("v");
   await page.keyboard.press("Shift+V");

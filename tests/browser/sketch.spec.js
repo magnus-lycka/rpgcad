@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 test.beforeEach(async ({ request }) => {
   for (const query of ["", "?level=below"]) {

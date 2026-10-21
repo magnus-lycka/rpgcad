@@ -1,7 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-
-preserveBrowserFixture(test);
+import { test, expect, appReady } from "../fixtures/app-test.js";
 
 const ada = {
   id: "ada",
@@ -164,6 +161,7 @@ test("Move to level sends the character to the chosen level", async ({
     .selectOption("below");
   await expect.poll(async () => (await saved(request))[0].level).toBe("below");
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
 });
 
 test("Remove character deletes it and closes the popup", async ({
@@ -241,8 +239,8 @@ test("typing shortcut characters in the popup edits text instead of running comm
   await name.press("Shift+E");
   await expect(page.locator("body")).toHaveAttribute("data-mode", "play");
   await expect(page.locator("#viewport")).toHaveAttribute(
-    "data-gm-view",
-    "false",
+    "data-fog-on",
+    "true",
   );
   await expect(name).toHaveValue("fgrs+-E");
 });

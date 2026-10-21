@@ -137,6 +137,11 @@ def main():
                 }
             )
         )
+        # Tests restore exactly this data before and after every test.
+        pristine = target / "pristine"
+        pristine.mkdir()
+        for path in target.glob("*.json"):
+            shutil.copy(path, pristine / path.name)
         port = os.environ.get("RPGCAD_TEST_PORT", "8766")
         if port == "8765":
             raise ValueError("The disposable fixture must not use the live port")

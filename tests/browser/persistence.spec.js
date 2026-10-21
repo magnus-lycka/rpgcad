@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 /** @param {import('@playwright/test').Page} page */
 async function ready(page) {

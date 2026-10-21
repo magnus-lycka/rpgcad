@@ -1,7 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-
-preserveBrowserFixture(test);
+import { test, expect } from "../fixtures/app-test.js";
 
 test("Designer browses previews and details directly without leaving the drawing", async ({
   page,

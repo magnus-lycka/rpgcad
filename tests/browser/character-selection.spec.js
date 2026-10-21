@@ -1,7 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-
-preserveBrowserFixture(test);
+import { test, expect, appReady } from "../fixtures/app-test.js";
 
 const roster = [
   {
@@ -268,6 +265,7 @@ test("a group level change moves every selected character", async ({
       ["guard", "below"],
     ]);
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
   await circle(page, "ada").dblclick();
   await expect(
     page.getByRole("dialog", { name: "2 characters" }).getByRole("heading"),
@@ -351,6 +349,7 @@ test("Shift+PageDown takes the selected characters one level down, Shift+PageUp 
   await circle(page, "guard").click({ modifiers: ["Meta"] });
   await page.keyboard.press("Shift+PageDown");
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
   await revealSaved(request);
   expect((await saved(request)).map(({ id, level }) => [id, level])).toEqual([
     ["ada", "below"],
@@ -360,6 +359,7 @@ test("Shift+PageDown takes the selected characters one level down, Shift+PageUp 
   await expect(selected(page)).toHaveCount(2);
   await page.keyboard.press("Shift+PageUp");
   await expect(page).toHaveURL(/level=original/);
+  await appReady(page);
   expect((await saved(request)).map(({ level }) => level)).toEqual([
     "original",
     "original",
@@ -377,6 +377,7 @@ test("arriving on a level reveals the POV's surroundings without a nudge", async
   await circle(page, "guard").click({ modifiers: ["Meta"] });
   await page.keyboard.press("Shift+PageDown");
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observations",
     "1",
@@ -403,6 +404,7 @@ test("Move to level in the popup reveals the arrival level too", async ({
     .getByLabel("Move to level")
     .selectOption("below");
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
   await expect(page.locator("#viewport")).toHaveAttribute(
     "data-observations",
     "1",

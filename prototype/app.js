@@ -301,7 +301,7 @@ function switchMode(edit) {
   editing = edit;
   closeComponents();
   fogEnabled = !edit;
-  gmView = false;
+  fogOn = true;
   closeCharacterPopup(false);
   drag = null;
   penStroke = null;
@@ -325,7 +325,7 @@ let exploration = null;
 /** @type {import('./geometry.js').Region[]} */
 let currentVisibility = [];
 let fogEnabled = !editing,
-  gmView = false,
+  fogOn = true,
   explorationEtag = "",
   savingExploration = false,
   editGeneration = 0;
@@ -842,7 +842,7 @@ function characterDrawing() {
       (c) =>
         c.level === currentLevel &&
         (c.kind === "pc" ||
-          gmView ||
+          !fogOn ||
           currentVisibility.some((r) => Fog.inside(c.at, r.polygon))),
     )
     .map(
@@ -876,7 +876,22 @@ async function pollCharacters() {
     fit();
   else draw();
 }
+/** `data-ready` on the viewport tells callers (and tests) that the first drawing, roster and fog have loaded, no save is in flight and no arrival is pending, so input will be handled. */
+function updateReady() {
+  viewport.setAttribute(
+    "data-ready",
+    String(
+      loaded &&
+        viewSettled &&
+        (!fogEnabled || (exploration && characterEtag)) &&
+        !savingCharacters &&
+        !savingExploration &&
+        !settings.has("arrive"),
+    ),
+  );
+}
 function updateBusyControls() {
+  updateReady();
   commandUi.refreshAvailability();
   element("character-popup").setAttribute(
     "aria-busy",
@@ -1080,7 +1095,7 @@ async function setRange(range) {
 async function resetFog() {
   if (!exploration || savingExploration) return;
   Fog.reset(exploration);
-  if (gmView) toggleGmView();
+  if (!fogOn) toggleFog();
   updateVisibility();
   draw();
   await saveExploration();
@@ -1228,8 +1243,8 @@ function positionCharacterPopup() {
   characterPopup.style.left = `${left}px`;
   characterPopup.style.top = `${top}px`;
 }
-function toggleGmView() {
-  gmView = !gmView;
+function toggleFog() {
+  fogOn = !fogOn;
   draw();
 }
 
@@ -1330,7 +1345,7 @@ function draw() {
         : { background: "#f1f5fa" }
       : {}),
   };
-  if (fogEnabled && gmView) {
+  if (fogEnabled && !fogOn) {
     viewport.innerHTML = Geometry.scene(model, b, {
       ...options,
       doorStates: exploration?.doors ?? {},
@@ -1342,10 +1357,10 @@ function draw() {
   } else viewport.innerHTML = renderScene(model, b, options);
   if (editing) viewport.innerHTML += sketchDrawing();
   else viewport.innerHTML += characterDrawing();
-  viewport.setAttribute("data-gm-view", String(fogEnabled && gmView));
-  element("gm-view").setAttribute(
+  viewport.setAttribute("data-fog-on", String(fogEnabled && fogOn));
+  element("toggle-fog").setAttribute(
     "aria-pressed",
-    String(!(fogEnabled && gmView)),
+    String(fogEnabled && fogOn),
   );
   positionCharacterPopup();
   persistView();
@@ -1408,6 +1423,7 @@ async function poll() {
   } catch (error) {
     console.error("Keeping the last valid drawing:", String(error));
   } finally {
+    updateReady();
     setTimeout(poll, 250);
   }
 }
@@ -1893,12 +1909,12 @@ const commandUi = installCommands(
       run: resetFog,
     },
     {
-      id: "gm-view",
+      id: "toggle-fog",
       label: "Toggle fog",
       keys: ["Shift+F"],
       scope: "play",
       repeat: false,
-      run: toggleGmView,
+      run: toggleFog,
     },
     {
       id: "undo-marks",
@@ -2204,7 +2220,7 @@ const commandUi = installCommands(
   },
 );
 for (const id of ["add-pc", "add-npc"]) commandUi.bind(`#${id}`, id);
-commandUi.bind("#gm-view", "gm-view");
+commandUi.bind("#toggle-fog", "toggle-fog");
 commandUi.bind("#reset-fog", "reset-fog");
 commandUi.bind("#undo-stroke", "undo-marks");
 commandUi.bind("#origin-tool", "move-origin");

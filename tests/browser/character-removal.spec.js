@@ -1,7 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
+import { test, expect } from "../fixtures/app-test.js";
 import { openCharacter } from "./helpers.js";
-preserveBrowserFixture(test);
 const ada = {
   id: "ada",
   name: "Ada",

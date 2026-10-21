@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 import { PNG } from "pngjs";
 
 test.beforeEach(async ({ request }) => {
@@ -124,10 +124,10 @@ test("GM unfog shows the plan temporarily without revealing secrets to players",
   await expect(viewport).toHaveAttribute("data-observations", "0");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([203, 210, 206]);
   await page.keyboard.press("Shift+F");
-  await expect(viewport).toHaveAttribute("data-gm-view", "true");
+  await expect(viewport).toHaveAttribute("data-fog-on", "false");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([255, 255, 255]);
   await page.keyboard.press("Shift+F");
-  await expect(viewport).toHaveAttribute("data-gm-view", "false");
+  await expect(viewport).toHaveAttribute("data-fog-on", "true");
   await expect(viewport).toHaveAttribute("data-observations", "0");
   expect(await colour(viewport, [4.1, 0.7])).toEqual([203, 210, 206]);
 });

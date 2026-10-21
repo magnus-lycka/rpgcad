@@ -1,6 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
-test("play browsing, polling and temporary GM view leave play dates unchanged", async ({
+test("play browsing, polling and switching fog off and on leave play dates unchanged", async ({
   page,
   request,
 }) => {
@@ -41,8 +41,8 @@ test("play browsing, polling and temporary GM view leave play dates unchanged", 
   await page.keyboard.up("Shift");
   await page.keyboard.press("Shift+F");
   await expect(page.locator("#viewport")).toHaveAttribute(
-    "data-gm-view",
-    "true",
+    "data-fog-on",
+    "false",
   );
   await expect(page.locator("#viewport")).toContainText("DEPOT");
   await page.keyboard.press("Shift+F");

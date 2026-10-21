@@ -1,7 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 import { openCharacter } from "./helpers.js";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-preserveBrowserFixture(test);
 
 test("rejected POV range changes preserve visibility and saved exploration", async ({
   page,

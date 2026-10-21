@@ -1,4 +1,9 @@
-import { test, expect } from "@playwright/test";
+import {
+  test,
+  expect,
+  gotoWhileLoading,
+  appReady,
+} from "../fixtures/app-test.js";
 
 test("shared palette finds and runs commands in both modes and restores focus", async ({
   page,
@@ -64,6 +69,7 @@ test("shared shortcuts preserve native fields, support Ctrl and Command exports 
     if (mode === "edit") await page.keyboard.press("Shift+E");
   }
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
 });
 
 test("palette explains unavailable calibration while loading and Escape restores its launcher", async ({
@@ -78,7 +84,7 @@ test("palette explains unavailable calibration while loading and Escape restores
     await route.continue();
   });
   try {
-    await page.goto("/?mode=edit");
+    await gotoWhileLoading(page, "/?mode=edit");
     await page.locator("#pan-tool").focus();
     await page.keyboard.press("Meta+k");
     const palette = page.getByRole("dialog", { name: "Commands" });

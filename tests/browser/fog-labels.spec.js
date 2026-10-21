@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 test.beforeEach(async ({ request }) => {
   const characters = await request.get("/characters");
@@ -46,7 +46,7 @@ async function savedAction(page, action) {
   ]);
 }
 
-test("text labels are never shown in the players' fog view, even where the room is seen, but the GM view shows them", async ({
+test("text labels are never shown in the players' fog view, even where the room is seen, but they show with fog off", async ({
   page,
 }) => {
   await page.goto("/?fog=1");
@@ -68,7 +68,7 @@ test("text labels are never shown in the players' fog view, even where the room 
   await expect(viewport.locator("text")).toHaveCount(0);
 
   await page.keyboard.press("Shift+F");
-  await expect(viewport).toHaveAttribute("data-gm-view", "true");
+  await expect(viewport).toHaveAttribute("data-fog-on", "false");
   await expect(viewport).toContainText("SECRET");
 });
 

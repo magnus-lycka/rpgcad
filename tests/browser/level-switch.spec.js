@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, appReady } from "../fixtures/app-test.js";
 
 const plan = {
   id: "levels-test",
@@ -37,6 +37,7 @@ test("the Levels list shows levels top first, marks the current one and switches
   );
   await list.getByRole("button", { name: /Maintenance/ }).click();
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
   await expect(page).toHaveURL(/mode=play/);
 });
 
@@ -53,9 +54,11 @@ test("L toggles the list; PageUp and PageDown step one level and stop at the end
   await expect(list).toBeHidden();
   await page.keyboard.press("PageUp");
   await expect(page).toHaveURL(/level=original/);
+  await appReady(page);
   await expect(page.locator("#viewport pattern")).not.toHaveCount(0);
   await page.keyboard.press("PageUp");
   await expect(page.locator("#problem")).toHaveText(/top level/i);
   await page.keyboard.press("PageDown");
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
 });

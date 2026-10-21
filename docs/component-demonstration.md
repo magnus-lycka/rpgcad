@@ -10,7 +10,7 @@ The main room is 9 × 9 m between wall centre lines; the side room is 3 × 6 m. 
 
 In Edit, draw a mark and write the requested change in the existing chat. The agent reads `/sketch?plan=component-demo&level=demo`, then edits the corresponding hydrated `/model` or authoritative model path returned by `/plan`, and acknowledges the saved mark with its `submittedAt`. There is no additional submit step. A useful evaluation is to request another console seat, rotate a chair, or widen one bed, then judge recognition, access, and delay in the unchanged view. Changes to one instance should leave siblings independent.
 
-In Play, click around `[7.5, 4.5]` to reveal toward the side-room door; Shift-click its centre `[9, 4.5]` to open it. The side room should become visible through the opening. Reload retains the door state and exploration; Shift-R resets fog and door overrides. Shift-F offers a temporary GM view. Access metadata does not enforce movement. Hatch state is authored metadata, with no travel or play toggle.
+In Play, click around `[7.5, 4.5]` to reveal toward the side-room door; Shift-click its centre `[9, 4.5]` to open it. The side room should become visible through the opening. Reload retains the door state and exploration; Shift-R resets fog and door overrides. Shift-F switches fog off and on. Access metadata does not enforce movement. Hatch state is authored metadata, with no travel or play toggle.
 
 Browser Print with `region=plan` uses the existing A4 landscape, 1:75 output. Print at actual size/100%, no headers or footers: each 1.5 m square is 20 mm. The drawing has no demonstration captions, calibration rulers or additional print markings.
 

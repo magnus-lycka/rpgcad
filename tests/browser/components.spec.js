@@ -1,8 +1,5 @@
 import { readFileSync } from "node:fs";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-import { test, expect } from "@playwright/test";
-
-preserveBrowserFixture(test);
+import { test, expect } from "../fixtures/app-test.js";
 
 const furnitureDefinitions = JSON.parse(
   readFileSync("prototype/component-catalogue.json", "utf8"),

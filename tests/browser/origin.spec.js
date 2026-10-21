@@ -1,7 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-
-preserveBrowserFixture(test);
+import { test, expect } from "../fixtures/app-test.js";
 
 test("Edit marks every 3 m along the red axes with numbers; Play does not", async ({
   page,

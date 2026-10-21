@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, appReady } from "../fixtures/app-test.js";
 import { addCharacter, openCharacter } from "./helpers.js";
 import { PNG } from "pngjs";
 test.use({ actionTimeout: 5000 });
@@ -254,6 +254,7 @@ test("an NPC moved to another level can be placed there without revealing areas"
   const popup = await openCharacter(page, "guard");
   await popup.getByLabel("Move to level").selectOption("below");
   await expect(page).toHaveURL(/level=below/);
+  await appReady(page);
   await page.keyboard.press("Shift+F");
   await expect(page.locator('[data-character="guard"]')).toBeVisible();
   const start = await point(page, [4, 0]),

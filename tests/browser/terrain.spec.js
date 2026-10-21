@@ -1,8 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 import { PNG } from "pngjs";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-
-preserveBrowserFixture(test);
 
 /** Put the POV character of the lower level at a position, with nothing explored yet.
  * @param {import("@playwright/test").APIRequestContext} request @param {number[]} at */
@@ -95,7 +92,7 @@ test("a character standing on solid ground beside the chamber reveals nothing", 
   expect(await colour(viewport, [5, 0.7])).toEqual([203, 210, 206]);
 });
 
-test("undecided ground shows question marks in Edit and in the GM view, but the players' fog view shows plain rock", async ({
+test("undecided ground shows question marks in Edit and with fog off, but the players' fog view shows plain rock", async ({
   page,
 }) => {
   const marks = page.locator("#viewport pattern text", { hasText: "?" });
@@ -113,8 +110,8 @@ test("undecided ground shows question marks in Edit and in the GM view, but the 
 
   await page.keyboard.press("Shift+F");
   await expect(page.locator("#viewport")).toHaveAttribute(
-    "data-gm-view",
-    "true",
+    "data-fog-on",
+    "false",
   );
   await expect(marks).toHaveCount(1);
 });

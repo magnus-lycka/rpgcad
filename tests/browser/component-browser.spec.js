@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 test("wall door preview is centred and large enough to inspect", async ({
   page,

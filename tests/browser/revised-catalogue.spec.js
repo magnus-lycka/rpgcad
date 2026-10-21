@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 test("standard bed uses the Referee's metre footprint", async ({ request }) => {
   const response = await request.get("/components?definition=bed%401");

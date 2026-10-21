@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 import { addCharacter } from "./helpers.js";
 
 test("plan and level appear only in Info, in Edit and in Play", async ({
@@ -116,7 +116,7 @@ test("characters added to another plan stay there on reload and library navigati
     "data-observations",
     /^\d+$/,
   );
-  // Labels show only in the GM view, which also confirms which plan this is.
+  // Labels show only with fog off, which also confirms which plan this is.
   await page.getByRole("button", { name: "Toggle fog", exact: true }).click();
   await expect(page.locator("#viewport")).toContainText("DEPOT");
   await expect(page.locator("#viewport")).toContainText("Depot guard");

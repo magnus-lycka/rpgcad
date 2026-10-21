@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 test("Designer tools and Components are discoverable keyboard commands with focus restoration", async ({
   page,

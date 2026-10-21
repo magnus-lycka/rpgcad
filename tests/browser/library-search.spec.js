@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 import { addCharacter } from "./helpers.js";
 
 test("text search finds names, descriptions and tags and identifies matching levels", async ({

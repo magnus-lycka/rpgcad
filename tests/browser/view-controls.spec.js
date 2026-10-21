@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, gotoWhileLoading } from "../fixtures/app-test.js";
 
 test("calibration waits for the plan's initial view before offering a ruler", async ({
   page,
@@ -12,7 +12,7 @@ test("calibration waits for the plan's initial view before offering a ruler", as
     await route.continue();
   });
   try {
-    await page.goto("/?mode=edit");
+    await gotoWhileLoading(page, "/?mode=edit");
     await expect(
       page.getByRole("button", { name: "Calibrate", exact: true }),
     ).toBeDisabled();

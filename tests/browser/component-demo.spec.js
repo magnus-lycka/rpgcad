@@ -1,9 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 import { readFileSync } from "node:fs";
 import { PNG } from "pngjs";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-
-preserveBrowserFixture(test);
 
 // Characterises the complete demo through the already implemented saved authoring loop.
 test("demo catalogue selection, variation, reload and door fog use normal saved APIs", async ({

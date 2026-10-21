@@ -1,6 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-preserveBrowserFixture(test);
+import { test, expect } from "../fixtures/app-test.js";
 test("component door shift-click state persists and reset closes the existing opening", async ({
   page,
   request,

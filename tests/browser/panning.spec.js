@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/app-test.js";
 
 test("holding Space pans instead of marking and release restores Pen", async ({
   page,

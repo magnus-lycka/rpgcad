@@ -1,7 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { preserveBrowserFixture } from "../fixtures/browser-state.js";
-
-preserveBrowserFixture(test);
+import { test, expect } from "../fixtures/app-test.js";
 
 test("one toolbar offers Play in Edit and Stop in Play, also on Shift+E", async ({
   page,
@@ -165,13 +162,13 @@ test("Toggle fog is pressed while fog hides the plan, by button and by Shift+F",
     .getByRole("button", { name: "Toggle fog", exact: true });
   const viewport = page.locator("#viewport");
   await expect(fog).toHaveAttribute("aria-pressed", "true");
-  await expect(viewport).toHaveAttribute("data-gm-view", "false");
+  await expect(viewport).toHaveAttribute("data-fog-on", "true");
   await fog.click();
   await expect(fog).toHaveAttribute("aria-pressed", "false");
-  await expect(viewport).toHaveAttribute("data-gm-view", "true");
+  await expect(viewport).toHaveAttribute("data-fog-on", "false");
   await page.keyboard.press("Shift+F");
   await expect(fog).toHaveAttribute("aria-pressed", "true");
-  await expect(viewport).toHaveAttribute("data-gm-view", "false");
+  await expect(viewport).toHaveAttribute("data-fog-on", "true");
   await page.keyboard.down("Shift");
   await page.keyboard.press("V");
   await page.keyboard.up("Shift");

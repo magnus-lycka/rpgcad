@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, appReady } from "../fixtures/app-test.js";
 
 /** @param {import("@playwright/test").APIRequestContext} request @param {object} data */
 async function setRoster(request, data) {
@@ -63,6 +63,7 @@ test("the Characters list shows name and level, and choosing one goes to its lev
     await expect(list).toContainText("below");
     await list.getByRole("button", { name: /Guard/ }).click();
     await expect(page).toHaveURL(/level=below/);
+    await appReady(page);
     await expect(list).toBeHidden();
     const viewport = page.locator("#viewport");
     await expect(viewport).toHaveAttribute("viewBox", /./);

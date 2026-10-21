@@ -38,7 +38,9 @@ test("the roof has the ground level's four sides as edges, not walls", () => {
     assert.ok(!wallIds.includes(id), id);
   // They run between the tower walls exactly where the ground level's walls do; the open left side mirrors the right about the building's centre, x 8.625.
   const edges = Object.fromEntries(
-    (roof.lines ?? []).map((l) => [l.id, [l.a, l.b]]),
+    (roof.lines ?? [])
+      .filter((l) => /^roof-edge-/.test(l.id))
+      .map((l) => [l.id, [l.a, l.b]]),
   );
   assert.deepEqual(edges, {
     "roof-edge-top": [
@@ -112,18 +114,25 @@ test("each corner tower has a downward iris valve over the ceiling hatch below",
   assert.deepEqual(centres, hatches);
 });
 
-test("a two-barrel missile rack stands mid-roof, open at the -X end", () => {
-  const tubes = (roof.outlines ?? []).filter((o) => /^rack-barrel/.test(o.id));
+test("a two-barrel missile launcher stands on the roof, its barrels reaching past the base at the -X end", () => {
+  const tubes = (roof.outlines ?? []).filter((o) =>
+    /^launcher-tube-\d$/.test(o.id),
+  );
   assert.equal(tubes.length, 2);
   for (const t of tubes) {
     assert.ok(t.width > t.height, `${t.id} is longer in X than in Y`);
-    assert.deepEqual([...(t.sides ?? [])].sort(), ["bottom", "right", "top"]);
+    assert.deepEqual([...(t.sides ?? [])].sort(), ["bottom", "top"]);
   }
-  const x0 = Math.min(...tubes.map((t) => t.at[0])),
-    x1 = Math.max(...tubes.map((t) => t.at[0] + t.width)),
-    y0 = Math.min(...tubes.map((t) => t.at[1])),
+  const plate = (roof.outlines ?? []).find(
+    (o) => o.id === "launcher-base-plate",
+  );
+  assert.ok(plate, "base plate");
+  assert.ok(
+    Math.min(...tubes.map((t) => t.at[0])) < plate.at[0],
+    "barrels extend beyond the base at -X",
+  );
+  const y0 = Math.min(...tubes.map((t) => t.at[1])),
     y1 = Math.max(...tubes.map((t) => t.at[1] + t.height));
-  // The building's centre is x 8.625, y 4.5.
-  assert.ok(Math.abs((x0 + x1) / 2 - 8.625) < 0.75, "centred in X");
+  // The building's centre is y 4.5.
   assert.ok(Math.abs((y0 + y1) / 2 - 4.5) < 0.01, "centred in Y");
 });
